@@ -22,6 +22,7 @@ parts:
       - -DWITH_TESTS=OFF
       - -DWITH_XC_AUTOTYPE=ON
       - -DWITH_XC_HTTP=ON
+      - -DWITH_XC_BROWSER=ON
     build-packages:
       - g++
       - libgcrypt20-dev

@@ -37,6 +37,7 @@ option(WITH_COVERAGE "Use to build with coverage tests. (GCC ONLY)." OFF)
 option(WITH_XC_AUTOTYPE "Include Autotype." OFF)
 option(WITH_XC_HTTP "Include KeePassHTTP." OFF)
 option(WITH_XC_YUBIKEY "Include Yubikey support." OFF)
+option(WITH_XC_BROWSER "Include browser extension support." OFF)
 
 set(KEEPASSXC_VERSION "2.1.4")
 set(KEEPASSXC_VERSION_NUM "2.1.4")

@@ -48,6 +48,12 @@
 #include "http/OptionDialog.h"
 #endif
 
+#ifdef WITH_XC_BROWSER
+#include "browser/ChromeListener.h"
+#include "browser/BrowserSettings.h"
+#include "browser/BrowserOptionDialog.h"
+#endif
+
 #include "gui/SettingsWidget.h"
 #include "gui/PasswordGeneratorWidget.h"
 
@@ -85,6 +91,40 @@ class HttpPlugin: public ISettingsPage
 };
 #endif
 
+#ifdef WITH_XC_BROWSER
+class BrowserPlugin: public ISettingsPage
+{
+    public:
+        BrowserPlugin(DatabaseTabWidget * tabWidget) {
+            m_chromeListener = new ChromeListener(tabWidget);
+        }
+        virtual ~BrowserPlugin() {
+            //delete m_chromeListener;
+        }
+        virtual QString name() {
+            return QObject::tr("Browser");
+        }
+        virtual QWidget * createWidget() {
+            BrowserOptionDialog * dlg = new BrowserOptionDialog();
+            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener, SLOT(removeSharedEncryptionKeys()));
+            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener, SLOT(removeStoredPermissions()));
+            return dlg;
+        }
+        virtual void loadSettings(QWidget * widget) {
+            qobject_cast<BrowserOptionDialog*>(widget)->loadSettings();
+        }
+        virtual void saveSettings(QWidget * widget) {
+            qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
+            if (BrowserSettings::isEnabled())
+                m_chromeListener->Run();
+            //else
+                //m_chromeListener->stop();
+        }
+    private:
+        ChromeListener *m_chromeListener;
+};
+#endif
+
 const QString MainWindow::BaseWindowTitle = "KeePassXC";
 
 MainWindow::MainWindow()
@@ -106,6 +146,9 @@ MainWindow::MainWindow()
     restoreGeometry(config()->get("GUI/MainWindowGeometry").toByteArray());
     #ifdef WITH_XC_HTTP
     m_ui->settingsWidget->addSettingsPage(new HttpPlugin(m_ui->tabWidget));
+    #endif
+    #ifdef WITH_XC_BROWSER
+    m_ui->settingsWidget->addSettingsPage(new BrowserPlugin(m_ui->tabWidget));
     #endif
 
     setWindowIcon(filePath()->applicationIcon());

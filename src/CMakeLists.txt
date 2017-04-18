@@ -148,10 +148,16 @@ set(keepassx_FORMS
 
 add_feature_info(KeePassHTTP WITH_XC_HTTP "KeePassHTTP support for ChromeIPass and PassIFox")
 add_feature_info(Autotype WITH_XC_AUTOTYPE "Auto-type passwords in Input fields")
+add_feature_info(chromeKeePassXC WITH_XC_BROWSER "KeePassXC browser support with chromeKeepassXC")
 
 add_subdirectory(http)
 if(WITH_XC_HTTP)
     set(keepasshttp_LIB keepasshttp)
+endif()
+
+if(WITH_XC_BROWSER)
+    add_subdirectory(browser)
+    set(keepassbrowser_LIB keepassbrowser)
 endif()
 
 add_subdirectory(autotype)
@@ -190,6 +196,7 @@ add_library(keepassx_core STATIC ${keepassx_SOURCES})
 set_target_properties(keepassx_core PROPERTIES COMPILE_DEFINITIONS KEEPASSX_BUILDING_CORE)
 target_link_libraries(keepassx_core
                       ${keepasshttp_LIB}
+                      ${keepassbrowser_LIB}
                       ${autotype_LIB}
                       zxcvbn
                       qhttp
