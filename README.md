@@ -14,6 +14,7 @@ KeePassXC is a fork of [KeePassX](https://www.keepassx.org/) that [aims to incor
 - Merging of databases
 - Automatic reload when the database changed on disk
 - KeePassHTTP support for use with [PassIFox](https://addons.mozilla.org/en-us/firefox/addon/passifox/) in Mozilla Firefox and [chromeIPass](https://chrome.google.com/webstore/detail/chromeipass/ompiailgknfdndiefoaoiligalphfdae) in Google Chrome or Chromium.
+- Support for chromeKeePassXC browser extension (under development)
 
 For a full list of features and changes, read the [CHANGELOG](CHANGELOG) document.
 
@@ -53,7 +54,7 @@ make -j8
 sudo make install
 ```
 
-To enable autotype, add `-DWITH_XC_AUTOTYPE=ON` to the `cmake` command. KeePassHTTP support is compiled in by adding `-DWITH_XC_HTTP=ON`. If these options are not specified, KeePassXC will be built without these plugins.
+To enable autotype, add `-DWITH_XC_AUTOTYPE=ON` to the `cmake` command. KeePassHTTP support is compiled in by adding `-DWITH_XC_HTTP=ON`. chromeKeePassXC browser extension support is added with `-DWITH_XC_BROWSER`. If these options are not specified, KeePassXC will be built without these plugins.
 
 
 ### Contributing
