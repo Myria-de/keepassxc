@@ -56,6 +56,7 @@ sudo make install
 
 To enable autotype, add `-DWITH_XC_AUTOTYPE=ON` to the `cmake` command. KeePassHTTP support is compiled in by adding `-DWITH_XC_HTTP=ON`. chromeKeePassXC browser extension support is added with `-DWITH_XC_BROWSER`. If these options are not specified, KeePassXC will be built without these plugins.
 
+With `-DWITH_XC_BROWSER` it's necessary to locate the `Findsodium.cmake` using `-DCMAKE_MODULE_PATH`.
 
 ### Contributing
 
