@@ -32,8 +32,12 @@ private:
     QString     encrypt(const QString decrypted, const QString nonce) const;
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;
 
+    QString     getDataBaseHash();
+
     bool        isDatabaseOpened() const;
     bool        openDatabase();
+    QString     getDatabaseRootUuid();
+    QString     getDatabaseRecycleBinUuid();
 
 signals:
     void        quit();

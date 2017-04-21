@@ -9,6 +9,7 @@
  */
 
 #include <QJsonArray>
+#include <QtCore/QCryptographicHash>
 #include <iostream>
 #include <cstring>
 #include "sodium.h"
@@ -16,6 +17,15 @@
 #include "randombytes.h"
 #include "ChromeListener.h"
 #include "BrowserSettings.h"
+#include "config-keepassx.h"
+
+#include "core/Database.h"
+#include "core/Entry.h"
+#include "core/Group.h"
+#include "core/EntrySearcher.h"
+#include "core/Metadata.h"
+#include "core/Uuid.h"
+#include "core/PasswordGenerator.h"
 
 #define MESSAGE_LENGTH  4096
 
@@ -48,17 +58,6 @@ void ChromeListener::readLine()
 
     QString received(msg.c_str());
     appendText("Received: " + received);
-
-    /*
-    if (!isDatabaseOpened()) {
-        if (!openDatabase()) {
-            // Send error response
-            response->setStatusCode(qhttp::ESTATUS_SERVICE_UNAVAILABLE);
-            response->end();
-            return;
-        }
-    }
-    */
 
     // Replace this functionality with better one
     QJsonParseError err;
@@ -111,12 +110,12 @@ void ChromeListener::handleAction(const QJsonObject &json)
 
 void ChromeListener::handleGetDatabaseHash(const QString &valStr)
 {
-    appendText("Sending database hash..");
+    QString hash = getDataBaseHash();
 
     QJsonObject response;
     response["action"] = valStr;
-    response["hash"] = "29234e32274a32276e25666a42";
-    response["version"] = "2.1.2";
+    response["hash"] = hash;
+    response["version"] = KEEPASSX_VERSION;
 
     sendReply(response);
 }
@@ -148,6 +147,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
 
 void ChromeListener::handleAssociate(const QJsonObject &json, const QString &valStr)
 {
+    QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
     if (encrypted.length() > 0) {
@@ -162,8 +162,8 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
 
                     // Encrypt a reply message
                     QJsonObject message;
-                    message["hash"] = "29234e32274a32276e25666a42";
-                    message["version"] = "2.1.2";
+                    message["hash"] = hash;
+                    message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
                     message["id"] = "testclient";
                     message["nonce"] = nonce;
@@ -188,6 +188,7 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
 void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString &valStr)
 {
     // { "action": "test-associate", "version": "2.1.2", "nonce": "tZvLrBzkQ9GxXq9PvKJj4iAnfPT0VZ3Q", "hash": "29234e32274a32276e25666a42", "id": "testclient", "success": "true" }
+    QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
     if (encrypted.length() > 0) {
@@ -203,8 +204,8 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
 
                     // Encrypt a reply message
                     QJsonObject message;
-                    message["hash"] = "29234e32274a32276e25666a42";
-                    message["version"] = "2.1.2";
+                    message["hash"] = hash;
+                    message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
                     message["id"] = "testclient";
                     message["nonce"] = nonce;
@@ -230,6 +231,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
 {
     // { "action": "get-logins", "count": "2", "entries" : [{"login": "user1", "name": "user1", "password": "passwd1"}, {"login": "user2", "name": "user2", "password": "passwd2"}],
     // "nonce": "tZvLrBzkQ9GxXq9PvKJj4iAnfPT0VZ3Q", "success": "true", "hash": "29234e32274a32276e25666a42", "version": "2.1.2" }
+    QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
     if (encrypted.length() > 0) {
@@ -256,8 +258,8 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                     QJsonObject message;
                     message["count"] = userCount;
                     message["entries"] = users;
-                    message["hash"] = "29234e32274a32276e25666a42";
-                    message["version"] = "2.1.2";
+                    message["hash"] = hash;
+                    message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
                     message["id"] = "testclient";
                     message["nonce"] = nonce;
@@ -291,7 +293,7 @@ void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QStri
     arr.append(passwd);
 
     QJsonObject message;
-    message["version"] = "2.1.2";
+    message["version"] = KEEPASSX_VERSION;
     message["success"] = "true";
     message["entries"] = arr;
     message["nonce"] = nonce;
@@ -307,6 +309,7 @@ void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QStri
 
 void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valStr)
 {
+    QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
     if (encrypted.length() > 0) {
@@ -323,8 +326,8 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
                     message["count"] = QJsonValue::Null;
                     message["entries"] = QJsonValue::Null;
                     message["error"] = "";
-                    message["hash"] = "29234e32274a32276e25666a42";
-                    message["version"] = "2.1.2";
+                    message["hash"] = hash;
+                    message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
                     message["nonce"] = nonce;
 
@@ -471,6 +474,14 @@ QByteArray ChromeListener::base64Decode(const QString str)
     return QByteArray::fromBase64(str.toUtf8());
 }
 
+QString ChromeListener::getDataBaseHash()
+{
+    QByteArray hash = QCryptographicHash::hash(
+        (getDatabaseRootUuid() + getDatabaseRecycleBinUuid()).toUtf8(),
+         QCryptographicHash::Sha256).toHex();
+    return QString(hash);
+}
+
 /*
  * Database functions
 */
@@ -506,4 +517,22 @@ bool ChromeListener::openDatabase()
     }
     m_dbTabWidget->activateWindow();
     return false;
+}
+
+QString ChromeListener::getDatabaseRootUuid()
+{
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
+        if (Database* db = dbWidget->database())
+            if (Group* rootGroup = db->rootGroup())
+                return rootGroup->uuid().toHex();
+    return QString();
+}
+
+QString ChromeListener::getDatabaseRecycleBinUuid()
+{
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
+        if (Database* db = dbWidget->database())
+            if (Group* recycleBin = db->metadata()->recycleBin())
+                return recycleBin->uuid().toHex();
+    return QString();
 }
