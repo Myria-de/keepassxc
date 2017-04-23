@@ -23,6 +23,7 @@ if(WITH_XC_BROWSER)
         BrowserPasswordGeneratorWidget.cpp
         BrowserSettings.cpp
         BrowserOptionDialog.cpp
+        BrowserService.cpp
     )
     set(keepassbrowser_FORMS
         BrowserAccessControlDialog.ui

@@ -5,6 +5,7 @@
 #include <QSocketNotifier>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 
 class ChromeListener : public QObject
@@ -24,6 +25,7 @@ private:
     void        handleGetLogins(const QJsonObject &json, const QString &valStr);
     void        handleGeneratePassword(const QJsonObject &json, const QString &valStr);
     void        handleSetLogin(const QJsonObject &json, const QString &valStr);
+    void        handleGetLoginsCount(const QJsonObject &json, const QString &valStr);
 
     void        appendText(const QString &str);
     void        sendReply(const QJsonObject json);
@@ -34,10 +36,13 @@ private:
 
     QString     getDataBaseHash();
 
+    // Database functions
     bool        isDatabaseOpened() const;
     bool        openDatabase();
     QString     getDatabaseRootUuid();
     QString     getDatabaseRecycleBinUuid();
+    Entry*      getConfigEntry(bool create);
+    QString     storeKey(const QString &key);
 
 signals:
     void        quit();
@@ -58,7 +63,8 @@ private:
      QString            m_publicKey;
      QString            m_secretKey;
 
-     DatabaseTabWidget * const m_dbTabWidget;
+     //DatabaseTabWidget * const m_dbTabWidget;
+     BrowserService     m_Service;
 };
 
 #endif // CHROMELISTENER_H
