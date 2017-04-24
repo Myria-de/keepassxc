@@ -23,6 +23,8 @@
 ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_Service(parent)
 {
     m_pNotifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this);
+    if (BrowserSettings::isEnabled())
+        run();
 }
 
 void ChromeListener::run()
@@ -48,7 +50,7 @@ void ChromeListener::readLine()
     }
 
     QString received(msg.c_str());
-    appendText("Received: " + received);
+    //appendText("Received: " + received);
 
     // Replace this functionality with better one
     QJsonParseError err;
@@ -66,7 +68,7 @@ void ChromeListener::readLine()
             handleAction(json);
         }
     } else {
-         appendText("Not an object");
+         //appendText("Not an object");
     }
 }
 
@@ -116,7 +118,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
     QString secretKey = getBase64FromKey(sk, crypto_box_SECRETKEYBYTES);
     m_publicKey = publicKey;
     m_secretKey = secretKey;
-    appendText("Public key: " + publicKey + "Secret key: " + secretKey);
+    //appendText("Public key: " + publicKey + "Secret key: " + secretKey);
 
     QString nonce = json.value("nonce").toString();
     m_clientPublicKey = json.value("publicKey").toString();
@@ -140,12 +142,12 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
     if (encrypted.length() > 0) {
         QByteArray ba = decrypt(encrypted, nonce);
         if (ba.length() > 0) {
-            appendText("Message decrypted: " + QString(ba));
+            //appendText("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
                 QJsonValue val = json.value("key");
                 if (val.isString() && val.toString() == m_clientPublicKey) {
-                    appendText("Keys match. Associate.");
+                    //appendText("Keys match. Associate.");
 
                     QString id = m_Service.storeKey(val.toString());
                     if (id.isEmpty())
@@ -169,10 +171,10 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
                 }
             }
         } else {
-            appendText("Cannot decrypt message");
+            //appendText("Cannot decrypt message");
         }
     } else {
-        appendText("No message received");
+        //appendText("No message received");
     }
 }
 
@@ -185,7 +187,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
     if (encrypted.length() > 0) {
         QByteArray ba = decrypt(encrypted, nonce);
         if (ba.length() > 0) {
-            appendText("Message decrypted: " + QString(ba));
+            //appendText("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
                 QJsonValue val = json.value("id");
@@ -214,10 +216,10 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                 }
             }
         } else {
-            appendText("Cannot decrypt message");
+            //appendText("Cannot decrypt message");
         }
     } else {
-        appendText("No message received");
+        //appendText("No message received");
     }
 }
 
@@ -230,26 +232,21 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
     if (encrypted.length() > 0) {
         QByteArray ba = decrypt(encrypted, nonce);
         if (ba.length() > 0) {
-            appendText("Message decrypted: " + QString(ba));
+            //appendText("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
                 QJsonValue val = json.value("url");
                 if (val.isString()) {
-                    appendText("URL: " + val.toString());
+                    //appendText("URL: " + val.toString());
 
-                    int userCount = 2;
-                    QJsonArray users;
+                    QJsonValue idVal = json.value("id");
+                    QJsonValue urlVal = json.value("url");
+                    QJsonValue submitVal = json.value("submitUrl");
 
-                    for (int i = 0; i < userCount; i++) {
-                        QJsonObject user;
-                        user["login"] = "user" + QString::number(i);
-                        user["name"] = "user" + QString::number(i);
-                        user["password"] = "passwd" + QString::number(i);
-                        users.append(user);
-                    }
+                    QJsonArray users = m_Service.findMatchingEntries(idVal.toString(), urlVal.toString(), submitVal.toString(), "");
 
                     QJsonObject message;
-                    message["count"] = userCount;
+                    message["count"] = users.count();
                     message["entries"] = users;
                     message["hash"] = hash;
                     message["version"] = KEEPASSX_VERSION;
@@ -267,10 +264,10 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                 }
             }
         } else {
-            appendText("Cannot decrypt message");
+            //appendText("Cannot decrypt message");
         }
     } else {
-        appendText("No message received");
+        //appendText("No message received");
     }
 }
 
@@ -310,12 +307,12 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
     if (encrypted.length() > 0) {
         QByteArray ba = decrypt(encrypted, nonce);
         if (ba.length() > 0) {
-            appendText("Message decrypted: " + QString(ba));
+            //appendText("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
                 QJsonValue val = json.value("url");
                 if (val.isString()) {
-                    appendText("URL: " + val.toString());
+                    //appendText("URL: " + val.toString());
 
                     QJsonObject message;
                     message["count"] = QJsonValue::Null;
@@ -336,19 +333,14 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
                 }
             }
         } else {
-            appendText("Cannot decrypt message");
+            //appendText("Cannot decrypt message");
         }
     } else {
-        appendText("No message received");
+        //appendText("No message received");
     }
 }
 
 void ChromeListener::handleGetLoginsCount(const QJsonObject &json, const QString &valStr)
-{
-
-}
-
-void ChromeListener::appendText(const QString &str)
 {
 
 }
@@ -364,7 +356,7 @@ void ChromeListener::sendReply(const QJsonObject json)
                 << char(((len>>24) & 0xFF));
     std::cout << reply.toStdString() << std::flush;
 
-    appendText(reply);
+    //appendText(reply);
 }
 
 void ChromeListener::sendErrorReply(const QString &valStr/*const int errCode*/)

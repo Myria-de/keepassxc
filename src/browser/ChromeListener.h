@@ -27,7 +27,6 @@ private:
     void        handleSetLogin(const QJsonObject &json, const QString &valStr);
     void        handleGetLoginsCount(const QJsonObject &json, const QString &valStr);
 
-    void        appendText(const QString &str);
     void        sendReply(const QJsonObject json);
     void        sendErrorReply(const QString &valStr/*const int errCode*/);
 

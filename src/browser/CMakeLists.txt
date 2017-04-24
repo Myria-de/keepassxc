@@ -24,6 +24,8 @@ if(WITH_XC_BROWSER)
         BrowserSettings.cpp
         BrowserOptionDialog.cpp
         BrowserService.cpp
+        BrowserEntryConfig.cpp
+        Variant.cpp
     )
     set(keepassbrowser_FORMS
         BrowserAccessControlDialog.ui
