@@ -317,7 +317,7 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
                     QString login = json.value("login").toString();
                     QString password = json.value("password").toString();
                     QString submitUrl = json.value("submitUrl").toString();
-                    QString uuid = json.value("url").toString();
+                    QString uuid = json.value("uuid").toString();
                     QString realm = ""; // ?
                      if (uuid.isEmpty())
                         m_Service.addEntry(id, login, password, url, submitUrl, realm);
