@@ -25,6 +25,8 @@
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 
+#define ERROR_KEEPASS_DATABASE_NOT_OPENED   1
+
 class ChromeListener : public QObject
 {
     Q_OBJECT
@@ -45,7 +47,7 @@ private:
     void        handleGetLoginsCount(const QJsonObject &json, const QString &valStr);
 
     void        sendReply(const QJsonObject json);
-    void        sendErrorReply(const QString &valStr/*const int errCode*/);
+    void        sendErrorReply(const QString &valStr, const int errorCode);
 
     QString     encrypt(const QString decrypted, const QString nonce) const;
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;

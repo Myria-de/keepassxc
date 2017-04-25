@@ -49,18 +49,12 @@ void ChromeListener::readLine()
         length = length | (read_char << i*8);
     }
 
-    std::string msg = "";
     QByteArray arr;
     for (uint i = 0; i < length; i++) {
         char c = getchar();
-        msg += c;
         arr.append(c);
     }
 
-    QString received(msg.c_str());
-    //appendText("Received: " + received);
-
-    // Replace this functionality with better one
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
     if (doc.isObject()) {
@@ -69,7 +63,7 @@ void ChromeListener::readLine()
         if (val.isString()) {
             if (!m_Service.isDatabaseOpened()) {
                 if (!m_Service.openDatabase()) {
-                    sendErrorReply(val.toString());
+                    sendErrorReply(val.toString(), ERROR_KEEPASS_DATABASE_NOT_OPENED);
                     return;
                 }
             }
@@ -156,7 +150,6 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
                 QJsonValue val = json.value("key");
                 if (val.isString() && val.toString() == m_clientPublicKey) {
                     //appendText("Keys match. Associate.");
-
                     QString id = m_Service.storeKey(val.toString());
                     if (id.isEmpty())
                         return;
@@ -377,11 +370,12 @@ void ChromeListener::sendReply(const QJsonObject json)
     //appendText(reply);
 }
 
-void ChromeListener::sendErrorReply(const QString &valStr/*const int errCode*/)
+void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)
 {
     QJsonObject response;
     response["action"] = valStr;
-    response["error"] = "error";    // errorCode
+    response["errorCode"] = QString::number(errorCode);
+    response["error"] = "";
     sendReply(response);
 }
 
