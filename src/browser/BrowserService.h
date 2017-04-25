@@ -3,7 +3,6 @@
 
 #include <QtCore>
 #include <QObject>
-//#include "Variant.h"
 #include "gui/DatabaseTabWidget.h"
 #include "core/Entry.h"
 
@@ -42,9 +41,14 @@ public:
     QString         storeKey(const QString &key);
     QString         getKey(const QString &id);
     QJsonArray      findMatchingEntries(const QString& /*id*/, const QString& url, const QString& submitUrl, const QString& realm);
-
+    void            addEntry(const QString& id, const QString& login, const QString& password, const QString& url, const QString& submitUrl, const QString& realm);
+    void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
     QList<Entry*>   searchEntries(Database* db, const QString& hostname);
     QList<Entry*>   searchEntries(const QString& text);
+
+public slots:
+    void removeSharedEncryptionKeys();
+    void removeStoredPermissions();
 
 private:
     enum Access     { Denied, Unknown, Allowed};
@@ -53,10 +57,12 @@ private:
 private:
     QJsonObject     prepareEntry(const Entry* entry);
     Access          checkAccess(const Entry* entry, const QString&  host, const QString&  submitHost, const QString&  realm);
-    
+    Group*          findCreateAddEntryGroup();
     int             sortPriority(const Entry *entry, const QString &host, const QString &submitUrl, const QString &baseSubmitUrl) const;
     bool            matchUrlScheme(const QString& url);
     bool            removeFirstDomain(QString& hostname);
+    void            addStringField(const QString &key, const QString &value);
+
 
 private:
     DatabaseTabWidget* const m_dbTabWidget;

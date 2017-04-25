@@ -6,14 +6,14 @@
  *
  * Copyright (C) 2013
  *
- * @author	        Francois Ferrand
- * @date	        4/2013
+ * @author	        (C) 2013 Francois Ferrand
  * @modifications   (C) 2017 Sami Vänttinen
  ***************************************************************************
  */
 
 #include <QJsonArray>
 #include <QInputDialog>
+#include <QProgressDialog>
 #include <QMessageBox>
 #include "BrowserService.h"
 #include "BrowserSettings.h"
@@ -63,7 +63,7 @@ bool BrowserService::openDatabase()
 {
     if (!BrowserSettings::unlockDatabase())
         return false;
-    if (DatabaseWidget * dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
         switch(dbWidget->currentMode()) {
         case DatabaseWidget::None:
         case DatabaseWidget::LockedMode:
@@ -98,8 +98,8 @@ QString BrowserService::getDatabaseRecycleBinUuid()
 
 Entry* BrowserService::getConfigEntry(bool create)
 {
-    if (DatabaseWidget * dbWidget = m_dbTabWidget->currentDatabaseWidget())
-        if (Database * db = dbWidget->database()) {
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
+        if (Database* db = dbWidget->database()) {
             Entry* entry = db->resolveEntry(KEEPASSBROWSER_UUID);
             if (!entry && create) {
                 entry = new Entry();
@@ -167,7 +167,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
     //Check entries for authorization
     QList<Entry*> pwEntriesToConfirm;
     QList<Entry*> pwEntries;
-    //Q_FOREACH (QJsonObject entry, searchEntries(url)) {
     for (Entry* entry : searchEntries(url)) {
         switch (checkAccess(entry, host, submitHost, realm)) {
         case Denied:
@@ -188,7 +187,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
 
     //If unsure, ask user for confirmation
     //if (!pwEntriesToConfirm.isEmpty()
-    //    && HttpSettings::showNotification()
+    //    && BrowserSettings::showNotification()
     //    && !ShowNotification(QString("%0: %1 is requesting access, click to allow or deny")
     //                                 .arg(id).arg(submitHost.isEmpty() ? host : submithost));
     //    pwEntriesToConfirm.clear(); //timeout --> do not request confirmation
@@ -202,7 +201,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
 
         int res = dlg.exec();
         if (dlg.remember()) {
-            //Q_FOREACH (QJsonObject entry, pwEntriesToConfirm) {
             for (Entry* entry : pwEntriesToConfirm) {
                 BrowserEntryConfig config;
                 config.load(entry);
@@ -236,7 +234,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
         //Cache priorities
         QHash<const Entry*, int> priorities;
         priorities.reserve(pwEntries.size());
-        //Q_FOREACH (const QJsonObject entry, pwEntries)
         for (const Entry* entry : pwEntries)
             priorities.insert(entry, sortPriority(entry, host, submitUrl, baseSubmitURL));
 
@@ -248,30 +245,68 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
     //{
     //    var names = (from e in resp.Entries select e.Name).Distinct<string>();
     //    var n = String.Join("\n    ", names.ToArray<string>());
-    //    if (HttpSettings::receiveCredentialNotification())
+    //    if (BrowserSettings::receiveCredentialNotification())
     //        ShowNotification(QString("%0: %1 is receiving credentials for:\n%2").arg(Id).arg(host).arg(n)));
     //}
-
-    //Fill the list
-    /*QList<KeepassHttpProtocol::Entry> result;
-    result.reserve(pwEntries.count());
-    Q_FOREACH (Entry * entry, pwEntries)
-        result << prepareEntry(entry);*/
-    
+ 
     // Fill the list
     QJsonArray result;
-    //Q_FOREACH (QJsonObject user, pwEntries)
     for (Entry* entry : pwEntries)
         result << prepareEntry(entry);
 
     return result;
 }
 
+void BrowserService::addEntry(const QString &, const QString &login, const QString &password, const QString &url, const QString &submitUrl, const QString &realm)
+{
+    if (Group* group = findCreateAddEntryGroup()) {
+        Entry* entry = new Entry();
+        entry->setUuid(Uuid::random());
+        entry->setTitle(QUrl(url).host());
+        entry->setUrl(url);
+        entry->setIcon(KEEPASSBROWSER_DEFAULT_ICON);
+        entry->setUsername(login);
+        entry->setPassword(password);
+        entry->setGroup(group);
+
+        const QString host = QUrl(url).host();
+        const QString submitHost = QUrl(submitUrl).host();
+        BrowserEntryConfig config;
+        config.allow(host);
+        if (!submitHost.isEmpty())
+            config.allow(submitHost);
+        if (!realm.isEmpty())
+            config.setRealm(realm);
+        config.save(entry);
+    }
+}
+
+void BrowserService::updateEntry(const QString &, const QString &uuid, const QString &login, const QString &password, const QString &url)
+{
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
+        if (Database* db = dbWidget->database())
+            if (Entry* entry = db->resolveEntry(Uuid::fromHex(uuid))) {
+                QString u = entry->username();
+                if (u != login || entry->password() != password) {
+                    //ShowNotification(QString("%0: You have an entry change prompt waiting, click to activate").arg(requestId));
+                    if (BrowserSettings::alwaysAllowUpdate()
+                        || QMessageBox::warning(0, tr("KeePassXC: Update Entry"),
+                                                tr("Do you want to update the information in %1 - %2?")
+                                                .arg(QUrl(url).host().toHtmlEscaped()).arg(u.toHtmlEscaped()),
+                                                QMessageBox::Yes|QMessageBox::No) == QMessageBox::Yes ) {
+                        entry->beginUpdate();
+                        entry->setUsername(login);
+                        entry->setPassword(password);
+                        entry->endUpdate();
+                    }
+                }
+            }
+}
+
 QList<Entry*> BrowserService::searchEntries(Database* db, const QString& hostname)
 {
     QList<Entry*> entries;
     if (Group* rootGroup = db->rootGroup())
-        //Q_FOREACH (Entry* entry, EntrySearcher().search(hostname, rootGroup, Qt::CaseInsensitive)) {
         for (Entry* entry : EntrySearcher().search(hostname, rootGroup, Qt::CaseInsensitive)) {
             QString title = entry->title();
             QString url = entry->url();
@@ -305,7 +340,6 @@ QList<Entry*> BrowserService::searchEntries(const QString& text)
     QString hostname = QUrl(text).host();
     QList<Entry*> entries;
     do {
-        //Q_FOREACH (Database* db, databases)
         for (Database* db : databases)
             entries << searchEntries(db, hostname);
     } while(entries.isEmpty() && removeFirstDomain(hostname));
@@ -321,15 +355,18 @@ QJsonObject BrowserService::prepareEntry(const Entry* entry)
     res["name"] = entry->title();
     res["uuid"] = entry->uuid().toHex();
 
-    /*
     if (BrowserSettings::supportKphFields()) {
-        const EntryAttributes * attr = entry->attributes();
-        //Q_FOREACH (const QString& key, attr->keys())
-        for (const QString& key : attr->keys())
-            if (key.startsWith(QLatin1String("KPH: ")))
-                res.addStringField(key, attr->value(key));
+        const EntryAttributes* attr = entry->attributes();
+        QJsonArray stringFields;
+        for (const QString& key : attr->keys()) {
+            if (key.startsWith(QLatin1String("KPH: "))) {
+                QJsonObject sField;
+                sField[key] = attr->value(key);
+                stringFields << sField;
+            }
+        }
+        res["stringFields"] = stringFields;
     }
-    */
     return res;
 }
 
@@ -347,7 +384,27 @@ BrowserService::Access BrowserService::checkAccess(const Entry *entry, const QSt
     return Unknown;      //not configured for this host
 }
 
+Group* BrowserService::findCreateAddEntryGroup()
+{
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
+        if (Database* db = dbWidget->database())
+            if (Group* rootGroup = db->rootGroup()) {
+                const QString groupName = QLatin1String(KEEPASSBROWSER_GROUP_NAME); //TODO: setting to decide where new keys are created
 
+                for (const Group* g : rootGroup->groupsRecursive(true))
+                    if (g->name() == groupName)
+                        return db->resolveGroup(g->uuid());
+
+                Group* group;
+                group = new Group();
+                group->setUuid(Uuid::random());
+                group->setName(groupName);
+                group->setIcon(KEEPASSBROWSER_DEFAULT_ICON);
+                group->setParent(rootGroup);
+                return group;
+            }
+    return NULL;
+}
 
 int BrowserService::sortPriority(const Entry* entry, const QString& host, const QString& submitUrl, const QString& baseSubmitUrl) const
 {
@@ -398,4 +455,84 @@ bool BrowserService::removeFirstDomain(QString & hostname)
         return false;
     hostname = hostname.mid(pos + 1);
     return !hostname.isEmpty();
+}
+
+void BrowserService::addStringField(const QString &key, const QString &value)
+{
+    //m_stringFields.append(StringField(key, value));
+}
+
+void BrowserService::removeSharedEncryptionKeys()
+{
+    if (!isDatabaseOpened()) {
+        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
+                              tr("The active database is locked!\n"
+                                 "Please unlock the selected database or choose another one which is unlocked."),
+                              QMessageBox::Ok);
+    } else if (Entry* entry = getConfigEntry()) {
+        QStringList keysToRemove;
+        for (const QString& key : entry->attributes()->keys())
+            if (key.startsWith(ASSOCIATE_KEY_PREFIX))
+                keysToRemove << key;
+
+        if(keysToRemove.count()) {
+            entry->beginUpdate();
+            for (const QString& key : keysToRemove)
+                entry->attributes()->remove(key);
+            entry->endUpdate();
+
+            const int count = keysToRemove.count();
+            QMessageBox::information(0, tr("KeePassXC: Removed keys from database"),
+                                     tr("Successfully removed %1 encryption-%2 from KeePassX/Http Settings.").arg(count).arg(count ? "keys" : "key"),
+                                     QMessageBox::Ok);
+        } else {
+            QMessageBox::information(0, tr("KeePassXC: No keys found"),
+                                     tr("No shared encryption-keys found in KeePassHttp Settings."),
+                                     QMessageBox::Ok);
+        }
+    } else {
+        QMessageBox::information(0, tr("KeePassXC: Settings not available!"),
+                                 tr("The active database does not contain an entry of KeePassHttp Settings."),
+                                 QMessageBox::Ok);
+    }
+}
+
+void BrowserService::removeStoredPermissions()
+{
+    if (!isDatabaseOpened()) {
+        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
+                              tr("The active database is locked!\n"
+                                 "Please unlock the selected database or choose another one which is unlocked."),
+                              QMessageBox::Ok);
+    } else {
+        Database* db = m_dbTabWidget->currentDatabaseWidget()->database();
+        QList<Entry*> entries = db->rootGroup()->entriesRecursive();
+
+        QProgressDialog progress(tr("Removing stored permissions..."), tr("Abort"), 0, entries.count());
+        progress.setWindowModality(Qt::WindowModal);
+
+        uint counter = 0;
+        for (Entry* entry : entries) {
+            if (progress.wasCanceled())
+                return;
+            if (entry->attributes()->contains(KEEPASSBROWSER_NAME)) {
+                entry->beginUpdate();
+                entry->attributes()->remove(KEEPASSBROWSER_NAME);
+                entry->endUpdate();
+                counter ++;
+            }
+            progress.setValue(progress.value() + 1);
+        }
+        progress.reset();
+
+        if (counter > 0) {
+            QMessageBox::information(0, tr("KeePassXC: Removed permissions"),
+                                     tr("Successfully removed permissions from %1 %2.").arg(counter).arg(counter ? "entries" : "entry"),
+                                     QMessageBox::Ok);
+        } else {
+            QMessageBox::information(0, tr("KeePassXC: No entry with permissions found!"),
+                                     tr("The active database does not contain an entry with permissions."),
+                                     QMessageBox::Ok);
+        }
+    }
 }

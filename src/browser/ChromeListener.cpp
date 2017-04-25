@@ -194,7 +194,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                 QString id = val.toString();
                 if (!id.isEmpty())
                 {
-                    QString key = m_Service.getKey(val.toString());
+                    QString key = m_Service.getKey(id);
                     if (key.isEmpty())
                         return;
 
@@ -203,7 +203,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                     message["hash"] = hash;
                     message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
-                    message["id"] = val.toString();
+                    message["id"] = id;
                     message["nonce"] = nonce;
 
                     QString replyMessage(QJsonDocument(message).toJson());
@@ -242,7 +242,6 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                     QJsonValue idVal = json.value("id");
                     QJsonValue urlVal = json.value("url");
                     QJsonValue submitVal = json.value("submitUrl");
-
                     QJsonArray users = m_Service.findMatchingEntries(idVal.toString(), urlVal.toString(), submitVal.toString(), "");
 
                     QJsonObject message;
@@ -310,9 +309,20 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
             //appendText("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
-                QJsonValue val = json.value("url");
-                if (val.isString()) {
-                    //appendText("URL: " + val.toString());
+                QString url = json.value("url").toString();
+                if (!url.isEmpty()) {
+                    //appendText("URL: " + url);
+
+                    QString id = json.value("id").toString();
+                    QString login = json.value("login").toString();
+                    QString password = json.value("password").toString();
+                    QString submitUrl = json.value("submitUrl").toString();
+                    QString uuid = json.value("url").toString();
+                    QString realm = ""; // ?
+                     if (uuid.isEmpty())
+                        m_Service.addEntry(id, login, password, url, submitUrl, realm);
+                    else
+                        m_Service.updateEntry(id, uuid, login, password, url);
 
                     QJsonObject message;
                     message["count"] = QJsonValue::Null;
@@ -442,7 +452,6 @@ QJsonObject ChromeListener::getJSonObject(const uchar* pArray, const uint len)
 
     if (!doc.isObject()) {
         //appendText(err.errorString());
-        // Error
     }
 
     return doc.object();
@@ -455,7 +464,6 @@ QJsonObject ChromeListener::getJSonObject(const QByteArray ba)
 
     if (!doc.isObject()) {
         //appendText(err.errorString());
-        // Error
     }
 
     return doc.object();
