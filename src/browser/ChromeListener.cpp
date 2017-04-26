@@ -59,11 +59,12 @@ void ChromeListener::readLine()
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
     if (doc.isObject()) {
         QJsonObject json = doc.object();
-        QJsonValue val = json.value("action");
-        if (val.isString()) {
-            if (!m_Service.isDatabaseOpened()) {
+        QString val = json.value("action").toString();
+        if (!val.isEmpty()) {
+            // Allow public keys to be changed without database being opened
+            if (val != "change-public-keys" && !m_Service.isDatabaseOpened()) {
                 if (!m_Service.openDatabase()) {
-                    sendErrorReply(val.toString(), ERROR_KEEPASS_DATABASE_NOT_OPENED);
+                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
                     return;
                 }
             }
