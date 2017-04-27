@@ -28,7 +28,7 @@
 
 #define MESSAGE_LENGTH  4096
 
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_Service(parent)
+ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent)
 {
     m_pNotifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this);
     if (BrowserSettings::isEnabled())
@@ -62,8 +62,8 @@ void ChromeListener::readLine()
         QString val = json.value("action").toString();
         if (!val.isEmpty()) {
             // Allow public keys to be changed without database being opened
-            if (val != "change-public-keys" && !m_Service.isDatabaseOpened()) {
-                if (!m_Service.openDatabase()) {
+            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
+                if (!m_service.openDatabase()) {
                     sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
                     return;
                 }
@@ -71,7 +71,7 @@ void ChromeListener::readLine()
             handleAction(json);
         }
     } else {
-         //appendText("Not an object");
+         //qWarning("Not an object");
     }
 }
 
@@ -148,7 +148,7 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
                 QJsonValue val = json.value("key");
                 if (val.isString() && val.toString() == m_clientPublicKey) {
                     //qDebug("Keys match. Associate.");
-                    QString id = m_Service.storeKey(val.toString());
+                    QString id = m_service.storeKey(val.toString());
                     if (id.isEmpty())
                         return;
 
@@ -193,7 +193,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                 QString id = val.toString();
                 if (!id.isEmpty())
                 {
-                    QString key = m_Service.getKey(id);
+                    QString key = m_service.getKey(id);
                     if (key.isEmpty())
                         return;
 
@@ -239,7 +239,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                     QJsonValue idVal = json.value("id");
                     QJsonValue urlVal = json.value("url");
                     QJsonValue submitVal = json.value("submitUrl");
-                    QJsonArray users = m_Service.findMatchingEntries(idVal.toString(), urlVal.toString(), submitVal.toString(), "");
+                    QJsonArray users = m_service.findMatchingEntries(idVal.toString(), urlVal.toString(), submitVal.toString(), "");
 
                     QJsonObject message;
                     message["count"] = users.count();
@@ -315,9 +315,9 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
                     QString uuid = json.value("uuid").toString();
                     QString realm = ""; // ?
                      if (uuid.isEmpty())
-                        m_Service.addEntry(id, login, password, url, submitUrl, realm);
+                        m_service.addEntry(id, login, password, url, submitUrl, realm);
                     else
-                        m_Service.updateEntry(id, uuid, login, password, url);
+                        m_service.updateEntry(id, uuid, login, password, url);
 
                     QJsonObject message;
                     message["count"] = QJsonValue::Null;
@@ -466,7 +466,17 @@ QByteArray ChromeListener::base64Decode(const QString str)
 QString ChromeListener::getDataBaseHash()
 {
     QByteArray hash = QCryptographicHash::hash(
-        (m_Service.getDatabaseRootUuid() + m_Service.getDatabaseRecycleBinUuid()).toUtf8(),
+        (m_service.getDatabaseRootUuid() + m_service.getDatabaseRecycleBinUuid()).toUtf8(),
          QCryptographicHash::Sha256).toHex();
     return QString(hash);
+}
+
+void ChromeListener::removeSharedEncryptionKeys()
+{
+    m_service.removeSharedEncryptionKeys();
+}
+
+void ChromeListener::removeStoredPermissions()
+{
+    m_service.removeStoredPermissions();
 }

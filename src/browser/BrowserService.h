@@ -45,11 +45,9 @@ public:
     void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
     QList<Entry*>   searchEntries(Database* db, const QString& hostname);
     QList<Entry*>   searchEntries(const QString& text);
-
-public slots:
-    void removeSharedEncryptionKeys();
-    void removeStoredPermissions();
-
+    void            removeSharedEncryptionKeys();
+    void            removeStoredPermissions();
+    
 private:
     enum Access     { Denied, Unknown, Allowed};
     //class           SortEntries;
@@ -61,8 +59,6 @@ private:
     int             sortPriority(const Entry *entry, const QString &host, const QString &submitUrl, const QString &baseSubmitUrl) const;
     bool            matchUrlScheme(const QString& url);
     bool            removeFirstDomain(QString& hostname);
-    void            addStringField(const QString &key, const QString &value);
-
 
 private:
     DatabaseTabWidget* const m_dbTabWidget;

@@ -64,6 +64,10 @@ private:
 signals:
     void        quit();
 
+public slots:
+    void removeSharedEncryptionKeys();
+    void removeStoredPermissions();
+
 private slots:
     void        readLine();
 
@@ -81,7 +85,7 @@ private:
      QString            m_secretKey;
 
      //DatabaseTabWidget * const m_dbTabWidget;
-     BrowserService     m_Service;
+     BrowserService     m_service;
 };
 
 #endif // CHROMELISTENER_H

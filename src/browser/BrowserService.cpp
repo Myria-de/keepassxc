@@ -347,6 +347,81 @@ QList<Entry*> BrowserService::searchEntries(const QString& text)
     return entries;
 }
 
+void BrowserService::removeSharedEncryptionKeys()
+{
+    if (!isDatabaseOpened()) {
+        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
+                              tr("The active database is locked!\n"
+                                 "Please unlock the selected database or choose another one which is unlocked."),
+                              QMessageBox::Ok);
+    } else if (Entry* entry = getConfigEntry()) {
+        QStringList keysToRemove;
+        for (const QString& key : entry->attributes()->keys())
+            if (key.startsWith(ASSOCIATE_KEY_PREFIX))
+                keysToRemove << key;
+
+        if(keysToRemove.count()) {
+            entry->beginUpdate();
+            for (const QString& key : keysToRemove)
+                entry->attributes()->remove(key);
+            entry->endUpdate();
+
+            const int count = keysToRemove.count();
+            QMessageBox::information(0, tr("KeePassXC: Removed keys from database"),
+                                     tr("Successfully removed %1 encryption-%2 from KeePassX/Http Settings.").arg(count).arg(count ? "keys" : "key"),
+                                     QMessageBox::Ok);
+        } else {
+            QMessageBox::information(0, tr("KeePassXC: No keys found"),
+                                     tr("No shared encryption-keys found in KeePassHttp Settings."),
+                                     QMessageBox::Ok);
+        }
+    } else {
+        QMessageBox::information(0, tr("KeePassXC: Settings not available!"),
+                                 tr("The active database does not contain an entry of KeePassHttp Settings."),
+                                 QMessageBox::Ok);
+    }
+}
+
+void BrowserService::removeStoredPermissions()
+{
+    if (!isDatabaseOpened()) {
+        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
+                              tr("The active database is locked!\n"
+                                 "Please unlock the selected database or choose another one which is unlocked."),
+                              QMessageBox::Ok);
+    } else {
+        Database* db = m_dbTabWidget->currentDatabaseWidget()->database();
+        QList<Entry*> entries = db->rootGroup()->entriesRecursive();
+
+        QProgressDialog progress(tr("Removing stored permissions..."), tr("Abort"), 0, entries.count());
+        progress.setWindowModality(Qt::WindowModal);
+
+        uint counter = 0;
+        for (Entry* entry : entries) {
+            if (progress.wasCanceled())
+                return;
+            if (entry->attributes()->contains(KEEPASSBROWSER_NAME)) {
+                entry->beginUpdate();
+                entry->attributes()->remove(KEEPASSBROWSER_NAME);
+                entry->endUpdate();
+                counter ++;
+            }
+            progress.setValue(progress.value() + 1);
+        }
+        progress.reset();
+
+        if (counter > 0) {
+            QMessageBox::information(0, tr("KeePassXC: Removed permissions"),
+                                     tr("Successfully removed permissions from %1 %2.").arg(counter).arg(counter ? "entries" : "entry"),
+                                     QMessageBox::Ok);
+        } else {
+            QMessageBox::information(0, tr("KeePassXC: No entry with permissions found!"),
+                                     tr("The active database does not contain an entry with permissions."),
+                                     QMessageBox::Ok);
+        }
+    }
+}
+
 QJsonObject BrowserService::prepareEntry(const Entry* entry)
 {
     QJsonObject res;
@@ -455,84 +530,4 @@ bool BrowserService::removeFirstDomain(QString & hostname)
         return false;
     hostname = hostname.mid(pos + 1);
     return !hostname.isEmpty();
-}
-
-void BrowserService::addStringField(const QString &key, const QString &value)
-{
-    //m_stringFields.append(StringField(key, value));
-}
-
-void BrowserService::removeSharedEncryptionKeys()
-{
-    if (!isDatabaseOpened()) {
-        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
-                              tr("The active database is locked!\n"
-                                 "Please unlock the selected database or choose another one which is unlocked."),
-                              QMessageBox::Ok);
-    } else if (Entry* entry = getConfigEntry()) {
-        QStringList keysToRemove;
-        for (const QString& key : entry->attributes()->keys())
-            if (key.startsWith(ASSOCIATE_KEY_PREFIX))
-                keysToRemove << key;
-
-        if(keysToRemove.count()) {
-            entry->beginUpdate();
-            for (const QString& key : keysToRemove)
-                entry->attributes()->remove(key);
-            entry->endUpdate();
-
-            const int count = keysToRemove.count();
-            QMessageBox::information(0, tr("KeePassXC: Removed keys from database"),
-                                     tr("Successfully removed %1 encryption-%2 from KeePassX/Http Settings.").arg(count).arg(count ? "keys" : "key"),
-                                     QMessageBox::Ok);
-        } else {
-            QMessageBox::information(0, tr("KeePassXC: No keys found"),
-                                     tr("No shared encryption-keys found in KeePassHttp Settings."),
-                                     QMessageBox::Ok);
-        }
-    } else {
-        QMessageBox::information(0, tr("KeePassXC: Settings not available!"),
-                                 tr("The active database does not contain an entry of KeePassHttp Settings."),
-                                 QMessageBox::Ok);
-    }
-}
-
-void BrowserService::removeStoredPermissions()
-{
-    if (!isDatabaseOpened()) {
-        QMessageBox::critical(0, tr("KeePassXC: Database locked!"),
-                              tr("The active database is locked!\n"
-                                 "Please unlock the selected database or choose another one which is unlocked."),
-                              QMessageBox::Ok);
-    } else {
-        Database* db = m_dbTabWidget->currentDatabaseWidget()->database();
-        QList<Entry*> entries = db->rootGroup()->entriesRecursive();
-
-        QProgressDialog progress(tr("Removing stored permissions..."), tr("Abort"), 0, entries.count());
-        progress.setWindowModality(Qt::WindowModal);
-
-        uint counter = 0;
-        for (Entry* entry : entries) {
-            if (progress.wasCanceled())
-                return;
-            if (entry->attributes()->contains(KEEPASSBROWSER_NAME)) {
-                entry->beginUpdate();
-                entry->attributes()->remove(KEEPASSBROWSER_NAME);
-                entry->endUpdate();
-                counter ++;
-            }
-            progress.setValue(progress.value() + 1);
-        }
-        progress.reset();
-
-        if (counter > 0) {
-            QMessageBox::information(0, tr("KeePassXC: Removed permissions"),
-                                     tr("Successfully removed permissions from %1 %2.").arg(counter).arg(counter ? "entries" : "entry"),
-                                     QMessageBox::Ok);
-        } else {
-            QMessageBox::information(0, tr("KeePassXC: No entry with permissions found!"),
-                                     tr("The active database does not contain an entry with permissions."),
-                                     QMessageBox::Ok);
-        }
-    }
 }
