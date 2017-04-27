@@ -40,21 +40,22 @@ void ChromeListener::run()
     connect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()));
 }
 
+void ChromeListener::stop()
+{
+    disconnect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()));
+}
+
 void ChromeListener::readLine()
 {
-    std::string line;
-    uint length = 0;
-    for (int i = 0; i < 4; i++) {
-        uint read_char = getchar();
-        length = length | (read_char << i*8);
-    }
-
-    QByteArray arr;
-    for (uint i = 0; i < length; i++) {
-        char c = getchar();
-        arr.append(c);
-    }
-
+    char startLen[4];
+    std::cin.read(startLen, 4);
+    unsigned int length = *reinterpret_cast<unsigned int *>(startLen);
+    char* msg = new char[length];
+    std::cin.read(msg, length);
+    std::string inStr(msg);
+    delete[] msg;
+    QByteArray arr(inStr.c_str());
+    
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
     if (doc.isObject()) {
@@ -271,11 +272,11 @@ void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QStri
 {
     QString nonce = json.value("nonce").toString();
     QString password = BrowserSettings::generatePassword();
-    QString bits = QString::number(BrowserSettings::getbits());
+    QString bits = QString::number(BrowserSettings::getbits()); // For some reason this always returns 1140 bits?
 
     QJsonArray arr;
     QJsonObject passwd;
-    passwd["login"] = bits;
+    passwd["login"] = QString::number(password.length() * 8); //bits;
     passwd["password"] = password;
     arr.append(passwd);
 

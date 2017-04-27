@@ -155,8 +155,8 @@ if(WITH_XC_HTTP)
     set(keepasshttp_LIB keepasshttp)
 endif()
 
+add_subdirectory(browser)
 if(WITH_XC_BROWSER)
-    add_subdirectory(browser)
     set(keepassbrowser_LIB keepassbrowser)
 endif()
 

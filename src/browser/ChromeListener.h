@@ -34,6 +34,7 @@ class ChromeListener : public QObject
 public:
     explicit    ChromeListener(DatabaseTabWidget* parent = 0);
     void        run();
+    void        stop();
 
 private:
     void        handleAction(const QJsonObject &json);

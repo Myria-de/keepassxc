@@ -117,8 +117,8 @@ class BrowserPlugin: public ISettingsPage
             qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
             if (BrowserSettings::isEnabled())
                 m_chromeListener->run();
-            //else
-                //m_chromeListener->stop();
+            else
+                m_chromeListener->stop();
         }
     private:
         ChromeListener *m_chromeListener;
