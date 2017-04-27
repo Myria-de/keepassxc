@@ -15,7 +15,7 @@ KeePass Cross-platform Community Edition
 - Merging of databases
 - Automatic reload when the database changed on disk
 - KeePassHTTP support for use with [PassIFox](https://addons.mozilla.org/en-us/firefox/addon/passifox/) in Mozilla Firefox and [chromeIPass](https://chrome.google.com/webstore/detail/chromeipass/ompiailgknfdndiefoaoiligalphfdae) in Google Chrome or Chromium, and [passafari](https://github.com/mmichaa/passafari.safariextension/) in Safari.
-- Support for chromeKeePassXC browser extension (under development)
+- Support for [chromeKeePassXC](https://github.com/varjolintu/chromeKeePassXC) browser extension (under development)
 - Many bug fixes
 
 For a full list of features and changes, read the [CHANGELOG](CHANGELOG) document.
