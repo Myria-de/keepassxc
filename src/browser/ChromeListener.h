@@ -44,7 +44,6 @@ private:
     void        handleGetLogins(const QJsonObject &json, const QString &valStr);
     void        handleGeneratePassword(const QJsonObject &json, const QString &valStr);
     void        handleSetLogin(const QJsonObject &json, const QString &valStr);
-    void        handleGetLoginsCount(const QJsonObject &json, const QString &valStr);
 
     void        sendReply(const QJsonObject json);
     void        sendErrorReply(const QString &valStr, const int errorCode);
