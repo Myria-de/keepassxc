@@ -18,6 +18,7 @@
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
 #include <iostream>
+#include <string>
 #include <cstring>
 #include "sodium.h"
 #include "crypto_box.h"
@@ -37,6 +38,7 @@ ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent)
 
 void ChromeListener::run()
 {
+    //connect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()), Qt::BlockingQueuedConnection);
     connect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()));
 }
 
@@ -47,16 +49,19 @@ void ChromeListener::stop()
 
 void ChromeListener::readLine()
 {
-    uint length = 0;
+    int length = 0;
     for (int i = 0; i < 4; i++) {
-        uint read_char = getchar();
+        int read_char = getchar();
+        if (read_char == std::char_traits<uint>::eof()) {
+            return;
+        }
         length = length | (read_char << i*8);
     }
 
-    char* msg = new char[length];
-    std::cin.read(msg, length);
-    QByteArray arr(msg);
-    delete[] msg;
+    QByteArray arr;
+    for (int i = 0; i < length; i++) {
+        arr.append(getchar());
+    }
     
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
@@ -191,11 +196,12 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
             //qDebug("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
+                QString responseKey = json.value("key").toString();
                 QString id = json.value("id").toString();
-                if (!id.isEmpty())
+                if (!id.isEmpty() && !responseKey.isEmpty())
                 {
                     QString key = m_service.getKey(id);
-                    if (key.isEmpty())
+                    if (key.isEmpty() || key != responseKey)
                         return;
 
                     // Encrypt a reply message
@@ -213,6 +219,10 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                     response["nonce"] = nonce;
 
                     sendReply(response);
+                }
+                else
+                {
+                    sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_NOT_OPENED);
                 }
             }
         } else {
