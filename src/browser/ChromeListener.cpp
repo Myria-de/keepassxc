@@ -47,14 +47,16 @@ void ChromeListener::stop()
 
 void ChromeListener::readLine()
 {
-    char startLen[4];
-    std::cin.read(startLen, 4);
-    unsigned int length = *reinterpret_cast<unsigned int *>(startLen);
+    uint length = 0;
+    for (int i = 0; i < 4; i++) {
+        uint read_char = getchar();
+        length = length | (read_char << i*8);
+    }
+
     char* msg = new char[length];
     std::cin.read(msg, length);
-    std::string inStr(msg);
+    QByteArray arr(msg);
     delete[] msg;
-    QByteArray arr(inStr.c_str());
     
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
@@ -128,7 +130,6 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
     response["action"] = valStr;
     response["publicKey"] = publicKey;
     response["nonce"] = nonce;
-    response["id"] = "testclient";
     response["success"] = "true";
 
     sendReply(response);
@@ -190,8 +191,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
             //qDebug("Message decrypted: " + QString(ba));
             QJsonObject json = getJSonObject(ba);
             if (!json.isEmpty()) {
-                QJsonValue val = json.value("id");
-                QString id = val.toString();
+                QString id = json.value("id").toString();
                 if (!id.isEmpty())
                 {
                     QString key = m_service.getKey(id);
@@ -237,10 +237,10 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
             if (!json.isEmpty()) {
                 QJsonValue val = json.value("url");
                 if (val.isString()) {
-                    QJsonValue idVal = json.value("id");
-                    QJsonValue urlVal = json.value("url");
-                    QJsonValue submitVal = json.value("submitUrl");
-                    QJsonArray users = m_service.findMatchingEntries(idVal.toString(), urlVal.toString(), submitVal.toString(), "");
+                    QString id = json.value("id").toString();
+                    QString url = json.value("url").toString();
+                    QString submit = json.value("submitUrl").toString();
+                    QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
 
                     QJsonObject message;
                     message["count"] = users.count();
@@ -248,7 +248,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                     message["hash"] = hash;
                     message["version"] = KEEPASSX_VERSION;
                     message["success"] = "true";
-                    message["id"] = "testclient";
+                    message["id"] = id;
                     message["nonce"] = nonce;
 
                     QString replyMessage(QJsonDocument(message).toJson());
