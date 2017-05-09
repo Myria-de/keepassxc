@@ -71,7 +71,7 @@ cmake accepts the following options:
   -DWITH_COVERAGE=[ON|OFF] Enable/Disable coverage tests (GCC only) (default: OFF)
 ```
 
-With `-DWITH_XC_BROWSER` it's necessary to locate the `Findsodium.cmake` using `-DCMAKE_MODULE_PATH`.
+With `-DWITH_XC_BROWSER` it's necessary to locate the `Findsodium.cmake` using `-DCMAKE_MODULE_PATH`. Also, Boost C++ libraries must be installed to the system.
 
 ### Contributing
 

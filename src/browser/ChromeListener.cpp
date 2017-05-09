@@ -18,8 +18,6 @@
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
 #include <iostream>
-#include <string>
-#include <cstring>
 #include "sodium.h"
 #include "crypto_box.h"
 #include "randombytes.h"
@@ -29,58 +27,99 @@
 
 #define MESSAGE_LENGTH  4096
 
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent)
+using namespace boost::asio;
+using boost::system::error_code;
+
+namespace boost
 {
-    m_pNotifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this);
+#ifdef BOOST_NO_EXCEPTIONS
+void throw_exception(std::exception const& e) {
+    std::cout << e.what();
+};
+#endif
+}
+
+ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO))
+{
     if (BrowserSettings::isEnabled())
         run();
 }
 
+ChromeListener::~ChromeListener()
+{
+    stop();
+}
+
 void ChromeListener::run()
 {
-    //connect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()), Qt::BlockingQueuedConnection);
-    connect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()));
+    m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
 }
 
 void ChromeListener::stop()
 {
-    disconnect(m_pNotifier, SIGNAL(activated(int)), this, SLOT(readLine()));
+    if (m_sd.is_open())
+    {
+        m_sd.cancel();
+        m_sd.close();
+    }
+
+    if (!m_io_service.stopped())
+        m_io_service.stop();
+
+    m_fut.waitForFinished();
+}
+
+void ChromeListener::readHeader(posix::stream_descriptor& sd)
+{
+    char buf[4] = {};
+    async_read(sd, buffer(buf,sizeof(buf)), transfer_at_least(1), [&](error_code ec, size_t br) {
+        if (!ec && br >= 1) {
+            uint len = 0;
+            for (int i = 0; i < 4; i++) {
+                uint rc = buf[i];
+                len = len | (rc << i*8);
+            }
+            readBody(sd, len);
+        }
+    });
+}
+
+void ChromeListener::readBody(posix::stream_descriptor& sd, const size_t len)
+{
+    char buf[MESSAGE_LENGTH] = {};
+    async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
+        if (!ec) {
+            std::string res(buf, br);
+            QByteArray arr(res.c_str());
+            QJsonParseError err;
+            QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
+            if (doc.isObject()) {
+                QJsonObject json = doc.object();
+                QJsonValue val = json.value("action");
+                if (val.isString()) {
+                    handleAction(json);
+                }
+            }
+            readHeader(sd);
+        }
+    });
 }
 
 void ChromeListener::readLine()
 {
-    int length = 0;
-    for (int i = 0; i < 4; i++) {
-        int read_char = getchar();
-        if (read_char == std::char_traits<uint>::eof()) {
-            return;
-        }
-        length = length | (read_char << i*8);
-    }
-
-    QByteArray arr;
-    for (int i = 0; i < length; i++) {
-        arr.append(getchar());
-    }
-    
-    QJsonParseError err;
-    QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
-    if (doc.isObject()) {
-        QJsonObject json = doc.object();
-        QString val = json.value("action").toString();
-        if (!val.isEmpty()) {
-            // Allow public keys to be changed without database being opened
-            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
-                if (!m_service.openDatabase()) {
-                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
-                    return;
-                }
+    // Read the message header
+    char buf[4] = {};
+    async_read(m_sd, buffer(buf,sizeof(buf)), transfer_at_least(1), [&](error_code ec, size_t br) {
+        if (!ec && br >= 1) {
+            uint len = 0;
+            for (int i = 0; i < 4; i++) {
+                uint rc = buf[i];
+                len = len | (rc << i*8);
             }
-            handleAction(json);
+            readBody(m_sd, len);
         }
-    } else {
-         //qWarning("Not an object");
-    }
+    });
+    m_io_service.run();
 }
 
 void ChromeListener::handleAction(const QJsonObject &json)

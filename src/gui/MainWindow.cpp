@@ -99,7 +99,7 @@ class BrowserPlugin: public ISettingsPage
             m_chromeListener = new ChromeListener(tabWidget);
         }
         virtual ~BrowserPlugin() {
-            //delete m_chromeListener;
+            delete m_chromeListener;
         }
         virtual QString name() {
             return QObject::tr("Browser");

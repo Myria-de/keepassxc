@@ -19,11 +19,15 @@
 #define CHROMELISTENER_H
 
 #include <QObject>
-#include <QSocketNotifier>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
+#include <boost/asio.hpp>
+
+namespace posix = boost::asio::posix;
 
 #define ERROR_KEEPASS_DATABASE_NOT_OPENED   1
 
@@ -33,10 +37,14 @@ class ChromeListener : public QObject
 
 public:
     explicit    ChromeListener(DatabaseTabWidget* parent = 0);
+    ~ChromeListener();
     void        run();
     void        stop();
 
 private:
+    void        readHeader(posix::stream_descriptor& sd);
+    void        readBody(posix::stream_descriptor& sd, const size_t len);
+
     void        handleAction(const QJsonObject &json);
     void        handleGetDatabaseHash(const QString &valStr);
     void        handleChangePublicKeys(const QJsonObject &json, const QString &valStr);
@@ -80,13 +88,15 @@ private:
     static QByteArray   base64Decode(const QString str);
 
 private:
-     QSocketNotifier*   m_pNotifier;
-     QString            m_clientPublicKey;
-     QString            m_publicKey;
-     QString            m_secretKey;
+     QSocketNotifier*           m_pNotifier;
+     QString                    m_clientPublicKey;
+     QString                    m_publicKey;
+     QString                    m_secretKey;
 
-     //DatabaseTabWidget * const m_dbTabWidget;
-     BrowserService     m_service;
+     BrowserService             m_service;
+     boost::asio::io_service    m_io_service;
+     posix::stream_descriptor   m_sd;
+     QFuture<void>              m_fut;
 };
 
 #endif // CHROMELISTENER_H
