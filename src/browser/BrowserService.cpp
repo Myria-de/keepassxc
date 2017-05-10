@@ -121,6 +121,13 @@ Entry* BrowserService::getConfigEntry(bool create)
 QString BrowserService::storeKey(const QString &key)
 {
     QString id;
+
+    if (thread()!=QThread::currentThread())
+    {
+        QMetaObject::invokeMethod(this, "storeKey", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QString, id), Q_ARG(QString, key));
+        return id;
+    }
+
     if (Entry* config = getConfigEntry(true)) {
 
         //ShowNotification("New key association requested")
@@ -283,6 +290,11 @@ void BrowserService::addEntry(const QString &, const QString &login, const QStri
 
 void BrowserService::updateEntry(const QString &, const QString &uuid, const QString &login, const QString &password, const QString &url)
 {
+    if (thread()!=QThread::currentThread())
+    {
+        QMetaObject::invokeMethod(this, "updateEntry", Qt::BlockingQueuedConnection);
+    }
+
     if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
         if (Database* db = dbWidget->database())
             if (Entry* entry = db->resolveEntry(Uuid::fromHex(uuid))) {
@@ -368,16 +380,16 @@ void BrowserService::removeSharedEncryptionKeys()
 
             const int count = keysToRemove.count();
             QMessageBox::information(0, tr("KeePassXC: Removed keys from database"),
-                                     tr("Successfully removed %1 encryption-%2 from KeePassX/Http Settings.").arg(count).arg(count ? "keys" : "key"),
+                                     tr("Successfully removed %1 encryption-%2 from KeePassXC Settings.").arg(count).arg(count ? "keys" : "key"),
                                      QMessageBox::Ok);
         } else {
             QMessageBox::information(0, tr("KeePassXC: No keys found"),
-                                     tr("No shared encryption-keys found in KeePassHttp Settings."),
+                                     tr("No shared encryption-keys found in KeePassXC Settings."),
                                      QMessageBox::Ok);
         }
     } else {
         QMessageBox::information(0, tr("KeePassXC: Settings not available!"),
-                                 tr("The active database does not contain an entry of KeePassHttp Settings."),
+                                 tr("The active database does not contain an entry of KeePassXC Settings."),
                                  QMessageBox::Ok);
     }
 }

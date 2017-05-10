@@ -23,6 +23,7 @@
 #include <QJsonDocument>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
+#include <QMutex>
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 #include <boost/asio.hpp>
@@ -74,10 +75,10 @@ signals:
     void        quit();
 
 public slots:
-    void removeSharedEncryptionKeys();
-    void removeStoredPermissions();
+    void        removeSharedEncryptionKeys();
+    void        removeStoredPermissions();
 
-private slots:
+private:
     void        readLine();
 
 private:
@@ -88,7 +89,6 @@ private:
     static QByteArray   base64Decode(const QString str);
 
 private:
-     QSocketNotifier*           m_pNotifier;
      QString                    m_clientPublicKey;
      QString                    m_publicKey;
      QString                    m_secretKey;
@@ -97,6 +97,7 @@ private:
      boost::asio::io_service    m_io_service;
      posix::stream_descriptor   m_sd;
      QFuture<void>              m_fut;
+     QMutex                     m_mutex;
 };
 
 #endif // CHROMELISTENER_H

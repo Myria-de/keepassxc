@@ -17,6 +17,7 @@
 
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
+#include <QMutexLocker>
 #include <iostream>
 #include "sodium.h"
 #include "crypto_box.h"
@@ -88,7 +89,7 @@ void ChromeListener::readBody(posix::stream_descriptor& sd, const size_t len)
 {
     char buf[MESSAGE_LENGTH] = {};
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
-        if (!ec) {
+        if (!ec && br > 0) {
             std::string res(buf, br);
             QByteArray arr(res.c_str());
             QJsonParseError err;
@@ -109,7 +110,7 @@ void ChromeListener::readLine()
 {
     // Read the message header
     char buf[4] = {};
-    async_read(m_sd, buffer(buf,sizeof(buf)), transfer_at_least(1), [&](error_code ec, size_t br) {
+    async_read(m_sd, buffer(buf,sizeof(buf)), transfer_at_least(4), [&](error_code ec, size_t br) {
         if (!ec && br >= 1) {
             uint len = 0;
             for (int i = 0; i < 4; i++) {
@@ -119,6 +120,7 @@ void ChromeListener::readLine()
             readBody(m_sd, len);
         }
     });
+    //readHeader(m_sd);
     m_io_service.run();
 }
 
@@ -194,7 +196,8 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
                 QJsonValue val = json.value("key");
                 if (val.isString() && val.toString() == m_clientPublicKey) {
                     //qDebug("Keys match. Associate.");
-                    QString id = m_service.storeKey(val.toString());
+                    QMutexLocker locker(&m_mutex);
+                    QString id = m_service.storeKey(val.toString()); 
                     if (id.isEmpty())
                         return;
 
@@ -239,6 +242,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
                 QString id = json.value("id").toString();
                 if (!id.isEmpty() && !responseKey.isEmpty())
                 {
+                    QMutexLocker locker(&m_mutex);
                     QString key = m_service.getKey(id);
                     if (key.isEmpty() || key != responseKey)
                         return;
@@ -289,6 +293,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                     QString id = json.value("id").toString();
                     QString url = json.value("url").toString();
                     QString submit = json.value("submitUrl").toString();
+                    QMutexLocker locker(&m_mutex);
                     QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
 
                     QJsonObject message;
@@ -364,7 +369,8 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
                     QString submitUrl = json.value("submitUrl").toString();
                     QString uuid = json.value("uuid").toString();
                     QString realm = ""; // ?
-                     if (uuid.isEmpty())
+                    QMutexLocker locker(&m_mutex);
+                    if (uuid.isEmpty())
                         m_service.addEntry(id, login, password, url, submitUrl, realm);
                     else
                         m_service.updateEntry(id, uuid, login, password, url);
@@ -515,6 +521,7 @@ QByteArray ChromeListener::base64Decode(const QString str)
 
 QString ChromeListener::getDataBaseHash()
 {
+    QMutexLocker locker(&m_mutex);
     QByteArray hash = QCryptographicHash::hash(
         (m_service.getDatabaseRootUuid() + m_service.getDatabaseRecycleBinUuid()).toUtf8(),
          QCryptographicHash::Sha256).toHex();
@@ -523,10 +530,12 @@ QString ChromeListener::getDataBaseHash()
 
 void ChromeListener::removeSharedEncryptionKeys()
 {
+    QMutexLocker locker(&m_mutex);
     m_service.removeSharedEncryptionKeys();
 }
 
 void ChromeListener::removeStoredPermissions()
 {
+    QMutexLocker locker(&m_mutex);
     m_service.removeStoredPermissions();
 }

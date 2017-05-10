@@ -38,19 +38,20 @@ public:
     QString         getDatabaseRootUuid();
     QString         getDatabaseRecycleBinUuid();
     Entry*          getConfigEntry(bool create = false);
-    QString         storeKey(const QString &key);
     QString         getKey(const QString &id);
     QJsonArray      findMatchingEntries(const QString& /*id*/, const QString& url, const QString& submitUrl, const QString& realm);
     void            addEntry(const QString& id, const QString& login, const QString& password, const QString& url, const QString& submitUrl, const QString& realm);
-    void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
     QList<Entry*>   searchEntries(Database* db, const QString& hostname);
     QList<Entry*>   searchEntries(const QString& text);
     void            removeSharedEncryptionKeys();
     void            removeStoredPermissions();
-    
+
+public slots:
+    QString         storeKey(const QString &key);
+    void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
+
 private:
     enum Access     { Denied, Unknown, Allowed};
-    //class           SortEntries;
 
 private:
     QJsonObject     prepareEntry(const Entry* entry);
