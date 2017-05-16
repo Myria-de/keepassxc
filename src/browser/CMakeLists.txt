@@ -1,7 +1,7 @@
 if(WITH_XC_BROWSER)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
     
-    find_package(Boost COMPONENTS system REQUIRED)
+    find_package(Boost 1.55 COMPONENTS system REQUIRED)
     include_directories(${Boost_INCLUDE_DIR})
     link_directories(${Boost_LIBRARY_DIRS})
     set(Boost_USE_STATIC_LIBS           OFF)
@@ -12,7 +12,7 @@ if(WITH_XC_BROWSER)
         add_definitions(DBOOST_DATE_TIME_NO_LIB DBOOST_REGEX_NO_LIB)
     endif(MSVC)
 
-    find_package(sodium REQUIRED)
+    find_package(sodium 1.0.12 REQUIRED)
     if(SODIUM_FOUND)
         include_directories(${sodium_INCLUDE_DIR})
         set(sodium_INCLUDE_EXTRAS "${sodium_INCLUDE_DIR}/sodium")
