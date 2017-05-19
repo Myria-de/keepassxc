@@ -43,6 +43,7 @@ public:
     void        stop();
 
 private:
+    void        readLine();
     void        readHeader(posix::stream_descriptor& sd);
     void        readBody(posix::stream_descriptor& sd, const size_t len);
 
@@ -58,9 +59,9 @@ private:
     void        sendReply(const QJsonObject json);
     void        sendErrorReply(const QString &valStr, const int errorCode);
 
+    QJsonObject decryptMessage(const QString& message, const QString& nonce) const;
     QString     encrypt(const QString decrypted, const QString nonce) const;
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;
-
     QString     getDataBaseHash();
 
     // Database functions
@@ -79,9 +80,6 @@ public slots:
     void        removeStoredPermissions();
 
 private:
-    void        readLine();
-
-private:
     static QString      getBase64FromKey(const uchar *array, const uint len);
     static QByteArray   getQByteArray(const uchar* array, const uint len);
     static QJsonObject  getJSonObject(const uchar* pArray, const uint len);
@@ -98,6 +96,7 @@ private:
      posix::stream_descriptor   m_sd;
      QFuture<void>              m_fut;
      QMutex                     m_mutex;
+     bool                       m_running;
 };
 
 #endif // CHROMELISTENER_H

@@ -40,9 +40,9 @@ void throw_exception(std::exception const& e) {
 #endif
 }
 
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO))
+ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO)), m_running(false)
 {
-    if (BrowserSettings::isEnabled())
+    if (BrowserSettings::isEnabled() && !m_running)
         run();
 }
 
@@ -53,7 +53,10 @@ ChromeListener::~ChromeListener()
 
 void ChromeListener::run()
 {
-    m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
+    if (!m_running) {
+        m_running = true;
+        m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
+    }
 }
 
 void ChromeListener::stop()
@@ -96,9 +99,17 @@ void ChromeListener::readBody(posix::stream_descriptor& sd, const size_t len)
             QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
             if (doc.isObject()) {
                 QJsonObject json = doc.object();
-                QJsonValue val = json.value("action");
-                if (val.isString()) {
-                    handleAction(json);
+                QString val = json.value("action").toString();
+                if (!val.isEmpty()) {
+                    // Allow public keys to be changed without database being opened
+                    if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
+                        if (!m_service.openDatabase()) {
+                            sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+                        }
+                    }
+                    else {
+                        handleAction(json);
+                    }
                 }
             }
             readHeader(sd);
@@ -109,40 +120,28 @@ void ChromeListener::readBody(posix::stream_descriptor& sd, const size_t len)
 void ChromeListener::readLine()
 {
     // Read the message header
-    char buf[4] = {};
-    async_read(m_sd, buffer(buf,sizeof(buf)), transfer_at_least(4), [&](error_code ec, size_t br) {
-        if (!ec && br >= 1) {
-            uint len = 0;
-            for (int i = 0; i < 4; i++) {
-                uint rc = buf[i];
-                len = len | (rc << i*8);
-            }
-            readBody(m_sd, len);
-        }
-    });
-    //readHeader(m_sd);
+    readHeader(m_sd);
     m_io_service.run();
 }
 
 void ChromeListener::handleAction(const QJsonObject &json)
 {
-    QJsonValue val = json.value("action");
-    if (val.isString()) {
-        QString valStr = val.toString();
-        if (valStr == "get-databasehash")
-            handleGetDatabaseHash(valStr);
-        else if (valStr == "change-public-keys")
-            handleChangePublicKeys(json, valStr);
-        else if (valStr == "associate")
-            handleAssociate(json, valStr);
-        else if (valStr == "test-associate")
-            handleTestAssociate(json, valStr);
-        else if (valStr == "get-logins")
-            handleGetLogins(json, valStr);
-        else if (valStr == "generate-password")
-            handleGeneratePassword(json, valStr);
-        else if (valStr == "set-login")
-            handleSetLogin(json, valStr);
+    QString val = json.value("action").toString();
+    if (!val.isEmpty()) {
+        if (val == "get-databasehash")
+            handleGetDatabaseHash(val);
+        else if (val == "change-public-keys")
+            handleChangePublicKeys(json, val);
+        else if (val == "associate")
+            handleAssociate(json, val);
+        else if (val == "test-associate")
+            handleTestAssociate(json, val);
+        else if (val == "get-logins")
+            handleGetLogins(json, val);
+        else if (val == "generate-password")
+            handleGeneratePassword(json, val);
+        else if (val == "set-login")
+            handleSetLogin(json, val);
     }
 }
 
@@ -156,6 +155,22 @@ void ChromeListener::handleGetDatabaseHash(const QString &valStr)
     response["version"] = KEEPASSX_VERSION;
 
     sendReply(response);
+}
+
+QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce) const
+{
+    QJsonObject json;
+    if (message.length() > 0) {
+        QByteArray ba = decrypt(message, nonce);
+        if (ba.length() > 0) {
+            json = getJSonObject(ba);
+        } else {
+            //qWarning("Cannot decrypt message");
+        }
+    } else {
+        //qWarning("No message received");
+    }
+    return json;
 }
 
 void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QString &valStr)
@@ -187,42 +202,32 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    if (encrypted.length() > 0) {
-        QByteArray ba = decrypt(encrypted, nonce);
-        if (ba.length() > 0) {
-            //qDebug("Message decrypted: " + QString(ba));
-            QJsonObject json = getJSonObject(ba);
-            if (!json.isEmpty()) {
-                QJsonValue val = json.value("key");
-                if (val.isString() && val.toString() == m_clientPublicKey) {
-                    //qDebug("Keys match. Associate.");
-                    QMutexLocker locker(&m_mutex);
-                    QString id = m_service.storeKey(val.toString()); 
-                    if (id.isEmpty())
-                        return;
+    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (!decrypted.isEmpty()) {
+        QJsonValue key = decrypted.value("key");
+        if (key.isString() && key.toString() == m_clientPublicKey) {
+            //qDebug("Keys match. Associate.");
+            QMutexLocker locker(&m_mutex);
+            QString id = m_service.storeKey(key.toString());
+            if (id.isEmpty())
+                return;
 
-                    // Encrypt a reply message
-                    QJsonObject message;
-                    message["hash"] = hash;
-                    message["version"] = KEEPASSX_VERSION;
-                    message["success"] = "true";
-                    message["id"] = id;
-                    message["nonce"] = nonce;
+            // Encrypt a reply message
+            QJsonObject message;
+            message["hash"] = hash;
+            message["version"] = KEEPASSX_VERSION;
+            message["success"] = "true";
+            message["id"] = id;
+            message["nonce"] = nonce;
 
-                    QString replyMessage(QJsonDocument(message).toJson());
-                    QJsonObject response;
-                    response["action"] = valStr;
-                    response["message"] = encrypt(replyMessage, nonce);
-                    response["nonce"] = nonce;
+            QString replyMessage(QJsonDocument(message).toJson());
+            QJsonObject response;
+            response["action"] = valStr;
+            response["message"] = encrypt(replyMessage, nonce);
+            response["nonce"] = nonce;
 
-                    sendReply(response);
-                }
-            }
-        } else {
-            //qWarning("Cannot decrypt message");
+            sendReply(response);
         }
-    } else {
-        //qWarning("No message received");
     }
 }
 
@@ -232,47 +237,37 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    if (encrypted.length() > 0) {
-        QByteArray ba = decrypt(encrypted, nonce);
-        if (ba.length() > 0) {
-            //qDebug("Message decrypted: " + QString(ba));
-            QJsonObject json = getJSonObject(ba);
-            if (!json.isEmpty()) {
-                QString responseKey = json.value("key").toString();
-                QString id = json.value("id").toString();
-                if (!id.isEmpty() && !responseKey.isEmpty())
-                {
-                    QMutexLocker locker(&m_mutex);
-                    QString key = m_service.getKey(id);
-                    if (key.isEmpty() || key != responseKey)
-                        return;
+    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (!decrypted.isEmpty()) {
+        QString responseKey = decrypted.value("key").toString();
+        QString id = decrypted.value("id").toString();
+        if (!id.isEmpty() && !responseKey.isEmpty())
+        {
+            QMutexLocker locker(&m_mutex);
+            QString key = m_service.getKey(id);
+            if (key.isEmpty() || key != responseKey)
+                return;
 
-                    // Encrypt a reply message
-                    QJsonObject message;
-                    message["hash"] = hash;
-                    message["version"] = KEEPASSX_VERSION;
-                    message["success"] = "true";
-                    message["id"] = id;
-                    message["nonce"] = nonce;
+            // Encrypt a reply message
+            QJsonObject message;
+            message["hash"] = hash;
+            message["version"] = KEEPASSX_VERSION;
+            message["success"] = "true";
+            message["id"] = id;
+            message["nonce"] = nonce;
 
-                    QString replyMessage(QJsonDocument(message).toJson());
-                    QJsonObject response;
-                    response["action"] = valStr;
-                    response["message"] = encrypt(replyMessage, nonce);
-                    response["nonce"] = nonce;
+            QString replyMessage(QJsonDocument(message).toJson());
+            QJsonObject response;
+            response["action"] = valStr;
+            response["message"] = encrypt(replyMessage, nonce);
+            response["nonce"] = nonce;
 
-                    sendReply(response);
-                }
-                else
-                {
-                    sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_NOT_OPENED);
-                }
-            }
-        } else {
-            //qWarning("Cannot decrypt message");
+            sendReply(response);
         }
-    } else {
-        //qWarning("No message received");
+        else
+        {
+            sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+        }
     }
 }
 
@@ -282,43 +277,35 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    if (encrypted.length() > 0) {
-        QByteArray ba = decrypt(encrypted, nonce);
-        if (ba.length() > 0) {
-            //qDebug("Message decrypted: " + QString(ba));
-            QJsonObject json = getJSonObject(ba);
-            if (!json.isEmpty()) {
-                QJsonValue val = json.value("url");
-                if (val.isString()) {
-                    QString id = json.value("id").toString();
-                    QString url = json.value("url").toString();
-                    QString submit = json.value("submitUrl").toString();
-                    QMutexLocker locker(&m_mutex);
-                    QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
+    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (!decrypted.isEmpty()) {
+        QJsonValue val = decrypted.value("url");
+        if (val.isString()) {
+            QString id = decrypted.value("id").toString();
+            QString url = decrypted.value("url").toString();
+            QString submit = decrypted.value("submitUrl").toString();
+            QMutexLocker locker(&m_mutex);
+            QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
 
-                    QJsonObject message;
-                    message["count"] = users.count();
-                    message["entries"] = users;
-                    message["hash"] = hash;
-                    message["version"] = KEEPASSX_VERSION;
-                    message["success"] = "true";
-                    message["id"] = id;
-                    message["nonce"] = nonce;
+            if (users.count() > 0) {
+                QJsonObject message;
+                message["count"] = users.count();
+                message["entries"] = users;
+                message["hash"] = hash;
+                message["version"] = KEEPASSX_VERSION;
+                message["success"] = "true";
+                message["id"] = id;
+                message["nonce"] = nonce;
 
-                    QString replyMessage(QJsonDocument(message).toJson());
-                    QJsonObject response;
-                    response["action"] = valStr;
-                    response["message"] = encrypt(replyMessage, nonce);
-                    response["nonce"] = nonce;
+                QString replyMessage(QJsonDocument(message).toJson());
+                QJsonObject response;
+                response["action"] = valStr;
+                response["message"] = encrypt(replyMessage, nonce);
+                response["nonce"] = nonce;
 
-                    sendReply(response);
-                }
+                sendReply(response);
             }
-        } else {
-            //qWarning("Cannot decrypt message");
         }
-    } else {
-        //qWarning("No message received");
     }
 }
 
@@ -355,49 +342,39 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    if (encrypted.length() > 0) {
-        QByteArray ba = decrypt(encrypted, nonce);
-        if (ba.length() > 0) {
-            //qDebug("Message decrypted: " + QString(ba));
-            QJsonObject json = getJSonObject(ba);
-            if (!json.isEmpty()) {
-                QString url = json.value("url").toString();
-                if (!url.isEmpty()) {
-                    QString id = json.value("id").toString();
-                    QString login = json.value("login").toString();
-                    QString password = json.value("password").toString();
-                    QString submitUrl = json.value("submitUrl").toString();
-                    QString uuid = json.value("uuid").toString();
-                    QString realm = ""; // ?
-                    QMutexLocker locker(&m_mutex);
-                    if (uuid.isEmpty())
-                        m_service.addEntry(id, login, password, url, submitUrl, realm);
-                    else
-                        m_service.updateEntry(id, uuid, login, password, url);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (!decrypted.isEmpty()) {
+        QString url = decrypted.value("url").toString();
+        if (!url.isEmpty()) {
+            QString id = decrypted.value("id").toString();
+            QString login = decrypted.value("login").toString();
+            QString password = decrypted.value("password").toString();
+            QString submitUrl = decrypted.value("submitUrl").toString();
+            QString uuid = decrypted.value("uuid").toString();
+            QString realm = ""; // ?
+            QMutexLocker locker(&m_mutex);
+            if (uuid.isEmpty())
+                m_service.addEntry(id, login, password, url, submitUrl, realm);
+            else
+                m_service.updateEntry(id, uuid, login, password, url);
 
-                    QJsonObject message;
-                    message["count"] = QJsonValue::Null;
-                    message["entries"] = QJsonValue::Null;
-                    message["error"] = "";
-                    message["hash"] = hash;
-                    message["version"] = KEEPASSX_VERSION;
-                    message["success"] = "true";
-                    message["nonce"] = nonce;
+            QJsonObject message;
+            message["count"] = QJsonValue::Null;
+            message["entries"] = QJsonValue::Null;
+            message["error"] = "";
+            message["hash"] = hash;
+            message["version"] = KEEPASSX_VERSION;
+            message["success"] = "true";
+            message["nonce"] = nonce;
 
-                    QString replyMessage(QJsonDocument(message).toJson());
-                    QJsonObject response;
-                    response["action"] = valStr;
-                    response["message"] = encrypt(replyMessage, nonce);
-                    response["nonce"] = nonce;
+            QString replyMessage(QJsonDocument(message).toJson());
+            QJsonObject response;
+            response["action"] = valStr;
+            response["message"] = encrypt(replyMessage, nonce);
+            response["nonce"] = nonce;
 
-                    sendReply(response);
-                }
-            }
-        } else {
-            //qWarning("Cannot decrypt message");
+            sendReply(response);
         }
-    } else {
-        //qWarning("No message received");
     }
 }
 
