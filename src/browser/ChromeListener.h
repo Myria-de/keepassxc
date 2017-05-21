@@ -28,8 +28,6 @@
 #include "gui/DatabaseTabWidget.h"
 #include <boost/asio.hpp>
 
-namespace posix = boost::asio::posix;
-
 #define ERROR_KEEPASS_DATABASE_NOT_OPENED   1
 
 class ChromeListener : public QObject
@@ -44,8 +42,8 @@ public:
 
 private:
     void        readLine();
-    void        readHeader(posix::stream_descriptor& sd);
-    void        readBody(posix::stream_descriptor& sd, const size_t len);
+    void        readHeader(boost::asio::posix::stream_descriptor& sd);
+    void        readBody(boost::asio::posix::stream_descriptor& sd, const size_t len);
 
     void        handleAction(const QJsonObject &json);
     void        handleGetDatabaseHash(const QString &valStr);
@@ -87,16 +85,15 @@ private:
     static QByteArray   base64Decode(const QString str);
 
 private:
-     QString                    m_clientPublicKey;
-     QString                    m_publicKey;
-     QString                    m_secretKey;
-
-     BrowserService             m_service;
-     boost::asio::io_service    m_io_service;
-     posix::stream_descriptor   m_sd;
-     QFuture<void>              m_fut;
-     QMutex                     m_mutex;
-     bool                       m_running;
+     QString                                m_clientPublicKey;
+     QString                                m_publicKey;
+     QString                                m_secretKey;
+     BrowserService                         m_service;
+     boost::asio::io_service                m_io_service;
+     boost::asio::posix::stream_descriptor  m_sd;
+     QFuture<void>                          m_fut;
+     QMutex                                 m_mutex;
+     bool                                   m_running;
 };
 
 #endif // CHROMELISTENER_H

@@ -165,8 +165,19 @@ QString BrowserService::getKey(const QString &id)
 }
 
 // No need to use KeepassHttpProtocol. Just return a JSON array.
-QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QString& url, const QString& submitUrl, const QString& realm)
+QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString& url, const QString& submitUrl, const QString& realm)
 {
+    QJsonArray result;
+    if (thread()!=QThread::currentThread())
+    {
+        QMetaObject::invokeMethod(this, "findMatchingEntries", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QJsonArray, result),
+                                                                                            Q_ARG(const QString&, id),
+                                                                                            Q_ARG(const QString&, url),
+                                                                                            Q_ARG(const QString&, submitUrl),
+                                                                                            Q_ARG(const QString&, realm));
+        return result;
+    }
+
     const bool alwaysAllowAccess = BrowserSettings::alwaysAllowAccess();
     const QString host = QUrl(url).host();
     const QString submitHost = QUrl(submitUrl).host();
@@ -200,7 +211,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
     //    pwEntriesToConfirm.clear(); //timeout --> do not request confirmation
 
     if (!pwEntriesToConfirm.isEmpty()) {
-
         BrowserAccessControlDialog dlg;
         dlg.setUrl(url);
         dlg.setItems(pwEntriesToConfirm);
@@ -255,9 +265,9 @@ QJsonArray BrowserService::findMatchingEntries(const QString& /*id*/, const QStr
     //    if (BrowserSettings::receiveCredentialNotification())
     //        ShowNotification(QString("%0: %1 is receiving credentials for:\n%2").arg(Id).arg(host).arg(n)));
     //}
- 
+
     // Fill the list
-    QJsonArray result;
+    //QJsonArray result;
     for (Entry* entry : pwEntries)
         result << prepareEntry(entry);
 

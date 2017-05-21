@@ -39,7 +39,6 @@ public:
     QString         getDatabaseRecycleBinUuid();
     Entry*          getConfigEntry(bool create = false);
     QString         getKey(const QString &id);
-    QJsonArray      findMatchingEntries(const QString& /*id*/, const QString& url, const QString& submitUrl, const QString& realm);
     void            addEntry(const QString& id, const QString& login, const QString& password, const QString& url, const QString& submitUrl, const QString& realm);
     QList<Entry*>   searchEntries(Database* db, const QString& hostname);
     QList<Entry*>   searchEntries(const QString& text);
@@ -47,6 +46,7 @@ public:
     void            removeStoredPermissions();
 
 public slots:
+    QJsonArray      findMatchingEntries(const QString& id, const QString& url, const QString& submitUrl, const QString& realm);
     QString         storeKey(const QString &key);
     void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
 

@@ -73,7 +73,7 @@ void ChromeListener::stop()
     m_fut.waitForFinished();
 }
 
-void ChromeListener::readHeader(posix::stream_descriptor& sd)
+void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
 {
     char buf[4] = {};
     async_read(sd, buffer(buf,sizeof(buf)), transfer_at_least(1), [&](error_code ec, size_t br) {
@@ -88,7 +88,7 @@ void ChromeListener::readHeader(posix::stream_descriptor& sd)
     });
 }
 
-void ChromeListener::readBody(posix::stream_descriptor& sd, const size_t len)
+void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const size_t len)
 {
     char buf[MESSAGE_LENGTH] = {};
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
