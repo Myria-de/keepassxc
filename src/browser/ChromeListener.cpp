@@ -149,12 +149,17 @@ void ChromeListener::handleGetDatabaseHash(const QString &valStr)
 {
     QString hash = getDataBaseHash();
 
-    QJsonObject response;
-    response["action"] = valStr;
-    response["hash"] = hash;
-    response["version"] = KEEPASSX_VERSION;
+    if (!hash.isEmpty()) {
+        QJsonObject response;
+        response["action"] = valStr;
+        response["hash"] = hash;
+        response["version"] = KEEPASSX_VERSION;
 
-    sendReply(response);
+        sendReply(response);
+    }
+    else {
+        sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
+    }
 }
 
 QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce) const
@@ -175,25 +180,31 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
 
 void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QString &valStr)
 {
-    unsigned char pk[crypto_box_PUBLICKEYBYTES];
-    unsigned char sk[crypto_box_SECRETKEYBYTES];
-    crypto_box_keypair(pk, sk);
-
-    QString publicKey = getBase64FromKey(pk, crypto_box_PUBLICKEYBYTES);
-    QString secretKey = getBase64FromKey(sk, crypto_box_SECRETKEYBYTES);
-    m_publicKey = publicKey;
-    m_secretKey = secretKey;
-
     QString nonce = json.value("nonce").toString();
     m_clientPublicKey = json.value("publicKey").toString();
 
-    QJsonObject response;
-    response["action"] = valStr;
-    response["publicKey"] = publicKey;
-    response["nonce"] = nonce;
-    response["success"] = "true";
+    if (!m_clientPublicKey.isEmpty())
+    {
+        unsigned char pk[crypto_box_PUBLICKEYBYTES];
+        unsigned char sk[crypto_box_SECRETKEYBYTES];
+        crypto_box_keypair(pk, sk);
 
-    sendReply(response);
+        QString publicKey = getBase64FromKey(pk, crypto_box_PUBLICKEYBYTES);
+        QString secretKey = getBase64FromKey(sk, crypto_box_SECRETKEYBYTES);
+        m_publicKey = publicKey;
+        m_secretKey = secretKey;
+
+        QJsonObject response;
+        response["action"] = valStr;
+        response["publicKey"] = publicKey;
+        response["nonce"] = nonce;
+        response["success"] = "true";
+
+        sendReply(response);
+    }
+    else {
+        sendErrorReply(valStr, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
+    }
 }
 
 void ChromeListener::handleAssociate(const QJsonObject &json, const QString &valStr)
@@ -269,6 +280,9 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
             sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_NOT_OPENED);
         }
     }
+    else {
+        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+    }
 }
 
 void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &valStr)
@@ -306,6 +320,9 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
                 sendReply(response);
             }
         }
+    }
+    else {
+        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
     }
 }
 
@@ -375,6 +392,9 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
 
             sendReply(response);
         }
+    }
+    else {
+        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
     }
 }
 

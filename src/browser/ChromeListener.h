@@ -28,11 +28,16 @@
 #include "gui/DatabaseTabWidget.h"
 #include <boost/asio.hpp>
 
-#define ERROR_KEEPASS_DATABASE_NOT_OPENED   1
-
 class ChromeListener : public QObject
 {
     Q_OBJECT
+
+    enum {
+        ERROR_KEEPASS_DATABASE_NOT_OPENED = 1,
+        ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED = 2,
+        ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED = 3,
+        ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE = 4
+    };
 
 public:
     explicit    ChromeListener(DatabaseTabWidget* parent = 0);
