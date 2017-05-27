@@ -29,16 +29,16 @@ public:
     explicit OptionDialog(QWidget *parent = nullptr);
     ~OptionDialog();
 
-public Q_SLOTS:
+public slots:
     void loadSettings();
     void saveSettings();
 
-Q_SIGNALS:
+signals:
     void removeSharedEncryptionKeys();
     void removeStoredPermissions();
 
 private:
-    QScopedPointer<Ui::OptionDialog> ui;
+    QScopedPointer<Ui::OptionDialog> m_ui;
 };
 
 #endif // OPTIONDIALOG_H

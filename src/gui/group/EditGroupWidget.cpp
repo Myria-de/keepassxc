@@ -19,6 +19,7 @@
 #include "ui_EditGroupWidgetMain.h"
 
 #include "core/Metadata.h"
+#include "core/FilePath.h"
 #include "gui/EditWidgetIcons.h"
 #include "gui/EditWidgetProperties.h"
 
@@ -33,9 +34,9 @@ EditGroupWidget::EditGroupWidget(QWidget* parent)
 {
     m_mainUi->setupUi(m_editGroupWidgetMain);
 
-    add(tr("Group"), m_editGroupWidgetMain);
-    add(tr("Icon"), m_editGroupWidgetIcons);
-    add(tr("Properties"), m_editWidgetProperties);
+    addPage(tr("Group"), FilePath::instance()->icon("actions", "document-edit"), m_editGroupWidgetMain);
+    addPage(tr("Icon"), FilePath::instance()->icon("apps", "preferences-desktop-icons"), m_editGroupWidgetIcons);
+    addPage(tr("Properties"), FilePath::instance()->icon("actions", "document-properties"), m_editWidgetProperties);
 
     connect(m_mainUi->expireCheck, SIGNAL(toggled(bool)), m_mainUi->expireDatePicker, SLOT(setEnabled(bool)));
     connect(m_mainUi->autoTypeSequenceCustomRadio, SIGNAL(toggled(bool)),
@@ -43,6 +44,9 @@ EditGroupWidget::EditGroupWidget(QWidget* parent)
 
     connect(this, SIGNAL(accepted()), SLOT(save()));
     connect(this, SIGNAL(rejected()), SLOT(cancel()));
+
+    connect(m_editGroupWidgetIcons, SIGNAL(messageEditEntry(QString, MessageWidget::MessageType)), SLOT(showMessage(QString, MessageWidget::MessageType)));
+    connect(m_editGroupWidgetIcons, SIGNAL(messageEditEntryDismiss()), SLOT(hideMessage()));
 }
 
 EditGroupWidget::~EditGroupWidget()
@@ -91,7 +95,7 @@ void EditGroupWidget::loadGroup(Group* group, bool create, Database* database)
 
     m_editWidgetProperties->setFields(group->timeInfo(), group->uuid());
 
-    setCurrentRow(0);
+    setCurrentPage(0);
 
     m_mainUi->editName->setFocus();
 }
@@ -126,7 +130,7 @@ void EditGroupWidget::save()
     }
 
     clear();
-    Q_EMIT editFinished(true);
+    emit editFinished(true);
 }
 
 void EditGroupWidget::cancel()
@@ -137,7 +141,7 @@ void EditGroupWidget::cancel()
     }
 
     clear();
-    Q_EMIT editFinished(false);
+    emit editFinished(false);
 }
 
 void EditGroupWidget::clear()

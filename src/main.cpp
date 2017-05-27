@@ -26,7 +26,12 @@
 #include "crypto/Crypto.h"
 #include "gui/Application.h"
 #include "gui/MainWindow.h"
+#include "gui/csvImport/CsvImportWizard.h"
 #include "gui/MessageBox.h"
+
+#if defined(WITH_ASAN) && defined(WITH_LSAN)
+#include <sanitizer/lsan_interface.h>
+#endif
 
 #ifdef QT_STATIC
 #include <QtPlugin>
@@ -110,6 +115,15 @@ int main(int argc, char** argv)
         mainWindow.show();
     }
     
+    if (config()->get("OpenPreviousDatabasesOnStartup").toBool()) {
+        const QStringList filenames = config()->get("LastOpenedDatabases").toStringList();
+        for (const QString& filename : filenames) {
+            if (!filename.isEmpty() && QFile::exists(filename)) {
+                mainWindow.openDatabase(filename, QString(), QString());
+            }
+        }
+    }
+
     for (int ii=0; ii < args.length(); ii++) {
         QString filename = args[ii];
         if (!filename.isEmpty() && QFile::exists(filename)) {
@@ -122,14 +136,13 @@ int main(int argc, char** argv)
         }
     }
 
-    if (config()->get("OpenPreviousDatabasesOnStartup").toBool()) {
-        const QStringList filenames = config()->get("LastOpenedDatabases").toStringList();
-        for (const QString& filename : filenames) {
-            if (!filename.isEmpty() && QFile::exists(filename)) {
-                mainWindow.openDatabase(filename, QString(), QString());
-            }
-        }
-    }
-    
-    return app.exec();
+    int exitCode = app.exec();
+
+#if defined(WITH_ASAN) && defined(WITH_LSAN)
+    // do leak check here to prevent massive tail of end-of-process leak errors from third-party libraries
+    __lsan_do_leak_check();
+    __lsan_disable();
+#endif
+
+    return exitCode;
 }

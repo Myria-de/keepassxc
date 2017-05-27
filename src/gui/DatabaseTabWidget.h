@@ -23,12 +23,14 @@
 
 #include "format/KeePass2Writer.h"
 #include "gui/DatabaseWidget.h"
+#include "gui/MessageWidget.h"
 
 class DatabaseWidget;
 class DatabaseWidgetStateSync;
 class DatabaseOpenWidget;
 class QFile;
 class QLockFile;
+class MessageWidget;
 
 struct DatabaseManagerStruct
 {
@@ -61,9 +63,10 @@ public:
 
     static const int LastDatabasesCount;
 
-public Q_SLOTS:
+public slots:
     void newDatabase();
     void openDatabase();
+    void importCsv();
     void mergeDatabase();
     void importKeePass1Database();
     bool saveDatabase(int index = -1);
@@ -75,17 +78,23 @@ public Q_SLOTS:
     void changeMasterKey();
     void changeDatabaseSettings();
     bool readOnly(int index = -1);
+    bool isModified(int index = -1);
     void performGlobalAutoType();
     void lockDatabases();
+    QString databasePath(int index = -1);
 
-Q_SIGNALS:
+signals:
     void tabNameChanged();
     void databaseWithFileClosed(QString filePath);
     void activateDatabaseChanged(DatabaseWidget* dbWidget);
     void databaseLocked(DatabaseWidget* dbWidget);
     void databaseUnlocked(DatabaseWidget* dbWidget);
+    void messageGlobal(const QString&, MessageWidget::MessageType type);
+    void messageTab(const QString&, MessageWidget::MessageType type);
+    void messageDismissGlobal();
+    void messageDismissTab();
 
-private Q_SLOTS:
+private slots:
     void updateTabName(Database* db);
     void updateTabNameFromDbSender();
     void updateTabNameFromDbWidgetSender();
@@ -110,7 +119,7 @@ private:
 
     KeePass2Writer m_writer;
     QHash<Database*, DatabaseManagerStruct> m_dbList;
-    DatabaseWidgetStateSync* m_dbWidgetSateSync;
+    DatabaseWidgetStateSync* m_dbWidgetStateSync;
 };
 
 #endif // KEEPASSX_DATABASETABWIDGET_H

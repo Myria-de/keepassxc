@@ -142,6 +142,9 @@ void AutoType::performAutoType(const Entry* entry, QWidget* hideWindow, const QS
         sequence = customSequence;
     }
 
+    sequence.replace("{{}", "{LEFTBRACE}");
+    sequence.replace("{}}", "{RIGHTBRACE}");
+
     QList<AutoTypeAction*> actions;
     ListDeleter<AutoTypeAction*> actionsDeleter(&actions);
 
@@ -317,8 +320,6 @@ bool AutoType::parseActions(const QString& sequence, const Entry* entry, QList<A
 
 
     for (const QChar& ch : sequence) {
-        // TODO: implement support for {{}, {}}
-
         if (inTmpl) {
             if (ch == '{') {
                 qWarning("Syntax error in auto-type sequence.");
@@ -395,6 +396,9 @@ QList<AutoTypeAction*> AutoType::createActionFromTemplate(const QString& tmpl, c
     }
     else if (tmplName.compare("enter",Qt::CaseInsensitive)==0) {
         list.append(new AutoTypeKey(Qt::Key_Enter));
+    }
+    else if (tmplName.compare("space",Qt::CaseInsensitive)==0) {
+        list.append(new AutoTypeKey(Qt::Key_Space));
     }
     else if (tmplName.compare("up",Qt::CaseInsensitive)==0) {
         list.append(new AutoTypeKey(Qt::Key_Up));
@@ -483,10 +487,10 @@ QList<AutoTypeAction*> AutoType::createActionFromTemplate(const QString& tmpl, c
     else if (tmplName.compare(")",Qt::CaseInsensitive)==0) {
         list.append(new AutoTypeChar(')'));
     }
-    else if (tmplName.compare("{",Qt::CaseInsensitive)==0) {
+    else if (tmplName.compare("leftbrace",Qt::CaseInsensitive)==0) {
         list.append(new AutoTypeChar('{'));
     }
-    else if (tmplName.compare("}",Qt::CaseInsensitive)==0) {
+    else if (tmplName.compare("rightbrace",Qt::CaseInsensitive)==0) {
         list.append(new AutoTypeChar('}'));
     }
     else {
@@ -562,8 +566,8 @@ QString AutoType::autoTypeSequence(const Entry* entry, const QString& windowTitl
             }
         }
 
-        if (!match && config()->get("AutoTypeEntryTitleMatch").toBool() && !entry->title().isEmpty()
-                && windowTitle.contains(entry->title(), Qt::CaseInsensitive)) {
+        if (!match && config()->get("AutoTypeEntryTitleMatch").toBool() && !entry->resolvePlaceholder(entry->title()).isEmpty()
+                && windowTitle.contains(entry->resolvePlaceholder(entry->title()), Qt::CaseInsensitive)) {
             sequence = entry->defaultAutoTypeSequence();
             match = true;
         }
@@ -594,11 +598,11 @@ QString AutoType::autoTypeSequence(const Entry* entry, const QString& windowTitl
         group = group->parentGroup();
     } while (group && (!enableSet || sequence.isEmpty()));
 
-    if (sequence.isEmpty() && (!entry->username().isEmpty() || !entry->password().isEmpty())) {
-        if (entry->username().isEmpty()) {
+    if (sequence.isEmpty() && (!entry->resolvePlaceholder(entry->username()).isEmpty() || !entry->resolvePlaceholder(entry->password()).isEmpty())) {
+        if (entry->resolvePlaceholder(entry->username()).isEmpty()) {
             sequence = "{PASSWORD}{ENTER}";
         }
-        else if (entry->password().isEmpty()) {
+        else if (entry->resolvePlaceholder(entry->password()).isEmpty()) {
             sequence = "{USERNAME}{ENTER}";
         }
         else {

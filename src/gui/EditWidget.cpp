@@ -17,6 +17,9 @@
 
 #include "EditWidget.h"
 #include "ui_EditWidget.h"
+#include <QScrollArea>
+
+#include "core/FilePath.h"
 
 EditWidget::EditWidget(QWidget* parent)
     : DialogyWidget(parent)
@@ -25,12 +28,14 @@ EditWidget::EditWidget(QWidget* parent)
     m_ui->setupUi(this);
     setReadOnly(false);
 
+    m_ui->messageWidget->setHidden(true);
+
     QFont headerLabelFont = m_ui->headerLabel->font();
     headerLabelFont.setBold(true);
     headerLabelFont.setPointSize(headerLabelFont.pointSize() + 2);
     headlineLabel()->setFont(headerLabelFont);
 
-    connect(m_ui->categoryList, SIGNAL(currentRowChanged(int)),
+    connect(m_ui->categoryList, SIGNAL(categoryChanged(int)),
             m_ui->stackedWidget, SLOT(setCurrentIndex(int)));
 
     connect(m_ui->buttonBox, SIGNAL(accepted()), SIGNAL(accepted()));
@@ -41,23 +46,42 @@ EditWidget::~EditWidget()
 {
 }
 
-void EditWidget::add(const QString& labelText, QWidget* widget)
+void EditWidget::addPage(const QString& labelText, const QIcon& icon, QWidget* widget)
 {
-    m_ui->categoryList->addItem(labelText);
-    m_ui->stackedWidget->addWidget(widget);
+    /*
+     * Instead of just adding a widget we're going to wrap it into a scroll area. It will automatically show
+     * scrollbars when the widget cannot fit into the page. This approach prevents the main window of the application
+     * from automatic resizing and it now should be able to fit into a user's monitor even if the monitor is only 768
+     * pixels high.
+     */
+    QScrollArea* scrollArea = new QScrollArea(m_ui->stackedWidget);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidget(widget);
+    scrollArea->setWidgetResizable(true);
+    m_ui->stackedWidget->addWidget(scrollArea);
+    m_ui->categoryList->addCategory(labelText, icon);
 }
 
-void EditWidget::setRowHidden(QWidget* widget, bool hide)
+void EditWidget::setPageHidden(QWidget* widget, bool hidden)
 {
-    int row = m_ui->stackedWidget->indexOf(widget);
-    if (row != -1) {
-        m_ui->categoryList->item(row)->setHidden(hide);
+    int index = m_ui->stackedWidget->indexOf(widget);
+    if (index != -1) {
+        m_ui->categoryList->setCategoryHidden(index, hidden);
+    }
+
+    if (index == m_ui->stackedWidget->currentIndex()) {
+        int newIndex = m_ui->stackedWidget->currentIndex() - 1;
+        if (newIndex < 0) {
+            newIndex = m_ui->stackedWidget->count() - 1;
+        }
+        m_ui->stackedWidget->setCurrentIndex(newIndex);
     }
 }
 
-void EditWidget::setCurrentRow(int index)
+void EditWidget::setCurrentPage(int index)
 {
-    m_ui->categoryList->setCurrentRow(index);
+    m_ui->categoryList->setCurrentCategory(index);
+    m_ui->stackedWidget->setCurrentIndex(index);
 }
 
 void EditWidget::setHeadline(const QString& text)
@@ -85,4 +109,16 @@ void EditWidget::setReadOnly(bool readOnly)
 bool EditWidget::readOnly() const
 {
     return m_readOnly;
+}
+
+void EditWidget::showMessage(const QString& text, MessageWidget::MessageType type)
+{
+    m_ui->messageWidget->showMessage(text, type);
+}
+
+void EditWidget::hideMessage()
+{
+    if (m_ui->messageWidget->isVisible()) {
+        m_ui->messageWidget->animatedHide();
+    }
 }

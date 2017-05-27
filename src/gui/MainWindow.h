@@ -24,6 +24,7 @@
 
 #include "core/SignalMultiplexer.h"
 #include "gui/DatabaseWidget.h"
+#include "gui/Application.h"
 
 namespace Ui {
     class MainWindow;
@@ -38,23 +39,40 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
     ~MainWindow();
+    enum StackedWidgetIndex
+    {
+        DatabaseTabScreen = 0,
+        SettingsScreen = 1,
+        WelcomeScreen = 2,
+        PasswordGeneratorScreen = 3
+    };
 
-public Q_SLOTS:
+public slots:
     void openDatabase(const QString& fileName, const QString& pw = QString(),
                       const QString& keyFile = QString());
     void appExit();
+    void displayGlobalMessage(const QString& text, MessageWidget::MessageType type, bool showClosebutton = true);
+    void displayTabMessage(const QString& text, MessageWidget::MessageType type, bool showClosebutton = true);
+    void hideGlobalMessage();
+    void showYubiKeyPopup();
+    void hideYubiKeyPopup();
 
 protected:
      void closeEvent(QCloseEvent* event) override;
      void changeEvent(QEvent* event) override;
 
-private Q_SLOTS:
+private slots:
     void setMenuActionState(DatabaseWidget::Mode mode = DatabaseWidget::None);
     void updateWindowTitle();
     void showAboutDialog();
     void switchToDatabases();
     void switchToSettings();
     void switchToPasswordGen(bool enabled);
+    void switchToNewDatabase();
+    void switchToOpenDatabase();
+    void switchToDatabaseFile(QString file);
+    void switchToKeePass1Database();
+    void switchToImportCsv();
     void closePasswordGen();
     void databaseStatusChanged(DatabaseWidget *dbWidget);
     void databaseTabChanged(int tabIndex);
@@ -72,6 +90,7 @@ private Q_SLOTS:
     void toggleWindow();
     void lockDatabasesAfterInactivity();
     void repairDatabase();
+    void hideTabMessage();
 
 private:
     static void setShortcut(QAction* action, QKeySequence::StandardKey standard, int fallback = 0);
@@ -98,5 +117,8 @@ private:
 
     bool appExitCalled;
 };
+
+#define KEEPASSXC_MAIN_WINDOW (qobject_cast<Application*>(qApp) ? \
+                               qobject_cast<MainWindow*>(qobject_cast<Application*>(qApp)->mainWindow()) : nullptr)
 
 #endif // KEEPASSX_MAINWINDOW_H

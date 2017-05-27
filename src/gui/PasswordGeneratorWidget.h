@@ -23,39 +23,48 @@
 #include <QLabel>
 
 #include "core/PasswordGenerator.h"
+#include "core/PassphraseGenerator.h"
 
 namespace Ui {
     class PasswordGeneratorWidget;
 }
 
 class PasswordGenerator;
+class PassphraseGenerator;
 
 class PasswordGeneratorWidget : public QWidget
 {
     Q_OBJECT
 
 public:
+    enum GeneratorTypes
+    {
+        Password = 0,
+        Diceware = 1
+    };
     explicit PasswordGeneratorWidget(QWidget* parent = nullptr);
     ~PasswordGeneratorWidget();
     void loadSettings();
     void saveSettings();
     void reset();
     void setStandaloneMode(bool standalone);
+public Q_SLOTS:
     void regeneratePassword();
     
-Q_SIGNALS:
+signals:
     void appliedPassword(const QString& password);
     void dialogTerminated();
 
-private Q_SLOTS:
+private slots:
     void applyPassword();
-    void generatePassword();
     void updateApplyEnabled(const QString& password);
     void updatePasswordStrength(const QString& password);
     void togglePasswordShown(bool hidden);
 
-    void sliderMoved();
-    void spinBoxChanged();
+    void passwordSliderMoved();
+    void passwordSpinBoxChanged();
+    void dicewareSliderMoved();
+    void dicewareSpinBoxChanged();
     void colorStrengthIndicator(double entropy);
 
     void updateGenerator();
@@ -66,7 +75,8 @@ private:
     PasswordGenerator::CharClasses charClasses();
     PasswordGenerator::GeneratorFlags generatorFlags();
 
-    const QScopedPointer<PasswordGenerator> m_generator;
+    const QScopedPointer<PasswordGenerator> m_passwordGenerator;
+    const QScopedPointer<PassphraseGenerator> m_dicewareGenerator;
     const QScopedPointer<Ui::PasswordGeneratorWidget> m_ui;
 };
 

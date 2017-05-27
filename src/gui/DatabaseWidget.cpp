@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 #include "format/KeePass2Reader.h"
 #include "gui/ChangeMasterKeyWidget.h"
 #include "gui/Clipboard.h"
+#include "gui/CloneDialog.h"
 #include "gui/DatabaseOpenWidget.h"
 #include "gui/DatabaseSettingsWidget.h"
 #include "gui/KeePass1OpenWidget.h"
@@ -60,7 +61,14 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
     , m_newParent(nullptr)
 {
     m_mainWidget = new QWidget(this);
-    QLayout* layout = new QHBoxLayout(m_mainWidget);
+
+    m_messageWidget = new MessageWidget(this);
+    m_messageWidget->setHidden(true);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout();
+    QLayout* layout = new QHBoxLayout();
+    mainLayout->addWidget(m_messageWidget);
+    mainLayout->addLayout(layout);
     m_splitter = new QSplitter(m_mainWidget);
     m_splitter->setChildrenCollapsible(false);
 
@@ -105,7 +113,7 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
     m_splitter->setStretchFactor(1, 70);
 
     layout->addWidget(m_splitter);
-    m_mainWidget->setLayout(layout);
+    m_mainWidget->setLayout(mainLayout);
 
     m_editEntryWidget = new EditEntryWidget();
     m_editEntryWidget->setObjectName("editEntryWidget");
@@ -114,6 +122,8 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
     m_editGroupWidget->setObjectName("editGroupWidget");
     m_changeMasterKeyWidget = new ChangeMasterKeyWidget();
     m_changeMasterKeyWidget->headlineLabel()->setText(tr("Change master key"));
+    m_csvImportWizard = new CsvImportWizard();
+    m_csvImportWizard->setObjectName("csvImportWizard");
     QFont headlineLabelFont = m_changeMasterKeyWidget->headlineLabel()->font();
     headlineLabelFont.setBold(true);
     headlineLabelFont.setPointSize(headlineLabelFont.pointSize() + 2);
@@ -137,6 +147,7 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
     addWidget(m_databaseSettingsWidget);
     addWidget(m_historyEditEntryWidget);
     addWidget(m_databaseOpenWidget);
+    addWidget(m_csvImportWizard);
     addWidget(m_databaseOpenMergeWidget);
     addWidget(m_keepass1OpenWidget);
     addWidget(m_unlockDatabaseWidget);
@@ -157,18 +168,19 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
     connect(m_databaseOpenWidget, SIGNAL(editFinished(bool)), SLOT(openDatabase(bool)));
     connect(m_databaseOpenMergeWidget, SIGNAL(editFinished(bool)), SLOT(mergeDatabase(bool)));
     connect(m_keepass1OpenWidget, SIGNAL(editFinished(bool)), SLOT(openDatabase(bool)));
+    connect(m_csvImportWizard, SIGNAL(importFinished(bool)), SLOT(csvImportFinished(bool)));
     connect(m_unlockDatabaseWidget, SIGNAL(editFinished(bool)), SLOT(unlockDatabase(bool)));
 	connect(m_unlockDatabaseDialog, SIGNAL(unlockDone(bool)), SLOT(unlockDatabase(bool)));
     connect(&m_fileWatcher, SIGNAL(fileChanged(QString)), this, SLOT(onWatchedFileChanged()));
     connect(&m_fileWatchTimer, SIGNAL(timeout()), this, SLOT(reloadDatabaseFile()));
-    connect(&m_ignoreWatchTimer, SIGNAL(timeout()), this, SLOT(onWatchedFileChanged()));
+    connect(&m_fileWatchUnblockTimer, SIGNAL(timeout()), this, SLOT(unblockAutoReload()));
     connect(this, SIGNAL(currentChanged(int)), this, SLOT(emitCurrentModeChanged()));
 
     m_databaseModified = false;
 
     m_fileWatchTimer.setSingleShot(true);
-    m_ignoreWatchTimer.setSingleShot(true);
-    m_ignoreNextAutoreload = false;
+    m_fileWatchUnblockTimer.setSingleShot(true);
+    m_ignoreAutoReload = false;
 
     m_searchCaseSensitive = false;
 
@@ -183,6 +195,9 @@ DatabaseWidget::Mode DatabaseWidget::currentMode() const
 {
     if (currentWidget() == nullptr) {
         return DatabaseWidget::None;
+    }
+    else if (currentWidget() == m_csvImportWizard) {
+        return DatabaseWidget::ImportMode;
     }
     else if (currentWidget() == m_mainWidget) {
         return DatabaseWidget::ViewMode;
@@ -255,7 +270,7 @@ void DatabaseWidget::clearAllWidgets()
 
 void DatabaseWidget::emitCurrentModeChanged()
 {
-    Q_EMIT currentModeChanged(currentMode());
+    emit currentModeChanged(currentMode());
 }
 
 Database* DatabaseWidget::database()
@@ -301,7 +316,7 @@ void DatabaseWidget::replaceDatabase(Database* db)
     Database* oldDb = m_db;
     m_db = db;
     m_groupView->changeDatabase(m_db);
-    Q_EMIT databaseChanged(m_db, m_databaseModified);
+    emit databaseChanged(m_db, m_databaseModified);
     delete oldDb;
 }
 
@@ -313,12 +328,9 @@ void DatabaseWidget::cloneEntry()
         return;
     }
 
-    Entry* entry = currentEntry->clone(Entry::CloneNewUuid | Entry::CloneResetTimeInfo | Entry::CloneRenameTitle);
-    entry->setGroup(currentEntry->group());
-    if (isInSearchMode())
-        search(m_lastSearchText);
-    m_entryView->setFocus();
-    m_entryView->setCurrentEntry(entry);
+    CloneDialog* cloneDialog = new CloneDialog(this, m_db, currentEntry);
+    cloneDialog->show();
+    return;
 }
 
 void DatabaseWidget::deleteEntries()
@@ -359,6 +371,7 @@ void DatabaseWidget::deleteEntries()
             for (Entry* entry : asConst(selectedEntries)) {
                 delete entry;
             }
+            refreshSearch();
         }
     }
     else {
@@ -401,7 +414,7 @@ void DatabaseWidget::copyTitle()
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->title());
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->title()));
 }
 
 void DatabaseWidget::copyUsername()
@@ -412,7 +425,7 @@ void DatabaseWidget::copyUsername()
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->username());
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->username()));
 }
 
 void DatabaseWidget::copyPassword()
@@ -423,7 +436,7 @@ void DatabaseWidget::copyPassword()
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->password());
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->password()));
 }
 
 void DatabaseWidget::copyURL()
@@ -434,7 +447,7 @@ void DatabaseWidget::copyURL()
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->url());
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->url()));
 }
 
 void DatabaseWidget::copyNotes()
@@ -445,7 +458,7 @@ void DatabaseWidget::copyNotes()
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->notes());
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->notes()));
 }
 
 void DatabaseWidget::copyAttribute(QAction* action)
@@ -456,7 +469,7 @@ void DatabaseWidget::copyAttribute(QAction* action)
         return;
     }
 
-    setClipboardTextAndMinimize(currentEntry->attributes()->value(action->text()));
+    setClipboardTextAndMinimize(currentEntry->resolveMultiplePlaceholders(currentEntry->attributes()->value(action->text())));
 }
 
 void DatabaseWidget::setClipboardTextAndMinimize(const QString& text)
@@ -618,6 +631,16 @@ void DatabaseWidget::setCurrentWidget(QWidget* widget)
     adjustSize();
 }
 
+void DatabaseWidget::csvImportFinished(bool accepted)
+{
+    if (!accepted) {
+        emit closeRequest();
+    }
+    else {
+        setCurrentWidget(m_mainWidget);
+    }
+}
+
 void DatabaseWidget::switchToView(bool accepted)
 {
     if (m_newGroup) {
@@ -689,12 +712,12 @@ void DatabaseWidget::updateMasterKey(bool accepted)
         QApplication::restoreOverrideCursor();
 
         if (!result) {
-            MessageBox::critical(this, tr("Error"), tr("Unable to calculate master key"));
+            m_messageWidget->showMessage(tr("Unable to calculate master key"), MessageWidget::Error);
             return;
         }
     }
     else if (!m_db->hasKey()) {
-        Q_EMIT closeRequest();
+        emit closeRequest();
         return;
     }
 
@@ -706,7 +729,7 @@ void DatabaseWidget::openDatabase(bool accepted)
     if (accepted) {
         replaceDatabase(static_cast<DatabaseOpenWidget*>(sender())->database());
         setCurrentWidget(m_mainWidget);
-        Q_EMIT unlockedDatabase();
+        emit unlockedDatabase();
 
         // We won't need those anymore and KeePass1OpenWidget closes
         // the file in its dtor.
@@ -721,7 +744,7 @@ void DatabaseWidget::openDatabase(bool accepted)
         if (m_databaseOpenWidget->database()) {
             delete m_databaseOpenWidget->database();
         }
-        Q_EMIT closeRequest();
+        emit closeRequest();
     }
 }
 
@@ -729,14 +752,14 @@ void DatabaseWidget::mergeDatabase(bool accepted)
 {
     if (accepted) {
         if (!m_db) {
-            MessageBox::critical(this, tr("Error"), tr("No current database."));
+            m_messageWidget->showMessage(tr("No current database."), MessageWidget::Error);
             return;
         }
 
         Database* srcDb = static_cast<DatabaseOpenWidget*>(sender())->database();
 
         if (!srcDb) {
-            MessageBox::critical(this, tr("Error"), tr("No source database, nothing to do."));
+            m_messageWidget->showMessage(tr("No source database, nothing to do."), MessageWidget::Error);
             return;
         }
 
@@ -744,13 +767,13 @@ void DatabaseWidget::mergeDatabase(bool accepted)
     }
 
     setCurrentWidget(m_mainWidget);
-    Q_EMIT databaseMerged(m_db);
+    emit databaseMerged(m_db);
 }
 
 void DatabaseWidget::unlockDatabase(bool accepted)
 {
     if (!accepted) {
-        Q_EMIT closeRequest();
+        emit closeRequest();
         return;
     }
 
@@ -769,7 +792,7 @@ void DatabaseWidget::unlockDatabase(bool accepted)
 
     setCurrentWidget(m_mainWidget);
     m_unlockDatabaseWidget->clearForms();
-    Q_EMIT unlockedDatabase();
+    emit unlockedDatabase();
 
     if (sender() == m_unlockDatabaseDialog) {
         QList<Database*> dbList;
@@ -838,11 +861,20 @@ void DatabaseWidget::switchToOpenDatabase(const QString& fileName, const QString
     m_databaseOpenWidget->enterKey(password, keyFile);
 }
 
+void DatabaseWidget::switchToImportCsv(const QString& fileName)
+{
+    updateFilename(fileName);
+    switchToMasterKeyChange();
+    m_csvImportWizard->load(fileName, m_db);
+    setCurrentWidget(m_csvImportWizard);
+}
+
 void DatabaseWidget::switchToOpenMergeDatabase(const QString& fileName)
 {
     m_databaseOpenMergeWidget->load(fileName);
     setCurrentWidget(m_databaseOpenMergeWidget);
 }
+
 
 void DatabaseWidget::switchToOpenMergeDatabase(const QString& fileName, const QString& password,
                                           const QString& keyFile)
@@ -868,6 +900,12 @@ void DatabaseWidget::databaseSaved()
     m_databaseModified = false;
 }
 
+void DatabaseWidget::refreshSearch() {
+    if (isInSearchMode()) {
+        search(m_lastSearchText);
+    }
+}
+
 void DatabaseWidget::search(const QString& searchtext)
 {
     if (searchtext.isEmpty())
@@ -876,7 +914,7 @@ void DatabaseWidget::search(const QString& searchtext)
         return;
     }
 
-    Q_EMIT searchModeAboutToActivate();
+    emit searchModeAboutToActivate();
 
     Qt::CaseSensitivity caseSensitive = m_searchCaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive;
 
@@ -895,15 +933,13 @@ void DatabaseWidget::search(const QString& searchtext)
 
     m_searchingLabel->setVisible(true);
 
-    Q_EMIT searchModeActivated();
+    emit searchModeActivated();
 }
 
 void DatabaseWidget::setSearchCaseSensitive(bool state)
 {
     m_searchCaseSensitive = state;
-
-    if (isInSearchMode())
-        search(m_lastSearchText);
+    refreshSearch();
 }
 
 void DatabaseWidget::onGroupChanged(Group* group)
@@ -924,12 +960,12 @@ void DatabaseWidget::endSearch()
 {
     if (isInSearchMode())
     {
-        Q_EMIT listModeAboutToActivate();
+        emit listModeAboutToActivate();
 
         // Show the normal entry view of the current group
         m_entryView->setGroup(currentGroup());
 
-        Q_EMIT listModeActivated();
+        emit listModeActivated();
     }
 
     m_searchingLabel->setVisible(false);
@@ -940,12 +976,12 @@ void DatabaseWidget::endSearch()
 
 void DatabaseWidget::emitGroupContextMenuRequested(const QPoint& pos)
 {
-    Q_EMIT groupContextMenuRequested(m_groupView->viewport()->mapToGlobal(pos));
+    emit groupContextMenuRequested(m_groupView->viewport()->mapToGlobal(pos));
 }
 
 void DatabaseWidget::emitEntryContextMenuRequested(const QPoint& pos)
 {
-    Q_EMIT entryContextMenuRequested(m_entryView->viewport()->mapToGlobal(pos));
+    emit entryContextMenuRequested(m_entryView->viewport()->mapToGlobal(pos));
 }
 
 bool DatabaseWidget::dbHasKey() const
@@ -994,7 +1030,7 @@ void DatabaseWidget::lock()
 
 void DatabaseWidget::updateFilename(const QString& fileName)
 {
-    if (! m_filename.isEmpty()) {
+    if (!m_filename.isEmpty()) {
         m_fileWatcher.removePath(m_filename);
     }
 
@@ -1002,26 +1038,31 @@ void DatabaseWidget::updateFilename(const QString& fileName)
     m_filename = fileName;
 }
 
-void DatabaseWidget::ignoreNextAutoreload()
+void DatabaseWidget::blockAutoReload(bool block)
 {
-    m_ignoreNextAutoreload = true;
-    m_ignoreWatchTimer.start(100);
+    if (block) {
+        m_ignoreAutoReload = true;
+        m_fileWatchTimer.stop();
+    } else {
+        m_fileWatchUnblockTimer.start(500);
+    }
+}
+
+void DatabaseWidget::unblockAutoReload()
+{
+    m_ignoreAutoReload = false;
+    updateFilename(m_filename);
 }
 
 void DatabaseWidget::onWatchedFileChanged()
 {
-    if (m_ignoreNextAutoreload) {
-        // Reset the watch
-        m_ignoreNextAutoreload = false;
-        m_ignoreWatchTimer.stop();
-        m_fileWatcher.addPath(m_filename);
+    if (m_ignoreAutoReload) {
+        return;
     }
-    else {
-        if (m_fileWatchTimer.isActive())
-            return;
+    if (m_fileWatchTimer.isActive())
+        return;
 
-        m_fileWatchTimer.start(500);
-    }
+    m_fileWatchTimer.start(500);
 }
 
 void DatabaseWidget::reloadDatabaseFile()
@@ -1086,8 +1127,9 @@ void DatabaseWidget::reloadDatabaseFile()
 
         }
     } else {
-        MessageBox::critical(this, tr("Autoreload Failed"),
-                             tr("Could not open the new database file while attempting to autoreload this database."));
+        m_messageWidget->showMessage(
+            tr("Could not open the new database file while attempting to autoreload this database."),
+            MessageWidget::Error);
     }
 
     // Rewatch the database file
@@ -1160,7 +1202,7 @@ bool DatabaseWidget::currentEntryHasUsername()
         Q_ASSERT(false);
         return false;
     }
-    return !currentEntry->username().isEmpty();
+    return !currentEntry->resolveMultiplePlaceholders(currentEntry->username()).isEmpty();
 }
 
 bool DatabaseWidget::currentEntryHasPassword()
@@ -1170,7 +1212,7 @@ bool DatabaseWidget::currentEntryHasPassword()
         Q_ASSERT(false);
         return false;
     }
-    return !currentEntry->password().isEmpty();
+    return !currentEntry->resolveMultiplePlaceholders(currentEntry->password()).isEmpty();
 }
 
 bool DatabaseWidget::currentEntryHasUrl()
@@ -1180,7 +1222,7 @@ bool DatabaseWidget::currentEntryHasUrl()
         Q_ASSERT(false);
         return false;
     }
-    return !currentEntry->url().isEmpty();
+    return !currentEntry->resolveMultiplePlaceholders(currentEntry->url()).isEmpty();
 }
 
 bool DatabaseWidget::currentEntryHasNotes()
@@ -1190,7 +1232,7 @@ bool DatabaseWidget::currentEntryHasNotes()
         Q_ASSERT(false);
         return false;
     }
-    return !currentEntry->notes().isEmpty();
+    return !currentEntry->resolveMultiplePlaceholders(currentEntry->notes()).isEmpty();
 }
 
 GroupView* DatabaseWidget::groupView() {
@@ -1212,4 +1254,38 @@ void DatabaseWidget::showUnlockDialog()
 void DatabaseWidget::closeUnlockDialog()
 {
     m_unlockDatabaseDialog->close();
+}
+
+void DatabaseWidget::showMessage(const QString& text, MessageWidget::MessageType type)
+{
+    m_messageWidget->showMessage(text, type);
+}
+
+void DatabaseWidget::hideMessage()
+{
+    if (m_messageWidget->isVisible()) {
+        m_messageWidget->animatedHide();
+    }
+}
+
+bool DatabaseWidget::isRecycleBinSelected() const
+{
+    return m_groupView->currentGroup() && m_groupView->currentGroup() == m_db->metadata()->recycleBin();
+}
+
+void DatabaseWidget::emptyRecycleBin()
+{
+    if(!isRecycleBinSelected()) {
+        return;
+    }
+
+    QMessageBox::StandardButton result = MessageBox::question(
+        this, tr("Empty recycle bin?"),
+        tr("Are you sure you want to permanently delete everything from your recycle bin?"),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (result == QMessageBox::Yes) {
+        m_db->emptyRecycleBin();
+        refreshSearch();
+    }
 }

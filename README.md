@@ -15,7 +15,7 @@ KeePass Cross-platform Community Edition
 - Merging of databases
 - Automatic reload when the database changed on disk
 - KeePassHTTP support for use with [PassIFox](https://addons.mozilla.org/en-us/firefox/addon/passifox/) in Mozilla Firefox and [chromeIPass](https://chrome.google.com/webstore/detail/chromeipass/ompiailgknfdndiefoaoiligalphfdae) in Google Chrome or Chromium, and [passafari](https://github.com/mmichaa/passafari.safariextension/) in Safari.
-- Support for [chromeKeePassXC](https://github.com/varjolintu/chromeKeePassXC) browser extension (under development)
+- Support for [chromeKeePassXC](https://github.com/varjolintu/chromeKeePassXC) browser extension.
 - Many bug fixes
 
 For a full list of features and changes, read the [CHANGELOG](CHANGELOG) document.
@@ -28,7 +28,7 @@ Pre-compiled binaries can be found on the [downloads page](https://keepassxc.org
 
 ### Building KeePassXC
 
-*More detailed instructions are available in the INSTALL file or on the [Wiki page](https://github.com/keepassxreboot/keepassx/wiki/Install-Instruction-from-Source).*
+*More detailed instructions are available in the INSTALL file or on the [Wiki page](https://github.com/keepassxreboot/keepassxc/wiki/Building-KeePassXC).*
 
 First, you must download the KeePassXC [source tarball](https://keepassxc.org/download#source) or check out the latest version from our [Git repository](https://github.com/keepassxreboot/keepassxc).
 
@@ -70,8 +70,6 @@ cmake accepts the following options:
   -DWITH_ASAN=[ON|OFF] Enable/Disable address sanitizer checks (Linux only) (default: OFF)
   -DWITH_COVERAGE=[ON|OFF] Enable/Disable coverage tests (GCC only) (default: OFF)
 ```
-
-With `-DWITH_XC_BROWSER` it's necessary to have Boost C++ libraries and libsodium installed to the system.
 
 ### Contributing
 

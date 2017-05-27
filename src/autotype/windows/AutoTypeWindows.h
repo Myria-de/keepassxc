@@ -45,7 +45,7 @@ public:
     void sendChar(const QChar& ch, bool isKeyDown);
     void sendKey(Qt::Key key, bool isKeyDown);
 
-Q_SIGNALS:
+signals:
     void globalShortcutTriggered();
 
 private:
@@ -64,6 +64,7 @@ public:
 
     void execChar(AutoTypeChar* action) override;
     void execKey(AutoTypeKey* action) override;
+    void execClearField(AutoTypeClearField* action) override;
 
 private:
     AutoTypePlatformWin* const m_platform;

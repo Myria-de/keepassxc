@@ -1,6 +1,5 @@
 /*
- *  Copyright (C) 2013 Michael Curtis <michael@moltenmercury.org>
- *  Copyright (C) 2014 Felix Geyer <debfx@fobos.de>
+ *  Copyright (C) 2012 Felix Geyer <debfx@fobos.de>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,31 +15,37 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSX_PASSWORDCOMBOBOX_H
-#define KEEPASSX_PASSWORDCOMBOBOX_H
+#ifndef KEEPASSX_CLONEDIALOG_H
+#define KEEPASSX_CLONEDIALOG_H
 
-#include <QComboBox>
+#include <QDialog>
+#include <QScopedPointer>
+#include "core/Entry.h"
+#include "core/Database.h"
+#include "gui/DatabaseWidget.h"
 
-class PasswordGenerator;
+namespace Ui {
+    class CloneDialog;
+}
 
-class PasswordComboBox : public QComboBox
+class CloneDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit PasswordComboBox(QWidget* parent = nullptr);
-    ~PasswordComboBox();
-
-    void setGenerator(PasswordGenerator* generator);
-    void setNumberAlternatives(int alternatives);
-    void showPopup();
-
-public Q_SLOTS:
-    void setEcho(bool echo);
+    explicit CloneDialog(DatabaseWidget* parent = nullptr, Database* db = nullptr, Entry* entry = nullptr);
+    ~CloneDialog();
 
 private:
-    PasswordGenerator* m_generator;
-    int m_alternatives;
+    QScopedPointer<Ui::CloneDialog> m_ui;
+
+private slots:
+    void cloneEntry();
+
+protected:
+    Database* m_db;
+    Entry* m_entry;
+    DatabaseWidget* m_parent;
 };
 
-#endif // KEEPASSX_PASSWORDCOMBOBOX_H
+#endif // KEEPASSX_CLONEDIALOG_H

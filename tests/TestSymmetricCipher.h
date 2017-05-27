@@ -24,10 +24,12 @@ class TestSymmetricCipher : public QObject
 {
     Q_OBJECT
 
-private Q_SLOTS:
+private slots:
     void initTestCase();
     void testAes256CbcEncryption();
     void testAes256CbcDecryption();
+    void testTwofish256CbcEncryption();
+    void testTwofish256CbcDecryption();
     void testSalsa20();
     void testPadding();
     void testStreamReset();

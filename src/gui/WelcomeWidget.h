@@ -19,6 +19,7 @@
 #define KEEPASSX_WELCOMEWIDGET_H
 
 #include <QWidget>
+#include <QListWidgetItem>
 
 namespace Ui {
     class WelcomeWidget;
@@ -31,6 +32,17 @@ class WelcomeWidget : public QWidget
 public:
     explicit WelcomeWidget(QWidget* parent = nullptr);
     ~WelcomeWidget();
+    void refreshLastDatabases();
+
+signals:
+    void newDatabase();
+    void openDatabase();
+    void openDatabaseFile(QString);
+    void importKeePass1Database();
+    void importCsv();
+
+private slots:
+    void openDatabaseFromFile(QListWidgetItem* item);
 
 private:
     const QScopedPointer<Ui::WelcomeWidget> m_ui;
