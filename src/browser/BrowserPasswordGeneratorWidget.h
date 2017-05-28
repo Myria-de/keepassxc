@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  Modifications for chromeKeePassXC:
- *  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@gmail.com>
+ *  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
  */
 
 #ifndef KEEPASSX_BROWSERPASSWORDGENERATORWIDGET_H

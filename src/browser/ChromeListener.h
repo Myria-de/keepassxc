@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@gmail.com>
+ *  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ class ChromeListener : public QObject
 public:
     explicit    ChromeListener(DatabaseTabWidget* parent = 0);
     ~ChromeListener();
+    int         init();
     void        run();
     void        stop();
 

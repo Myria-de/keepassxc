@@ -51,9 +51,18 @@ ChromeListener::~ChromeListener()
     stop();
 }
 
+int ChromeListener::init()
+{
+    return sodium_init();
+}
+
 void ChromeListener::run()
 {
     if (!m_running) {
+        if (init() == -1) {
+            return;
+        }
+
         m_running = true;
         m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
     }
