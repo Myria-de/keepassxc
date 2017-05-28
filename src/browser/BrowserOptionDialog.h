@@ -29,16 +29,16 @@ public:
     explicit BrowserOptionDialog(QWidget *parent = nullptr);
     ~BrowserOptionDialog();
 
-public Q_SLOTS:
+public slots:
     void loadSettings();
     void saveSettings();
 
-Q_SIGNALS:
+signals:
     void removeSharedEncryptionKeys();
     void removeStoredPermissions();
 
 private:
-    QScopedPointer<Ui::BrowserOptionDialog> ui;
+    QScopedPointer<Ui::BrowserOptionDialog> m_ui;
 };
 
 #endif // BROWSEROPTIONDIALOG_H

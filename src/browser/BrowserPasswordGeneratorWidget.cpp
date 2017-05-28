@@ -35,13 +35,10 @@ BrowserPasswordGeneratorWidget::BrowserPasswordGeneratorWidget(QWidget* parent)
 {
     m_ui->setupUi(this);
 
-    connect(m_ui->buttonApply, SIGNAL(clicked()), SLOT(saveSettings()));
-
     connect(m_ui->sliderLength, SIGNAL(valueChanged(int)), SLOT(sliderMoved()));
     connect(m_ui->spinBoxLength, SIGNAL(valueChanged(int)), SLOT(spinBoxChanged()));
 
     connect(m_ui->optionButtons, SIGNAL(buttonClicked(int)), SLOT(updateGenerator()));
-    m_ui->buttonApply->setEnabled(true);
 
     loadSettings();
     reset();

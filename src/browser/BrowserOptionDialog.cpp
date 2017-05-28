@@ -18,15 +18,24 @@
 #include "ui_BrowserOptionDialog.h"
 #include "BrowserSettings.h"
 
+#include "core/FilePath.h"
+
 #include <QMessageBox>
 
 BrowserOptionDialog::BrowserOptionDialog(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::BrowserOptionDialog())
+    m_ui(new Ui::BrowserOptionDialog())
 {
-    ui->setupUi(this);
-    connect(ui->removeSharedEncryptionKeys, SIGNAL(clicked()), this, SIGNAL(removeSharedEncryptionKeys()));
-    connect(ui->removeStoredPermissions, SIGNAL(clicked()), this, SIGNAL(removeStoredPermissions()));
+    m_ui->setupUi(this);
+    connect(m_ui->removeSharedEncryptionKeys, SIGNAL(clicked()), this, SIGNAL(removeSharedEncryptionKeys()));
+    connect(m_ui->removeStoredPermissions, SIGNAL(clicked()), this, SIGNAL(removeStoredPermissions()));
+
+    m_ui->warningWidget->showMessage(tr("The following options can be dangerous!\nChange them only if you know what you are doing."), MessageWidget::Warning);
+    m_ui->warningWidget->setIcon(FilePath::instance()->icon("status", "dialog-warning"));
+    m_ui->warningWidget->setCloseButtonVisible(false);
+
+    m_ui->tabWidget->setEnabled(m_ui->enableBrowserSupport->isChecked());
+    connect(m_ui->enableBrowserSupport, SIGNAL(toggled(bool)), m_ui->tabWidget, SLOT(setEnabled(bool)));
 }
 
 BrowserOptionDialog::~BrowserOptionDialog()
@@ -36,58 +45,38 @@ BrowserOptionDialog::~BrowserOptionDialog()
 void BrowserOptionDialog::loadSettings()
 {
     BrowserSettings settings;
-    //ui->enableHttpServer->setChecked(settings.isEnabled());
-    ui->enableBrowserSupport->setChecked(settings.isEnabled());
+    m_ui->enableBrowserSupport->setChecked(settings.isEnabled());
 
-    ui->showNotification->setChecked(settings.showNotification());
-    ui->bestMatchOnly->setChecked(settings.bestMatchOnly());
-    ui->unlockDatabase->setChecked(settings.unlockDatabase());
-    ui->matchUrlScheme->setChecked(settings.matchUrlScheme());
+    m_ui->showNotification->setChecked(settings.showNotification());
+    m_ui->bestMatchOnly->setChecked(settings.bestMatchOnly());
+    m_ui->unlockDatabase->setChecked(settings.unlockDatabase());
+    m_ui->matchUrlScheme->setChecked(settings.matchUrlScheme());
     if (settings.sortByUsername())
-        ui->sortByUsername->setChecked(true);
+        m_ui->sortByUsername->setChecked(true);
     else
-        ui->sortByTitle->setChecked(true);
+        m_ui->sortByTitle->setChecked(true);
 
-/*
-    ui->checkBoxLower->setChecked(settings.passwordUseLowercase());
-    ui->checkBoxNumbers->setChecked(settings.passwordUseNumbers());
-    ui->checkBoxUpper->setChecked(settings.passwordUseUppercase());
-    ui->checkBoxSpecialChars->setChecked(settings.passwordUseSpecial());
-    ui->checkBoxEnsureEvery->setChecked(settings.passwordEveryGroup());
-    ui->checkBoxExcludeAlike->setChecked(settings.passwordExcludeAlike());
-    ui->spinBoxLength->setValue(settings.passwordLength());
-*/
+    m_ui->alwaysAllowAccess->setChecked(settings.alwaysAllowAccess());
+    m_ui->alwaysAllowUpdate->setChecked(settings.alwaysAllowUpdate());
+    m_ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
+    m_ui->supportKphFields->setChecked(settings.supportKphFields());
 
-    ui->alwaysAllowAccess->setChecked(settings.alwaysAllowAccess());
-    ui->alwaysAllowUpdate->setChecked(settings.alwaysAllowUpdate());
-    ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
-    ui->supportKphFields->setChecked(settings.supportKphFields());
+    m_ui->passwordGenerator->loadSettings();
 }
 
 void BrowserOptionDialog::saveSettings()
 {
     BrowserSettings settings;
-    //settings.setEnabled(ui->enableHttpServer->isChecked());
-    settings.setEnabled(ui->enableBrowserSupport->isChecked());
+    settings.setEnabled(m_ui->enableBrowserSupport->isChecked());
+    settings.setShowNotification(m_ui->showNotification->isChecked());
+    settings.setBestMatchOnly(m_ui->bestMatchOnly->isChecked());
+    settings.setUnlockDatabase(m_ui->unlockDatabase->isChecked());
+    settings.setMatchUrlScheme(m_ui->matchUrlScheme->isChecked());
+    settings.setSortByUsername(m_ui->sortByUsername->isChecked());
+    settings.setAlwaysAllowAccess(m_ui->alwaysAllowAccess->isChecked());
+    settings.setAlwaysAllowUpdate(m_ui->alwaysAllowUpdate->isChecked());
+    settings.setSearchInAllDatabases(m_ui->searchInAllDatabases->isChecked());
+    settings.setSupportKphFields(m_ui->supportKphFields->isChecked());
 
-    settings.setShowNotification(ui->showNotification->isChecked());
-    settings.setBestMatchOnly(ui->bestMatchOnly->isChecked());
-    settings.setUnlockDatabase(ui->unlockDatabase->isChecked());
-    settings.setMatchUrlScheme(ui->matchUrlScheme->isChecked());
-    settings.setSortByUsername(ui->sortByUsername->isChecked());
-
-/*
-    settings.setPasswordUseLowercase(ui->checkBoxLower->isChecked());
-    settings.setPasswordUseNumbers(ui->checkBoxNumbers->isChecked());
-    settings.setPasswordUseUppercase(ui->checkBoxUpper->isChecked());
-    settings.setPasswordUseSpecial(ui->checkBoxSpecialChars->isChecked());
-    settings.setPasswordEveryGroup(ui->checkBoxEnsureEvery->isChecked());
-    settings.setPasswordExcludeAlike(ui->checkBoxExcludeAlike->isChecked());
-    settings.setPasswordLength(ui->spinBoxLength->value());
-*/
-
-    settings.setAlwaysAllowAccess(ui->alwaysAllowAccess->isChecked());
-    settings.setAlwaysAllowUpdate(ui->alwaysAllowUpdate->isChecked());
-    settings.setSearchInAllDatabases(ui->searchInAllDatabases->isChecked());
-    settings.setSupportKphFields(ui->supportKphFields->isChecked());
+    m_ui->passwordGenerator->saveSettings();
 }

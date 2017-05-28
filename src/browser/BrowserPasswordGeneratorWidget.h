@@ -38,10 +38,10 @@ public:
     explicit BrowserPasswordGeneratorWidget(QWidget* parent = nullptr);
     ~BrowserPasswordGeneratorWidget();
     void loadSettings();
+    void saveSettings();
     void reset();
 
 private Q_SLOTS:
-    void saveSettings();
     void sliderMoved();
     void spinBoxChanged();
 

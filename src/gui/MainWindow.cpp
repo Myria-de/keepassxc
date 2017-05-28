@@ -54,6 +54,12 @@
 #include "browser/BrowserOptionDialog.h"
 #endif
 
+#ifdef WITH_XC_BROWSER
+#include "browser/ChromeListener.h"
+#include "browser/BrowserSettings.h"
+#include "browser/BrowserOptionDialog.h"
+#endif
+
 #include "gui/SettingsWidget.h"
 #include "gui/PasswordGeneratorWidget.h"
 
@@ -111,22 +117,33 @@ class BrowserPlugin: public ISettingsPage
         BrowserPlugin(DatabaseTabWidget * tabWidget) {
             m_chromeListener = new ChromeListener(tabWidget);
         }
-        virtual ~BrowserPlugin() {
-            delete m_chromeListener;
+
+        ~BrowserPlugin() = default;
+
+        QString name() override
+        {
+            return QObject::tr("Browser extension (chromeKeePassXC)");
         }
-        virtual QString name() {
-            return QObject::tr("Browser");
+
+        QIcon icon() override
+        {
+            return FilePath::instance()->icon("apps", "internet-web-browser");
         }
-        virtual QWidget * createWidget() {
+
+        QWidget * createWidget() override {
             BrowserOptionDialog * dlg = new BrowserOptionDialog();
             QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener, SLOT(removeSharedEncryptionKeys()));
             QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener, SLOT(removeStoredPermissions()));
             return dlg;
         }
-        virtual void loadSettings(QWidget * widget) {
+
+        void loadSettings(QWidget * widget) override
+        {
             qobject_cast<BrowserOptionDialog*>(widget)->loadSettings();
         }
-        virtual void saveSettings(QWidget * widget) {
+
+        void saveSettings(QWidget * widget) override
+        {
             qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
             if (BrowserSettings::isEnabled())
                 m_chromeListener->run();
