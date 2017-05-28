@@ -44,6 +44,9 @@ option(WITH_XC_HTTP "Include KeePassHTTP." OFF)
 option(WITH_XC_YUBIKEY "Include Yubikey support." OFF)
 option(WITH_XC_BROWSER "Include browser extension support." OFF)
 
+# Process ui files automatically from source files
+set(CMAKE_AUTOUIC ON)
+
 set(KEEPASSXC_VERSION_MAJOR "2")
 set(KEEPASSXC_VERSION_MINOR "1")
 set(KEEPASSXC_VERSION_PATCH "4")
@@ -75,6 +78,10 @@ macro(add_gcc_compiler_flags FLAGS)
 endmacro(add_gcc_compiler_flags)
 
 add_definitions(-DQT_NO_EXCEPTIONS -DQT_STRICT_ITERATORS -DQT_NO_CAST_TO_ASCII)
+
+if(WITH_APP_BUNDLE)
+  add_definitions(-DWITH_APP_BUNDLE)
+endif()
 
 add_gcc_compiler_flags("-fno-common")
 add_gcc_compiler_flags("-Wall -Wextra -Wundef -Wpointer-arith -Wno-long-long")
@@ -161,16 +168,15 @@ if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--nxcompat -Wl,--dynamicbase")
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--nxcompat -Wl,--dynamicbase")
   endif()
-  link_libraries(ws2_32 wsock32)
 endif()
 
-if(APPLE OR MINGW)
+if(APPLE AND WITH_APP_BUNDLE OR MINGW)
   set(PROGNAME KeePassXC)
 else()
   set(PROGNAME keepassxc)
 endif()
 
-if(APPLE AND "${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
+if(APPLE AND WITH_APP_BUNDLE AND "${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
   set(CMAKE_INSTALL_PREFIX "/Applications")
 endif()
 
@@ -179,7 +185,7 @@ if(MINGW)
   set(BIN_INSTALL_DIR    ".")
   set(PLUGIN_INSTALL_DIR ".")
   set(DATA_INSTALL_DIR   "share")
-elseif(APPLE)
+elseif(APPLE AND WITH_APP_BUNDLE)
   set(CLI_INSTALL_DIR    "/usr/local/bin")
   set(BIN_INSTALL_DIR    ".")
   set(PLUGIN_INSTALL_DIR "${PROGNAME}.app/Contents/PlugIns")

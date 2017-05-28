@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+ *  Copyright (C) 2017 Weslly Honorato <﻿weslly@protonmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,34 +15,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSX_TESTGROUP_H
-#define KEEPASSX_TESTGROUP_H
+#ifndef KEEPASSX_TESTTOTP_H
+#define KEEPASSX_TESTTOTP_H
 
 #include <QObject>
-#include "core/Database.h"
 
-class TestGroup : public QObject
+class Totp;
+
+class TestTotp : public QObject
 {
     Q_OBJECT
 
 private slots:
     void initTestCase();
-    void testParenting();
-    void testSignals();
-    void testEntries();
-    void testDeleteSignals();
-    void testCopyCustomIcon();
-    void testClone();
-    void testCopyCustomIcons();
-    void testMerge();
-    void testMergeConflict();
-    void testMergeDatabase();
-    void testMergeConflictKeepBoth();
-    void testFindEntry();
-    void testPrint();
-
-private:
-    Database* createMergeTestDatabase();
+    void testParseSecret();
+    void testBase32();
+    void testTotpCode();
 };
 
-#endif // KEEPASSX_TESTGROUP_H
+#endif // KEEPASSX_TESTTOTP_H

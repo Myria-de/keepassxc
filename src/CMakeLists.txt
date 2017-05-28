@@ -201,12 +201,10 @@ if(MINGW)
 endif()
 
 if(WITH_XC_YUBIKEY)
-  set(keepassx_SOURCES ${keepassx_SOURCES} keys/drivers/YubiKey.cpp)
+  list(APPEND keepassx_SOURCES keys/drivers/YubiKey.cpp)
 else()
-  set(keepassx_SOURCES ${keepassx_SOURCES} keys/drivers/YubiKeyStub.cpp)
+  list(APPEND keepassx_SOURCES keys/drivers/YubiKeyStub.cpp)
 endif()
-
-qt5_wrap_ui(keepassx_SOURCES ${keepassx_FORMS})
 
 add_library(zxcvbn STATIC zxcvbn/zxcvbn.cpp)
 target_link_libraries(zxcvbn)
@@ -226,21 +224,24 @@ target_link_libraries(keepassx_core
                       ${YUBIKEY_LIBRARIES}
                       zxcvbn
                       Qt5::Core
+                      Qt5::Network
                       Qt5::Concurrent
                       Qt5::Widgets
                       ${GCRYPT_LIBRARIES}
                       ${GPGERROR_LIBRARIES}
                       ${ZLIB_LIBRARIES})
+
+if(APPLE)
+    target_link_libraries(keepassx_core "-framework Foundation")
+endif()
 if (UNIX AND NOT APPLE)
     target_link_libraries(keepassx_core Qt5::DBus)
 endif()
+if(MINGW)
+    target_link_libraries(keepassx_core Wtsapi32.lib)
+endif()
 
 if(MINGW)
-  string(REPLACE "." ";" VERSION_LIST ${KEEPASSXC_VERSION})
-  list(GET VERSION_LIST 0 KEEPASSXC_VERSION_MAJOR)
-  list(GET VERSION_LIST 1 KEEPASSXC_VERSION_MINOR)
-  list(GET VERSION_LIST 2 KEEPASSXC_VERSION_PATCH)
-
   include(GenerateProductVersion)
   generate_product_version(
     WIN32_ProductVersionFiles
@@ -252,14 +253,15 @@ if(MINGW)
   )
 endif()
 
-add_executable(${PROGNAME} WIN32 MACOSX_BUNDLE ${keepassx_SOURCES_MAINEXE} ${WIN32_ProductVersionFiles})
+add_executable(${PROGNAME} WIN32 ${keepassx_SOURCES_MAINEXE} ${WIN32_ProductVersionFiles})
 target_link_libraries(${PROGNAME} keepassx_core)
 
 set_target_properties(${PROGNAME} PROPERTIES ENABLE_EXPORTS ON)
 
-if(APPLE)
+if(APPLE AND WITH_APP_BUNDLE)
   configure_file(${CMAKE_SOURCE_DIR}/share/macosx/Info.plist.cmake ${CMAKE_CURRENT_BINARY_DIR}/Info.plist)
   set_target_properties(${PROGNAME} PROPERTIES
+                        MACOSX_BUNDLE ON
                         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/Info.plist)
 endif()
 
@@ -267,7 +269,7 @@ install(TARGETS ${PROGNAME}
         BUNDLE DESTINATION . COMPONENT Runtime
         RUNTIME DESTINATION ${BIN_INSTALL_DIR} COMPONENT Runtime)
 
-if(APPLE)
+if(APPLE AND WITH_APP_BUNDLE)
   if(QT_MAC_USE_COCOA AND EXISTS "${QT_LIBRARY_DIR}/Resources/qt_menu.nib")
     install(DIRECTORY "${QT_LIBRARY_DIR}/Resources/qt_menu.nib"
             DESTINATION "${DATA_INSTALL_DIR}")
@@ -278,7 +280,7 @@ if(APPLE)
   set(CPACK_DMG_VOLUME_NAME "${PROGNAME}")
   set(CPACK_SYSTEM_NAME "OSX")
   set(CPACK_STRIP_FILES ON)
-  set(CPACK_PACKAGE_FILE_NAME "${PROGNAME}-${KEEPASSXC_VERSION_NUM}")
+  set(CPACK_PACKAGE_FILE_NAME "${PROGNAME}-${KEEPASSXC_VERSION}")
   include(CPack)
 
   if(NOT DEFINED QT_BINARY_DIR)
