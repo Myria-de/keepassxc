@@ -56,6 +56,8 @@ bool BrowserService::isDatabaseOpened() const
         case DatabaseWidget::EditMode:
             return true;
         }
+        default:
+            break;
     return false;
 }
 
@@ -73,6 +75,8 @@ bool BrowserService::openDatabase()
         case DatabaseWidget::EditMode:
             return true;
         }
+        default:
+            break;
     }
     m_dbTabWidget->activateWindow();
     return false;
@@ -201,6 +205,8 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
             pwEntries.append(entry);
             break;
         }
+        default:
+            break;
     }
 
     //If unsure, ask user for confirmation
