@@ -118,7 +118,9 @@ class BrowserPlugin: public ISettingsPage
             m_chromeListener = new ChromeListener(tabWidget);
         }
 
-        ~BrowserPlugin() = default;
+        ~BrowserPlugin() {
+            delete m_chromeListener;
+        }
 
         QString name() override
         {
