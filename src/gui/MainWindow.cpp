@@ -124,7 +124,7 @@ class BrowserPlugin: public ISettingsPage
 
         QString name() override
         {
-            return QObject::tr("Browser extension (chromeKeePassXC)");
+            return QObject::tr("Browser extension (Native Messaging)");
         }
 
         QIcon icon() override
