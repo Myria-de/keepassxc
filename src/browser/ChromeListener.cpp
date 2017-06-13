@@ -1,19 +1,19 @@
 /*
- *  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@gmail.com>
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 2 or (at your option)
- *  version 3 of the License.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
@@ -25,6 +25,9 @@
 #include "ChromeListener.h"
 #include "BrowserSettings.h"
 #include "config-keepassx.h"
+
+#include <QtNetwork>
+#include <QDataStream>
 
 #define MESSAGE_LENGTH  4096
 
@@ -40,7 +43,7 @@ void throw_exception(std::exception const& e) {
 #endif
 }
 
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO)), m_running(false)
+ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO)), m_running(false), m_peerPort(0), m_localPort(19700)
 {
     if (BrowserSettings::isEnabled() && !m_running)
         run();
@@ -63,6 +66,10 @@ void ChromeListener::run()
             return;
         }
 
+        m_localPort = BrowserSettings::udpPort();
+        m_udpSocket.bind(QHostAddress::LocalHost, m_localPort, QUdpSocket::DontShareAddress);
+        connect(&m_udpSocket, SIGNAL(readyRead()), this, SLOT(readDatagrams()));
+
         m_running = true;
         m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
     }
@@ -70,6 +77,8 @@ void ChromeListener::run()
 
 void ChromeListener::stop()
 {
+    m_udpSocket.close();
+
     if (m_sd.is_open())
     {
         m_sd.cancel();
@@ -80,6 +89,51 @@ void ChromeListener::stop()
         m_io_service.stop();
 
     m_fut.waitForFinished();
+}
+
+void ChromeListener::readDatagrams()
+{
+    QByteArray dgram;
+
+    while (m_udpSocket.hasPendingDatagrams()) {
+        dgram.resize(m_udpSocket.pendingDatagramSize());
+        m_udpSocket.readDatagram(dgram.data(), dgram.size(), &m_peerAddr, &m_peerPort);
+    }
+
+    QString resp;
+    QDataStream in(&dgram, QIODevice::ReadOnly);
+    in.setVersion(QDataStream::Qt_5_2);
+    in >> resp;
+
+    // Test client reply
+    if (resp == "query")
+    {
+        QString resp = "This is the KeePassXC response";
+        QByteArray buf;
+        QDataStream out(&buf, QIODevice::WriteOnly);
+        out.setVersion(QDataStream::Qt_5_2);
+        out << resp;
+        m_udpSocket.writeDatagram(buf, m_peerAddr, m_peerPort);
+    }
+
+    QByteArray arr(resp.toUtf8());
+    QJsonParseError err;
+    QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
+    if (doc.isObject()) {
+        QJsonObject json = doc.object();
+        QString val = json.value("action").toString();
+        if (!val.isEmpty()) {
+            // Allow public keys to be changed without database being opened
+            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
+                if (!m_service.openDatabase()) {
+                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+                }
+            }
+            else {
+                handleAction(json);
+            }
+        }
+    }
 }
 
 void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
@@ -102,8 +156,7 @@ void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const s
     char buf[MESSAGE_LENGTH] = {};
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br > 0) {
-            std::string res(buf, br);
-            QByteArray arr(res.c_str());
+            QByteArray arr(buf, br);
             QJsonParseError err;
             QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
             if (doc.isObject()) {
@@ -417,6 +470,12 @@ void ChromeListener::sendReply(const QJsonObject json)
                 << char(((len>>16) & 0xFF))
                 << char(((len>>24) & 0xFF));
     std::cout << reply.toStdString() << std::flush;
+
+    QByteArray buf;
+    QDataStream out(&buf, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_5_2);
+    out << reply;
+    m_udpSocket.writeDatagram(buf, m_peerAddr, m_peerPort);
 }
 
 void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)
