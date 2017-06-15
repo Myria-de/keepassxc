@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>chromeKeePassXC Confirm Access</string>
+   <string>keepassxc-browser Confirm Access</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

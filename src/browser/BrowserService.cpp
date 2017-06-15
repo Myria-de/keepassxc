@@ -38,9 +38,9 @@ static const unsigned char KEEPASSBROWSER_UUID_DATA[] = {
     0x97, 0x4b, 0x59, 0x11, 0xb8, 0x81, 0x62, 0x24
 };
 static const Uuid KEEPASSBROWSER_UUID = Uuid(QByteArray::fromRawData(reinterpret_cast<const char *>(KEEPASSBROWSER_UUID_DATA), sizeof(KEEPASSBROWSER_UUID_DATA)));
-static const char KEEPASSBROWSER_NAME[] = "chromeKeePassXC Settings";
+static const char KEEPASSBROWSER_NAME[] = "keepassxc-browser Settings";
 static const char ASSOCIATE_KEY_PREFIX[] = "Public Key: ";
-static const char KEEPASSBROWSER_GROUP_NAME[] = "chromeKeePassXC Passwords";
+static const char KEEPASSBROWSER_GROUP_NAME[] = "keepassxc-browser Passwords";
 static int        KEEPASSBROWSER_DEFAULT_ICON = 1;
 
 BrowserService::BrowserService(DatabaseTabWidget* parent) : m_dbTabWidget(parent)

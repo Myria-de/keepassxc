@@ -15,7 +15,7 @@ KeePass Cross-platform Community Edition
 - Merging of databases
 - Automatic reload when the database changed on disk
 - KeePassHTTP support for use with [PassIFox](https://addons.mozilla.org/en-us/firefox/addon/passifox/) in Mozilla Firefox and [chromeIPass](https://chrome.google.com/webstore/detail/chromeipass/ompiailgknfdndiefoaoiligalphfdae) in Google Chrome or Chromium, and [passafari](https://github.com/mmichaa/passafari.safariextension/) in Safari.
-- Support for [chromeKeePassXC](https://github.com/varjolintu/chromeKeePassXC) browser extension.
+- Support for [keepassxc-browser](https://github.com/varjolintu/keepassxc-browser) browser extension.
 - Many bug fixes
 
 For a full list of features and changes, read the [CHANGELOG](CHANGELOG) document.
@@ -62,7 +62,7 @@ cmake accepts the following options:
   -DWITH_XC_AUTOTYPE=[ON|OFF] Enable/Disable Auto-Type (default: ON)
   -DWITH_XC_HTTP=[ON|OFF] Enable/Disable KeePassHTTP and custom icon downloads (default: OFF)
   -DWITH_XC_YUBIKEY=[ON|OFF] Enable/Disable YubiKey HMAC-SHA1 authentication support (default: OFF)
-  -DWITH_XC_BROWSER=[ON|OFF] Enable/Disable chromeKeePassXC browser extension support (default: OFF)
+  -DWITH_XC_BROWSER=[ON|OFF] Enable/Disable keepassxc-browser extension support (default: OFF)
 
   -DWITH_TESTS=[ON|OFF] Enable/Disable building of unit tests (default: ON)
   -DWITH_GUI_TESTS=[ON|OFF] Enable/Disable building of GUI tests (default: OFF)
