@@ -100,25 +100,8 @@ void ChromeListener::readDatagrams()
         m_udpSocket.readDatagram(dgram.data(), dgram.size(), &m_peerAddr, &m_peerPort);
     }
 
-    QString resp;
-    QDataStream in(&dgram, QIODevice::ReadOnly);
-    in.setVersion(QDataStream::Qt_5_2);
-    in >> resp;
-
-    // Test client reply
-    if (resp == "query")
-    {
-        QString resp = "This is the KeePassXC response";
-        QByteArray buf;
-        QDataStream out(&buf, QIODevice::WriteOnly);
-        out.setVersion(QDataStream::Qt_5_2);
-        out << resp;
-        m_udpSocket.writeDatagram(buf, m_peerAddr, m_peerPort);
-    }
-
-    QByteArray arr(resp.toUtf8());
     QJsonParseError err;
-    QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
+    QJsonDocument doc(QJsonDocument::fromJson(dgram, &err));
     if (doc.isObject()) {
         QJsonObject json = doc.object();
         QString val = json.value("action").toString();
@@ -260,6 +243,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
         response["action"] = valStr;
         response["publicKey"] = publicKey;
         response["nonce"] = nonce;
+        response["version"] = KEEPASSX_VERSION;
         response["success"] = "true";
 
         sendReply(response);
@@ -470,12 +454,7 @@ void ChromeListener::sendReply(const QJsonObject json)
                 << char(((len>>16) & 0xFF))
                 << char(((len>>24) & 0xFF));
     std::cout << reply.toStdString() << std::flush;
-
-    QByteArray buf;
-    QDataStream out(&buf, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_5_2);
-    out << reply;
-    m_udpSocket.writeDatagram(buf, m_peerAddr, m_peerPort);
+    m_udpSocket.writeDatagram(reply.toUtf8(), m_peerAddr, m_peerPort);
 }
 
 void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)
@@ -483,8 +462,19 @@ void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)
     QJsonObject response;
     response["action"] = valStr;
     response["errorCode"] = QString::number(errorCode);
-    response["error"] = "";
+    response["error"] = getErrorMessage(errorCode);
     sendReply(response);
+}
+
+QString ChromeListener::getErrorMessage(const int errorCode) const
+{
+    switch(errorCode) {
+        case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
+        case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
+        case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
+        case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
+        default:                                            return "Unknown error";
+    }
 }
 
 QString ChromeListener::encrypt(const QString decrypted, const QString nonce) const

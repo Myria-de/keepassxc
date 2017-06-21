@@ -64,6 +64,7 @@ private:
 
     void        sendReply(const QJsonObject json);
     void        sendErrorReply(const QString &valStr, const int errorCode);
+    QString     getErrorMessage(const int errorCode) const;
 
     QJsonObject decryptMessage(const QString& message, const QString& nonce) const;
     QString     encrypt(const QString decrypted, const QString nonce) const;
