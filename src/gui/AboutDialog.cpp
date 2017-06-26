@@ -84,7 +84,7 @@ AboutDialog::AboutDialog(QWidget* parent)
     extensions += "\n- YubiKey";
 #endif
 #ifdef WITH_XC_BROWSER
-    extensions += "\n- Browser extension";
+    extensions += "\n- Native Messaging browser extension";
 #endif
 
     if (extensions.isEmpty())
