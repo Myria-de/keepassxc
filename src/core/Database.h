@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,6 +113,7 @@ public:
     void setEmitModified(bool value);
     void copyAttributesFrom(const Database* other);
     void merge(const Database* other);
+    QString saveToFile(QString filePath);
 
     /**
      * Returns a unique id that is only valid as long as the Database exists.

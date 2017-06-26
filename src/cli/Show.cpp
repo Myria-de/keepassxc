@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 KeePassXC Team
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "core/Entry.h"
 #include "core/Group.h"
 #include "keys/CompositeKey.h"
+#include "cli/PasswordInput.h"
 
 int Show::execute(int argc, char** argv)
 {
@@ -43,15 +44,13 @@ int Show::execute(int argc, char** argv)
 
     const QStringList args = parser.positionalArguments();
     if (args.size() != 2) {
-        parser.showHelp();
-        return EXIT_FAILURE;
+        parser.showHelp(EXIT_FAILURE);
     }
 
     out << "Insert the database password\n> ";
     out.flush();
 
-    static QTextStream inputTextStream(stdin, QIODevice::ReadOnly);
-    QString line = inputTextStream.readLine();
+    QString line = PasswordInput::getPassword();
     CompositeKey key = CompositeKey::readFromLine(line);
 
     Database* db = Database::openDatabaseFile(args.at(0), key);

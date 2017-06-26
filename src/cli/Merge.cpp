@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,12 +22,10 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCoreApplication>
-#include <QSaveFile>
 #include <QStringList>
 #include <QTextStream>
 
 #include "core/Database.h"
-#include "format/KeePass2Writer.h"
 #include "gui/UnlockDatabaseDialog.h"
 
 int Merge::execute(int argc, char** argv)
@@ -63,8 +61,7 @@ int Merge::execute(int argc, char** argv)
     const QStringList args = parser.positionalArguments();
     if (args.size() != 2) {
         QCoreApplication app(argc, argv);
-        parser.showHelp();
-        return EXIT_FAILURE;
+        parser.showHelp(EXIT_FAILURE);
     }
 
     Database* db1;
@@ -95,26 +92,13 @@ int Merge::execute(int argc, char** argv)
     }
 
     db1->merge(db2);
-
-    QSaveFile saveFile(args.at(0));
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qCritical("Unable to open file %s for writing.", qPrintable(args.at(0)));
-        return EXIT_FAILURE;
-    }
-
-    KeePass2Writer writer;
-    writer.writeDatabase(&saveFile, db1);
-
-    if (writer.hasError()) {
-        qCritical("Error while updating the database:\n%s\n", qPrintable(writer.errorString()));
-        return EXIT_FAILURE;
-    }
-
-    if (!saveFile.commit()) {
-        qCritical("Error while updating the database:\n%s\n", qPrintable(writer.errorString()));
+    QString errorMessage = db1->saveToFile(args.at(0));
+    if (!errorMessage.isEmpty()) {
+        qCritical("Unable to save database to file : %s", qPrintable(errorMessage));
         return EXIT_FAILURE;
     }
 
     out << "Successfully merged the database files.\n";
     return EXIT_SUCCESS;
+
 }

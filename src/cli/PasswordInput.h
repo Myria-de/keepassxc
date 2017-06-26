@@ -1,5 +1,4 @@
 /*
- *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
  *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -16,24 +15,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSX_TESTSYMMETRICCIPHER_H
-#define KEEPASSX_TESTSYMMETRICCIPHER_H
+#ifndef KEEPASSXC_PASSWORDINPUT_H
+#define KEEPASSXC_PASSWORDINPUT_H
 
-#include <QObject>
+#include <QtCore/qglobal.h>
 
-class TestSymmetricCipher : public QObject
+class PasswordInput
 {
-    Q_OBJECT
-
-private slots:
-    void initTestCase();
-    void testAes256CbcEncryption();
-    void testAes256CbcDecryption();
-    void testTwofish256CbcEncryption();
-    void testTwofish256CbcDecryption();
-    void testSalsa20();
-    void testPadding();
-    void testStreamReset();
+public:
+    PasswordInput();
+    static void setStdinEcho(bool enable);
+    static QString getPassword();
 };
 
-#endif // KEEPASSX_TESTSYMMETRICCIPHER_H
+#endif // KEEPASSXC_PASSWORDINPUT_H

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 KeePassXC Team
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,8 +55,7 @@ int Clip::execute(int argc, char** argv)
     const QStringList args = parser.positionalArguments();
     if (args.size() != 2) {
         QCoreApplication app(argc, argv);
-        parser.showHelp();
-        return EXIT_FAILURE;
+        parser.showHelp(EXIT_FAILURE);
     }
 
     Database* db = nullptr;

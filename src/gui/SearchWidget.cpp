@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2016 Jonathan White <support@dmapps.us>
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 #include <QShortcut>
 #include <QToolButton>
 
+#include "core/Config.h"
 #include "core/FilePath.h"
 
 SearchWidget::SearchWidget(QWidget* parent)
@@ -48,6 +50,11 @@ SearchWidget::SearchWidget(QWidget* parent)
     m_actionCaseSensitive = searchMenu->addAction(tr("Case Sensitive"), this, SLOT(updateCaseSensitive()));
     m_actionCaseSensitive->setObjectName("actionSearchCaseSensitive");
     m_actionCaseSensitive->setCheckable(true);
+
+    m_actionLimitGroup = searchMenu->addAction(tr("Limit search to selected group"), this, SLOT(updateLimitGroup()));
+    m_actionLimitGroup->setObjectName("actionSearchLimitGroup");
+    m_actionLimitGroup->setCheckable(true);
+    m_actionLimitGroup->setChecked(config()->get("SearchLimitGroup", false).toBool());
 
     m_ui->searchIcon->setIcon(filePath()->icon("actions", "system-search"));
     m_ui->searchIcon->setMenu(searchMenu);
@@ -101,6 +108,7 @@ void SearchWidget::connectSignals(SignalMultiplexer& mx)
 {
     mx.connect(this, SIGNAL(search(QString)), SLOT(search(QString)));
     mx.connect(this, SIGNAL(caseSensitiveChanged(bool)), SLOT(setSearchCaseSensitive(bool)));
+    mx.connect(this, SIGNAL(limitGroupChanged(bool)), SLOT(setSearchLimitGroup(bool)));
     mx.connect(this, SIGNAL(copyPressed()), SLOT(copyPassword()));
     mx.connect(this, SIGNAL(downPressed()), SLOT(setFocus()));
     mx.connect(m_ui->searchEdit, SIGNAL(returnPressed()), SLOT(switchToEntryEdit()));
@@ -114,6 +122,7 @@ void SearchWidget::databaseChanged(DatabaseWidget* dbWidget)
 
         // Enforce search policy
         emit caseSensitiveChanged(m_actionCaseSensitive->isChecked());
+        emit limitGroupChanged(m_actionLimitGroup->isChecked());
     } else {
         m_ui->searchEdit->clear();
     }
@@ -149,6 +158,19 @@ void SearchWidget::setCaseSensitive(bool state)
     m_actionCaseSensitive->setChecked(state);
     updateCaseSensitive();
 }
+
+void SearchWidget::updateLimitGroup()
+{
+    config()->set("SearchLimitGroup", m_actionLimitGroup->isChecked());
+    emit limitGroupChanged(m_actionLimitGroup->isChecked());
+}
+
+void SearchWidget::setLimitGroup(bool state)
+{
+    m_actionLimitGroup->setChecked(state);
+    updateLimitGroup();
+}
+
 
 void SearchWidget::searchFocus()
 {

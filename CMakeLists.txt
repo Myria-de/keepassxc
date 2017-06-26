@@ -1,4 +1,5 @@
 #  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+#  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -48,8 +49,8 @@ option(WITH_XC_BROWSER "Include browser extension support." OFF)
 set(CMAKE_AUTOUIC ON)
 
 set(KEEPASSXC_VERSION_MAJOR "2")
-set(KEEPASSXC_VERSION_MINOR "1")
-set(KEEPASSXC_VERSION_PATCH "4")
+set(KEEPASSXC_VERSION_MINOR "2")
+set(KEEPASSXC_VERSION_PATCH "0")
 set(KEEPASSXC_VERSION "${KEEPASSXC_VERSION_MAJOR}.${KEEPASSXC_VERSION_MINOR}.${KEEPASSXC_VERSION_PATCH}")
 
 if("${CMAKE_C_COMPILER}" MATCHES "clang$" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")

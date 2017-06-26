@@ -1,4 +1,5 @@
 #  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+#  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -58,6 +59,8 @@ set(keepassx_SOURCES
     core/Tools.cpp
     core/Translator.cpp
     core/Uuid.cpp
+    cli/PasswordInput.cpp
+    cli/PasswordInput.h
     crypto/Crypto.cpp
     crypto/CryptoHash.cpp
     crypto/Random.cpp
@@ -294,7 +297,12 @@ if(APPLE AND WITH_APP_BUNDLE)
 endif()
 
 if(MINGW)
-  string(REPLACE "AMD" "Win" OUTPUT_FILE_POSTFIX "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  if(${CMAKE_SIZEOF_VOID_P} EQUAL "8")
+    set(OUTPUT_FILE_POSTFIX "Win64")
+  else()
+    set(OUTPUT_FILE_POSTFIX "Win32")
+  endif()
+
   set(CPACK_GENERATOR "ZIP;NSIS")
   set(CPACK_STRIP_FILES ON)
   set(CPACK_PACKAGE_FILE_NAME "${PROGNAME}-${KEEPASSXC_VERSION}-${OUTPUT_FILE_POSTFIX}")
@@ -303,6 +311,7 @@ if(MINGW)
   set(CPACK_PACKAGE_VENDOR "${PROGNAME} Team")
   string(REGEX REPLACE "/" "\\\\\\\\" CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/share/windows/installer-header.bmp")
   set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.GPL-2")
+  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
   set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/share/windows/keepassxc.ico")
   set(CPACK_NSIS_MUI_UNIICON "${CPACK_NSIS_MUI_ICON}")
   set(CPACK_NSIS_INSTALLED_ICON_NAME "\\\\${PROGNAME}.exe")
@@ -311,6 +320,7 @@ if(MINGW)
   set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROGNAME}.lnk' '$INSTDIR\\\\${PROGNAME}.exe'")
   set(CPACK_NSIS_DELETE_ICONS_EXTRA "Delete '$SMPROGRAMS\\\\$START_MENU\\\\${PROGNAME}.lnk'")
   set(CPACK_NSIS_URL_INFO_ABOUT "https://keepassxc.org")
+  set(CPACK_NSIS_DISPLAY_NAME ${PROGNAME})
   set(CPACK_NSIS_PACKAGE_NAME "${PROGNAME} v${KEEPASSXC_VERSION}")
   set(CPACK_NSIS_MUI_FINISHPAGE_RUN "../${PROGNAME}.exe")
   include(CPack)

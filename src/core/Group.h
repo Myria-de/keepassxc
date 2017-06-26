@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
+ *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,10 +79,11 @@ public:
     static const int DefaultIconNumber;
     static const int RecycleBinIconNumber;
 
+    Group* findChildByName(const QString& name);
     Entry* findEntry(QString entryId);
     Entry* findEntryByUuid(const Uuid& uuid);
     Entry* findEntryByPath(QString entryPath, QString basePath = QString(""));
-    Group* findChildByName(const QString& name);
+    Group* findGroupByPath(QString groupPath, QString basePath = QString("/"));
     void setUuid(const Uuid& uuid);
     void setName(const QString& name);
     void setNotes(const QString& notes);
