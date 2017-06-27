@@ -39,6 +39,9 @@ BrowserOptionDialog::BrowserOptionDialog(QWidget *parent) :
 
     m_ui->tabWidget->setEnabled(m_ui->enableBrowserSupport->isChecked());
     connect(m_ui->enableBrowserSupport, SIGNAL(toggled(bool)), m_ui->tabWidget, SLOT(setEnabled(bool)));
+
+    m_ui->udpPort->setEnabled(m_ui->supportBrowserProxy->isChecked());
+    connect(m_ui->supportBrowserProxy, SIGNAL(toggled(bool)), m_ui->udpPort, SLOT(setEnabled(bool)));
 }
 
 BrowserOptionDialog::~BrowserOptionDialog()
@@ -63,7 +66,7 @@ void BrowserOptionDialog::loadSettings()
     m_ui->alwaysAllowUpdate->setChecked(settings.alwaysAllowUpdate());
     m_ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
     m_ui->supportKphFields->setChecked(settings.supportKphFields());
-
+    m_ui->supportBrowserProxy->setChecked(settings.supportBrowserProxy());
     m_ui->passwordGenerator->loadSettings();
 }
 
@@ -84,7 +87,7 @@ void BrowserOptionDialog::saveSettings()
         port = 19700;
     }
     settings.setUdpPort(port);
-
+    settings.setSupportBrowserProxy(m_ui->supportBrowserProxy->isChecked());
     settings.setAlwaysAllowAccess(m_ui->alwaysAllowAccess->isChecked());
     settings.setAlwaysAllowUpdate(m_ui->alwaysAllowUpdate->isChecked());
     settings.setSearchInAllDatabases(m_ui->searchInAllDatabases->isChecked());

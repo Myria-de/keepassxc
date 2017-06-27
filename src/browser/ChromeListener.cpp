@@ -66,12 +66,17 @@ void ChromeListener::run()
             return;
         }
 
+        m_running = true;
+        m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
+    }
+
+    if (BrowserSettings::supportBrowserProxy()) {
         m_localPort = BrowserSettings::udpPort();
         m_udpSocket.bind(QHostAddress::LocalHost, m_localPort, QUdpSocket::DontShareAddress);
         connect(&m_udpSocket, SIGNAL(readyRead()), this, SLOT(readDatagrams()));
-
-        m_running = true;
-        m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
+    }
+    else {
+        m_udpSocket.close();
     }
 }
 
@@ -89,6 +94,7 @@ void ChromeListener::stop()
         m_io_service.stop();
 
     m_fut.waitForFinished();
+    m_running = false;
 }
 
 void ChromeListener::readDatagrams()
@@ -465,7 +471,10 @@ void ChromeListener::sendReply(const QJsonObject json)
                 << char(((len>>16) & 0xFF))
                 << char(((len>>24) & 0xFF));
     std::cout << reply.toStdString() << std::flush;
-    m_udpSocket.writeDatagram(reply.toUtf8(), m_peerAddr, m_peerPort);
+
+    if (BrowserSettings::supportBrowserProxy()) {
+        m_udpSocket.writeDatagram(reply.toUtf8(), m_peerAddr, m_peerPort);
+    }
 }
 
 void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)

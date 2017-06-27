@@ -50,6 +50,8 @@ public:
     static void setSupportKphFields(bool supportKphFields);
     static int  udpPort();
     static void setUdpPort(int port);
+    static bool supportBrowserProxy();
+    static void setSupportBrowserProxy(bool enabled);
 
     static bool passwordUseNumbers();
     static void setPasswordUseNumbers(bool useNumbers);

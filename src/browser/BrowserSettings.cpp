@@ -143,6 +143,16 @@ void BrowserSettings::setUdpPort(int port)
     config()->set("UDP/Port", port);
 }
 
+bool BrowserSettings::supportBrowserProxy()
+{
+    return config()->get("Browser/SupportBrowserProxy", false).toBool();
+}
+
+void BrowserSettings::setSupportBrowserProxy(bool enabled)
+{
+    config()->set("Browser/SupportBrowserProxy", enabled);
+}
+
 bool BrowserSettings::passwordUseNumbers()
 {
     return config()->get("Browser/generator/Numbers", true).toBool();
