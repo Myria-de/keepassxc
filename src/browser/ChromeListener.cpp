@@ -174,7 +174,7 @@ void ChromeListener::handleAction(const QJsonObject &json)
     QString val = json.value("action").toString();
     if (!val.isEmpty()) {
         if (val == "get-databasehash")
-            handleGetDatabaseHash(val);
+            handleGetDatabaseHash(json, val);
         else if (val == "change-public-keys")
             handleChangePublicKeys(json, val);
         else if (val == "associate")
@@ -190,20 +190,31 @@ void ChromeListener::handleAction(const QJsonObject &json)
     }
 }
 
-void ChromeListener::handleGetDatabaseHash(const QString &valStr)
+void ChromeListener::handleGetDatabaseHash(const QJsonObject &json, const QString &valStr)
 {
     QString hash = getDataBaseHash();
+    QString nonce = json.value("nonce").toString();
+    QString encrypted = json.value("message").toString();
 
-    if (!hash.isEmpty()) {
-        QJsonObject response;
-        response["action"] = valStr;
-        response["hash"] = hash;
-        response["version"] = KEEPASSX_VERSION;
+    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (!decrypted.isEmpty()) {
+        QJsonValue action = decrypted.value("action");
+        if (!hash.isEmpty() && action.toString() == "get-databasehash") {
+            QJsonObject message;
+            message["hash"] = hash;
+            message["version"] = KEEPASSX_VERSION;
 
-        sendReply(response);
-    }
-    else {
-        sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
+            QString replyMessage(QJsonDocument(message).toJson());
+            QJsonObject response;
+            response["action"] = valStr;
+            response["message"] = encrypt(replyMessage, nonce);
+            response["nonce"] = nonce;
+
+            sendReply(response);
+        }
+        else {
+            sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
+        }
     }
 }
 

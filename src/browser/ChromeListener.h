@@ -54,7 +54,7 @@ private:
     void        readBody(boost::asio::posix::stream_descriptor& sd, const size_t len);
 
     void        handleAction(const QJsonObject &json);
-    void        handleGetDatabaseHash(const QString &valStr);
+    void        handleGetDatabaseHash(const QJsonObject &json, const QString &valStr);
     void        handleChangePublicKeys(const QJsonObject &json, const QString &valStr);
     void        handleAssociate(const QJsonObject &json, const QString &valStr);
     void        handleTestAssociate(const QJsonObject &json, const QString &valStr);
