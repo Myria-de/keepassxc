@@ -21,6 +21,7 @@
 #define BROWSERSETTINGS_H
 
 #include "core/PasswordGenerator.h"
+#include "core/PassphraseGenerator.h"
 
 class BrowserSettings
 {
@@ -61,6 +62,14 @@ public:
     static void setPasswordUseUppercase(bool useUppercase);
     static bool passwordUseSpecial();
     static void setPasswordUseSpecial(bool useSpecial);
+    static bool passwordUseEASCII();
+    static void setPasswordUseEASCII(bool useEASCII);
+    static int passPhraseWordCount();
+    static void setPassPhraseWordCount(int wordCount);
+    static QString passPhraseWordSeparator();
+    static void setPassPhraseWordSeparator(QString separator);
+    static int generatorType();
+    static void setGeneratorType(int type);
     static bool passwordEveryGroup();
     static void setPasswordEveryGroup(bool everyGroup);
     static bool passwordExcludeAlike();
@@ -73,7 +82,8 @@ public:
     static int getbits();
 
 private:
-    static PasswordGenerator m_generator;
+    static PasswordGenerator m_passwordGenerator;
+    static PassphraseGenerator m_passPhraseGenerator;
 };
 
 #endif // BROWSERSETTINGS_H

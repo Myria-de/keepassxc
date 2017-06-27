@@ -20,7 +20,8 @@
 #include "BrowserSettings.h"
 #include "core/Config.h"
 
-PasswordGenerator BrowserSettings::m_generator;
+PasswordGenerator BrowserSettings::m_passwordGenerator;
+PassphraseGenerator BrowserSettings::m_passPhraseGenerator;
 
 bool BrowserSettings::isEnabled()
 {
@@ -193,6 +194,46 @@ void BrowserSettings::setPasswordUseSpecial(bool useSpecial)
     config()->set("Browser/generator/SpecialChars", useSpecial);
 }
 
+bool BrowserSettings::passwordUseEASCII()
+{
+    return config()->get("Browser/generator/EASCII", false).toBool();
+}
+
+void BrowserSettings::setPasswordUseEASCII(bool useEASCII)
+{
+    config()->set("Browser/generator/EASCII", useEASCII);
+}
+
+int BrowserSettings::passPhraseWordCount()
+{
+    return config()->get("Browser/generator/WordCount", 6).toInt();
+}
+
+void BrowserSettings::setPassPhraseWordCount(int wordCount)
+{
+    config()->set("Browser/generator/WordCount", wordCount);
+}
+
+QString BrowserSettings::passPhraseWordSeparator()
+{
+    return config()->get("Browser/generator/WordSeparator", " ").toString();
+}
+
+void BrowserSettings::setPassPhraseWordSeparator(QString separator)
+{
+    config()->set("Browser/generator/WordSeparator", separator);
+}
+
+int BrowserSettings::generatorType()
+{
+    return config()->get("Browser/generator/Type", 0).toInt();
+}
+
+void BrowserSettings::setGeneratorType(int type)
+{
+    config()->set("Browser/generator/Type", type);
+}
+
 bool BrowserSettings::passwordEveryGroup()
 {
     return config()->get("Browser/generator/EnsureEvery", true).toBool();
@@ -221,7 +262,7 @@ int BrowserSettings::passwordLength()
 void BrowserSettings::setPasswordLength(int length)
 {
     config()->set("Browser/generator/Length", length);
-    m_generator.setLength(length);
+    m_passwordGenerator.setLength(length);
 }
 
 PasswordGenerator::CharClasses BrowserSettings::passwordCharClasses()
@@ -235,6 +276,8 @@ PasswordGenerator::CharClasses BrowserSettings::passwordCharClasses()
         classes |= PasswordGenerator::Numbers;
     if (passwordUseSpecial())
         classes |= PasswordGenerator::SpecialCharacters;
+    if (passwordUseEASCII())
+        classes |= PasswordGenerator::EASCII;
     return classes;
 }
 
@@ -250,14 +293,20 @@ PasswordGenerator::GeneratorFlags BrowserSettings::passwordGeneratorFlags()
 
 QString BrowserSettings::generatePassword()
 {
-    m_generator.setLength(passwordLength());
-    m_generator.setCharClasses(passwordCharClasses());
-    m_generator.setFlags(passwordGeneratorFlags());
-
-    return m_generator.generatePassword();
+    if (generatorType() == 0) {
+        m_passwordGenerator.setLength(passwordLength());
+        m_passwordGenerator.setCharClasses(passwordCharClasses());
+        m_passwordGenerator.setFlags(passwordGeneratorFlags());
+        return m_passwordGenerator.generatePassword();
+    }
+    else {
+        m_passPhraseGenerator.setWordCount(passPhraseWordCount());
+        m_passPhraseGenerator.setWordSeparator(passPhraseWordSeparator());
+        return m_passPhraseGenerator.generatePassphrase();
+    }
 }
 
 int BrowserSettings::getbits()
 {
-    return m_generator.getbits();
+    return m_passwordGenerator.getbits();
 }
