@@ -348,8 +348,9 @@ QList<Entry*> BrowserService::searchEntries(Database* db, const QString& hostnam
             if ((!title.isEmpty() && hostname.contains(title))
                 || (!url.isEmpty() && hostname.contains(url))
                 || (matchUrlScheme(title) && hostname.endsWith(QUrl(title).host()))
-                || (matchUrlScheme(url) && hostname.endsWith(QUrl(url).host())) )
+                || (matchUrlScheme(url) && hostname.endsWith(QUrl(url).host())) ) {
                 entries.append(entry);
+            }
         }
     return entries;
 }
@@ -458,10 +459,10 @@ void BrowserService::removeStoredPermissions()
 QJsonObject BrowserService::prepareEntry(const Entry* entry)
 {
     QJsonObject res;
-    res["login"] = entry->username();
-    res["password"] = entry->password();
-    res["name"] = entry->title();
-    res["uuid"] = entry->uuid().toHex();
+    res["login"] = entry->resolvePlaceholder(entry->username());
+    res["password"] = entry->resolvePlaceholder(entry->password());
+    res["name"] = entry->resolvePlaceholder(entry->title());
+    res["uuid"] = entry->resolvePlaceholder(entry->uuid().toHex());
 
     if (BrowserSettings::supportKphFields()) {
         const EntryAttributes* attr = entry->attributes();
