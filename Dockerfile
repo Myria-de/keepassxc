@@ -22,6 +22,7 @@ RUN set -x \
 
 RUN set -x \
     && add-apt-repository --yes ppa:beineri/opt-qt58-trusty
+    && add-apt-repository --yes ppa:chris-lea/libsodium
 
 RUN set -x \
     && apt-get update \
@@ -37,6 +38,8 @@ RUN set -x \
         zlib1g-dev \
         libyubikey-dev \
         libykpers-1-dev \
+        libsodium-dev \
+        libboost-system-dev \
         xvfb \
         wget \
         file \
@@ -45,7 +48,7 @@ RUN set -x \
 
 RUN set -x \
     && apt-get install --yes mesa-common-dev
-        
+
 VOLUME /keepassxc/src
 VOLUME /keepassxc/out
 WORKDIR /keepassxc
