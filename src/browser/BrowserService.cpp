@@ -309,11 +309,15 @@ void BrowserService::addEntry(const QString &, const QString &login, const QStri
     }
 }
 
-void BrowserService::updateEntry(const QString &, const QString &uuid, const QString &login, const QString &password, const QString &url)
+void BrowserService::updateEntry(const QString &id, const QString &uuid, const QString &login, const QString &password, const QString &url)
 {
     if (thread()!=QThread::currentThread())
     {
-        QMetaObject::invokeMethod(this, "updateEntry", Qt::BlockingQueuedConnection);
+        QMetaObject::invokeMethod(this, "updateEntry", Qt::BlockingQueuedConnection,    Q_ARG(const QString&, id),
+                                                                                        Q_ARG(const QString&, uuid),
+                                                                                        Q_ARG(const QString&, login),
+                                                                                        Q_ARG(const QString&, password),
+                                                                                        Q_ARG(const QString&, url));
     }
 
     if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget())
