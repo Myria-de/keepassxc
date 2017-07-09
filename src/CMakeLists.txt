@@ -169,7 +169,7 @@ set(keepassx_SOURCES_MAINEXE
 add_feature_info(AutoType WITH_XC_AUTOTYPE "Automatic password typing")
 add_feature_info(KeePassHTTP WITH_XC_HTTP "Browser integration compatible with ChromeIPass and PassIFox")
 add_feature_info(YubiKey WITH_XC_YUBIKEY "YubiKey HMAC-SHA1 challenge-response")
-add_feature_info(chromeKeePassXC WITH_XC_BROWSER "KeePassXC browser support with keepassxc-browser")
+add_feature_info(keepassxc-browser WITH_XC_BROWSER "KeePassXC browser support with keepassxc-browser")
 
 add_subdirectory(http)
 if(WITH_XC_HTTP)
