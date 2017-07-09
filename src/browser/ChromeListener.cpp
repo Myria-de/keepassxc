@@ -177,54 +177,54 @@ void ChromeListener::readLine()
 
 void ChromeListener::handleAction(const QJsonObject &json)
 {
-    QString val = json.value("action").toString();
-    if (!val.isEmpty()) {
-        if (val == "get-databasehash")
-            handleGetDatabaseHash(json, val);
-        else if (val == "change-public-keys")
-            handleChangePublicKeys(json, val);
-        else if (val == "associate")
-            handleAssociate(json, val);
-        else if (val == "test-associate")
-            handleTestAssociate(json, val);
-        else if (val == "get-logins")
-            handleGetLogins(json, val);
-        else if (val == "generate-password")
-            handleGeneratePassword(json, val);
-        else if (val == "set-login")
-            handleSetLogin(json, val);
+    QString action = json.value("action").toString();
+    if (!action.isEmpty()) {
+        if (action == "get-databasehash")
+            handleGetDatabaseHash(json, action);
+        else if (action == "change-public-keys")
+            handleChangePublicKeys(json, action);
+        else if (action == "associate")
+            handleAssociate(json, action);
+        else if (action == "test-associate")
+            handleTestAssociate(json, action);
+        else if (action == "get-logins")
+            handleGetLogins(json, action);
+        else if (action == "generate-password")
+            handleGeneratePassword(json, action);
+        else if (action == "set-login")
+            handleSetLogin(json, action);
     }
 }
 
-void ChromeListener::handleGetDatabaseHash(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleGetDatabaseHash(const QJsonObject &json, const QString &action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
-        QJsonValue action = decrypted.value("action");
-        if (!hash.isEmpty() && action.toString() == "get-databasehash") {
+        QJsonValue command = decrypted.value("action");
+        if (!hash.isEmpty() && command.toString() == "get-databasehash") {
             QJsonObject message;
             message["hash"] = hash;
             message["version"] = KEEPASSX_VERSION;
 
             QString replyMessage(QJsonDocument(message).toJson());
             QJsonObject response;
-            response["action"] = valStr;
+            response["action"] = action;
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
             sendReply(response);
         }
         else {
-            sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
+            sendErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
         }
     }
 }
 
-QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce) const
+QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce, const QString& action)
 {
     QJsonObject json;
     if (message.length() > 0) {
@@ -233,6 +233,7 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
             json = getJSonObject(ba);
         } else {
             //qWarning("Cannot decrypt message");
+            sendErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
         }
     } else {
         //qWarning("No message received");
@@ -240,7 +241,7 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
     return json;
 }
 
-void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QString &action)
 {
     QString nonce = json.value("nonce").toString();
     m_clientPublicKey = json.value("publicKey").toString();
@@ -257,7 +258,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
         m_secretKey = secretKey;
 
         QJsonObject response;
-        response["action"] = valStr;
+        response["action"] = action;
         response["publicKey"] = publicKey;
         response["nonce"] = nonce;
         response["version"] = KEEPASSX_VERSION;
@@ -266,17 +267,17 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
         sendReply(response);
     }
     else {
-        sendErrorReply(valStr, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
+        sendErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
     }
 }
 
-void ChromeListener::handleAssociate(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleAssociate(const QJsonObject &json, const QString &action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
         QJsonValue key = decrypted.value("key");
         if (key.isString() && key.toString() == m_clientPublicKey) {
@@ -296,7 +297,7 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
 
             QString replyMessage(QJsonDocument(message).toJson());
             QJsonObject response;
-            response["action"] = valStr;
+            response["action"] = action;
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
@@ -305,13 +306,13 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &val
     }
 }
 
-void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString &action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
         QString responseKey = decrypted.value("key").toString();
         QString id = decrypted.value("id").toString();
@@ -332,7 +333,7 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
 
             QString replyMessage(QJsonDocument(message).toJson());
             QJsonObject response;
-            response["action"] = valStr;
+            response["action"] = action;
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
@@ -340,21 +341,18 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
         }
         else
         {
-            sendErrorReply(valStr, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+            sendErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
         }
-    }
-    else {
-        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
     }
 }
 
-void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
         QJsonValue val = decrypted.value("url");
         if (val.isString()) {
@@ -376,7 +374,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
 
                 QString replyMessage(QJsonDocument(message).toJson());
                 QJsonObject response;
-                response["action"] = valStr;
+                response["action"] = action;
                 response["message"] = encrypt(replyMessage, nonce);
                 response["nonce"] = nonce;
 
@@ -384,12 +382,9 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &val
             }
         }
     }
-    else {
-        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
-    }
 }
 
-void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QString &action)
 {
     QString nonce = json.value("nonce").toString();
     QString password = BrowserSettings::generatePassword();
@@ -409,20 +404,20 @@ void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QStri
 
     QString replyMessage(QJsonDocument(message).toJson());
     QJsonObject response;
-    response["action"] = valStr;
+    response["action"] = action;
     response["message"] = encrypt(replyMessage, nonce);
     response["nonce"] = nonce;
 
     sendReply(response);
 }
 
-void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valStr)
+void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
-    QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
         QString url = decrypted.value("url").toString();
         if (!url.isEmpty()) {
@@ -449,15 +444,12 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &valS
 
             QString replyMessage(QJsonDocument(message).toJson());
             QJsonObject response;
-            response["action"] = valStr;
+            response["action"] = action;
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
             sendReply(response);
         }
-    }
-    else {
-        sendErrorReply(valStr, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
     }
 }
 
@@ -477,10 +469,10 @@ void ChromeListener::sendReply(const QJsonObject json)
     }
 }
 
-void ChromeListener::sendErrorReply(const QString &valStr, const int errorCode)
+void ChromeListener::sendErrorReply(const QString &action, const int errorCode)
 {
     QJsonObject response;
-    response["action"] = valStr;
+    response["action"] = action;
     response["errorCode"] = QString::number(errorCode);
     response["error"] = getErrorMessage(errorCode);
     sendReply(response);

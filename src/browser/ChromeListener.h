@@ -54,19 +54,19 @@ private:
     void        readBody(boost::asio::posix::stream_descriptor& sd, const size_t len);
 
     void        handleAction(const QJsonObject &json);
-    void        handleGetDatabaseHash(const QJsonObject &json, const QString &valStr);
-    void        handleChangePublicKeys(const QJsonObject &json, const QString &valStr);
-    void        handleAssociate(const QJsonObject &json, const QString &valStr);
-    void        handleTestAssociate(const QJsonObject &json, const QString &valStr);
-    void        handleGetLogins(const QJsonObject &json, const QString &valStr);
-    void        handleGeneratePassword(const QJsonObject &json, const QString &valStr);
-    void        handleSetLogin(const QJsonObject &json, const QString &valStr);
+    void        handleGetDatabaseHash(const QJsonObject &json, const QString &action);
+    void        handleChangePublicKeys(const QJsonObject &json, const QString &action);
+    void        handleAssociate(const QJsonObject &json, const QString &action);
+    void        handleTestAssociate(const QJsonObject &json, const QString &action);
+    void        handleGetLogins(const QJsonObject &json, const QString &action);
+    void        handleGeneratePassword(const QJsonObject &json, const QString &action);
+    void        handleSetLogin(const QJsonObject &json, const QString &action);
 
     void        sendReply(const QJsonObject json);
-    void        sendErrorReply(const QString &valStr, const int errorCode);
+    void        sendErrorReply(const QString &action, const int errorCode);
     QString     getErrorMessage(const int errorCode) const;
 
-    QJsonObject decryptMessage(const QString& message, const QString& nonce) const;
+    QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
     QString     encrypt(const QString decrypted, const QString nonce) const;
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;
     QString     getDataBaseHash();
