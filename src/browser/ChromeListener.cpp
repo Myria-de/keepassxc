@@ -384,9 +384,6 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &act
 
                 sendReply(response);
             }
-            else {
-                sendErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
-            }
         }
     }
 }
