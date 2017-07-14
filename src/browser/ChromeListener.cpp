@@ -61,6 +61,7 @@ int ChromeListener::init()
 
 void ChromeListener::run()
 {
+    QMutexLocker locker(&m_mutex);
     if (!m_running) {
         if (init() == -1) {
             return;
@@ -82,6 +83,7 @@ void ChromeListener::run()
 
 void ChromeListener::stop()
 {
+    QMutexLocker locker(&m_mutex);
     m_udpSocket.close();
 
     if (m_sd.is_open())
@@ -284,8 +286,10 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &act
             //qDebug("Keys match. Associate.");
             QMutexLocker locker(&m_mutex);
             QString id = m_service.storeKey(key.toString());
-            if (id.isEmpty())
+            if (id.isEmpty()) {
+                sendErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
                 return;
+            }
 
             // Encrypt a reply message
             QJsonObject message;
@@ -379,6 +383,9 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &act
                 response["nonce"] = nonce;
 
                 sendReply(response);
+            }
+            else {
+                sendErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
             }
         }
     }
@@ -485,6 +492,8 @@ QString ChromeListener::getErrorMessage(const int errorCode) const
         case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
         case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
         case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
+        case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
+        case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
         default:                                            return "Unknown error";
     }
 }

@@ -191,7 +191,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
     const QString host = QUrl(url).host();
     const QString submitHost = QUrl(submitUrl).host();
 
-    //Check entries for authorization
+    // Check entries for authorization
     QList<Entry*> pwEntriesToConfirm;
     QList<Entry*> pwEntries;
     for (Entry* entry : searchEntries(url)) {
@@ -250,7 +250,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
             pwEntries.append(pwEntriesToConfirm);
     }
 
-    //Sort results
+    // Sort results
     const bool sortSelection = true;
     if (sortSelection) {
         QUrl url(submitUrl);
@@ -259,7 +259,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
         const QString submitUrl = url.toString(QUrl::StripTrailingSlash);
         const QString baseSubmitURL = url.toString(QUrl::StripTrailingSlash | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
 
-        //Cache priorities
+        // Cache priorities
         QHash<const Entry*, int> priorities;
         priorities.reserve(pwEntries.size());
         for (const Entry* entry : pwEntries)
@@ -278,7 +278,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
     //}
 
     // Fill the list
-    //QJsonArray result;
     for (Entry* entry : pwEntries)
         result << prepareEntry(entry);
 
