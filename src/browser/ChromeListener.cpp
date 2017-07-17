@@ -20,8 +20,8 @@
 #include <QMutexLocker>
 #include <iostream>
 #include "sodium.h"
-#include "crypto_box.h"
-#include "randombytes.h"
+#include "sodium/crypto_box.h"
+#include "sodium/randombytes.h"
 #include "ChromeListener.h"
 #include "BrowserSettings.h"
 #include "config-keepassx.h"
