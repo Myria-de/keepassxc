@@ -36,12 +36,14 @@ LOWERAPP="$(echo "$APP" | tr '[:upper:]' '[:lower:]')"
 VERSION="$2"
 
 mkdir -p $APP.AppDir
-wget -q https://github.com/probonopd/AppImages/raw/master/functions.sh -O ./functions.sh
+wget -q https://github.com/AppImage/AppImages/raw/master/functions.sh -O ./functions.sh
 . ./functions.sh
 
 LIB_DIR=./usr/lib
 if [ -d ./usr/lib/x86_64-linux-gnu ]; then
     LIB_DIR=./usr/lib/x86_64-linux-gnu
+elif [ -d ./usr/lib/i386-linux-gnu ]; then
+    LIB_DIR=./usr/lib/i386-linux-gnu
 fi
 
 cd $APP.AppDir
@@ -72,7 +74,7 @@ get_icon
 cat << EOF > ./usr/bin/keepassxc_env
 #!/usr/bin/env bash
 #export QT_QPA_PLATFORMTHEME=gtk2
-export LD_LIBRARY_PATH="../opt/qt58/lib:\${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="..$(dirname ${QT_PLUGIN_PATH})/lib:\${LD_LIBRARY_PATH}"
 export QT_PLUGIN_PATH="..${QT_PLUGIN_PATH}"
 
 # unset XDG_DATA_DIRS to make tray icon work in Ubuntu Unity

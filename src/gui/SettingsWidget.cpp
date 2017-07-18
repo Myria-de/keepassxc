@@ -20,6 +20,7 @@
 #include "ui_SettingsWidgetGeneral.h"
 #include "ui_SettingsWidgetSecurity.h"
 
+#include "config-keepassx.h"
 #include "autotype/AutoType.h"
 #include "core/Config.h"
 #include "core/Translator.h"
@@ -68,6 +69,7 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     }
 
     connect(this, SIGNAL(accepted()), SLOT(saveSettings()));
+    connect(this, SIGNAL(apply()), SLOT(saveSettings()));
     connect(this, SIGNAL(rejected()), SLOT(reject()));
 
     connect(m_generalUi->autoSaveAfterEveryChangeCheckBox, SIGNAL(toggled(bool)),
@@ -79,6 +81,10 @@ SettingsWidget::SettingsWidget(QWidget* parent)
             m_secUi->clearClipboardSpinBox, SLOT(setEnabled(bool)));
     connect(m_secUi->lockDatabaseIdleCheckBox, SIGNAL(toggled(bool)),
             m_secUi->lockDatabaseIdleSpinBox, SLOT(setEnabled(bool)));
+
+#ifndef WITH_XC_HTTP
+    m_secUi->privacy->setVisible(false);
+#endif
 }
 
 SettingsWidget::~SettingsWidget()
@@ -111,6 +117,7 @@ void SettingsWidget::loadSettings()
     m_generalUi->minimizeOnCopyCheckBox->setChecked(config()->get("MinimizeOnCopy").toBool());
     m_generalUi->useGroupIconOnEntryCreationCheckBox->setChecked(config()->get("UseGroupIconOnEntryCreation").toBool());
     m_generalUi->autoTypeEntryTitleMatchCheckBox->setChecked(config()->get("AutoTypeEntryTitleMatch").toBool());
+    m_generalUi->autoTypeEntryURLMatchCheckBox->setChecked(config()->get("AutoTypeEntryURLMatch").toBool());
     m_generalUi->ignoreGroupExpansionCheckBox->setChecked(config()->get("IgnoreGroupExpansion").toBool());
 
     m_generalUi->languageComboBox->clear();
@@ -135,6 +142,7 @@ void SettingsWidget::loadSettings()
         if (m_globalAutoTypeKey > 0 && m_globalAutoTypeModifiers > 0) {
             m_generalUi->autoTypeShortcutWidget->setShortcut(m_globalAutoTypeKey, m_globalAutoTypeModifiers);
         }
+        m_generalUi->autoTypeDelaySpinBox->setValue(config()->get("AutoTypeDelay").toInt());
     }
 
 
@@ -145,6 +153,7 @@ void SettingsWidget::loadSettings()
     m_secUi->lockDatabaseIdleSpinBox->setValue(config()->get("security/lockdatabaseidlesec").toInt());
     m_secUi->lockDatabaseMinimizeCheckBox->setChecked(config()->get("security/lockdatabaseminimize").toBool());
     m_secUi->lockDatabaseOnScreenLockCheckBox->setChecked(config()->get("security/lockdatabasescreenlock").toBool());
+    m_secUi->lockDatabaseOnScreenLockCheckBox->setChecked(config()->get("security/IconDownloadFallbackToGoogle").toBool());
 
     m_secUi->passwordCleartextCheckBox->setChecked(config()->get("security/passwordscleartext").toBool());
     m_secUi->passwordRepeatCheckBox->setChecked(config()->get("security/passwordsrepeat").toBool());
@@ -183,6 +192,8 @@ void SettingsWidget::saveSettings()
                   m_generalUi->ignoreGroupExpansionCheckBox->isChecked());
     config()->set("AutoTypeEntryTitleMatch",
                   m_generalUi->autoTypeEntryTitleMatchCheckBox->isChecked());
+    config()->set("AutoTypeEntryURLMatch",
+                  m_generalUi->autoTypeEntryURLMatchCheckBox->isChecked());
     int currentLangIndex = m_generalUi->languageComboBox->currentIndex();
 
     config()->set("GUI/Language", m_generalUi->languageComboBox->itemData(currentLangIndex).toString());
@@ -198,6 +209,7 @@ void SettingsWidget::saveSettings()
         config()->set("GlobalAutoTypeKey", m_generalUi->autoTypeShortcutWidget->key());
         config()->set("GlobalAutoTypeModifiers",
                       static_cast<int>(m_generalUi->autoTypeShortcutWidget->modifiers()));
+        config()->set("AutoTypeDelay", m_generalUi->autoTypeDelaySpinBox->value());
     }
     config()->set("security/clearclipboard", m_secUi->clearClipboardCheckBox->isChecked());
     config()->set("security/clearclipboardtimeout", m_secUi->clearClipboardSpinBox->value());
@@ -206,6 +218,7 @@ void SettingsWidget::saveSettings()
     config()->set("security/lockdatabaseidlesec", m_secUi->lockDatabaseIdleSpinBox->value());
     config()->set("security/lockdatabaseminimize", m_secUi->lockDatabaseMinimizeCheckBox->isChecked());
     config()->set("security/lockdatabasescreenlock", m_secUi->lockDatabaseOnScreenLockCheckBox->isChecked());
+    config()->set("security/IconDownloadFallbackToGoogle", m_secUi->fallbackToGoogle->isChecked());
 
     config()->set("security/passwordscleartext", m_secUi->passwordCleartextCheckBox->isChecked());
     config()->set("security/passwordsrepeat", m_secUi->passwordRepeatCheckBox->isChecked());
@@ -213,8 +226,6 @@ void SettingsWidget::saveSettings()
     for (const ExtraPage& page: asConst(m_extraPages)) {
         page.saveSettings();
     }
-
-    emit editFinished(true);
 }
 
 void SettingsWidget::reject()
@@ -224,7 +235,6 @@ void SettingsWidget::reject()
         autoType()->registerGlobalShortcut(m_globalAutoTypeKey, m_globalAutoTypeModifiers);
     }
 
-    emit editFinished(false);
 }
 
 void SettingsWidget::enableAutoSaveOnExit(bool checked)
