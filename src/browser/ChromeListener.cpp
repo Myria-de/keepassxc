@@ -193,7 +193,9 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QStrin
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (!decrypted.isEmpty()) {
+    if (decrypted.isEmpty()) {
+        return;
+    } else {
         QJsonValue command = decrypted.value("action");
         if (!hash.isEmpty() && command.toString() == "get-databasehash") {
             QJsonObject message;
@@ -265,7 +267,9 @@ void ChromeListener::handleAssociate(const QJsonObject& json, const QString& act
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (!decrypted.isEmpty()) {
+    if (decrypted.isEmpty()) {
+        return;
+    } else {
         QJsonValue key = decrypted.value("key");
         if (key.isString() && key.toString() == m_clientPublicKey) {
             //qDebug("Keys match. Associate.");
@@ -302,7 +306,9 @@ void ChromeListener::handleTestAssociate(const QJsonObject& json, const QString&
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (!decrypted.isEmpty()) {
+    if (decrypted.isEmpty()) {
+        return;
+    } else {
         QString responseKey = decrypted.value("key").toString();
         QString id = decrypted.value("id").toString();
         if (!id.isEmpty() && !responseKey.isEmpty()) {
@@ -340,7 +346,9 @@ void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& act
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (!decrypted.isEmpty()) {
+    if (decrypted.isEmpty()) {
+        return;
+    } else {
         QJsonValue val = decrypted.value("url");
         if (val.isString()) {
             QString id = decrypted.value("id").toString();
@@ -349,7 +357,9 @@ void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& act
             QMutexLocker locker(&m_mutex);
             QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
 
-            if (users.count() > 0) {
+            if (users.count() <= 0) {
+                return;
+            } else {
                 QJsonObject message;
                 message["count"] = users.count();
                 message["entries"] = users;
@@ -405,9 +415,13 @@ void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& acti
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (!decrypted.isEmpty()) {
+    if (decrypted.isEmpty()) {
+        return;
+    } else {
         QString url = decrypted.value("url").toString();
-        if (!url.isEmpty()) {
+        if (url.isEmpty()) {
+            return;
+        } else {
             QString id = decrypted.value("id").toString();
             QString login = decrypted.value("login").toString();
             QString password = decrypted.value("password").toString();
@@ -505,7 +519,6 @@ QString ChromeListener::encrypt(const QString decrypted, const QString nonce) co
 
 QByteArray ChromeListener::decrypt(const QString encrypted, const QString nonce) const
 {
-
     QByteArray result;
     const QByteArray ma = base64Decode(encrypted);
     const QByteArray na = base64Decode(nonce);
