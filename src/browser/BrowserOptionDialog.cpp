@@ -20,12 +20,11 @@
 #include "BrowserOptionDialog.h"
 #include "ui_BrowserOptionDialog.h"
 #include "BrowserSettings.h"
-
 #include "core/FilePath.h"
 
 #include <QMessageBox>
 
-BrowserOptionDialog::BrowserOptionDialog(QWidget *parent) :
+BrowserOptionDialog::BrowserOptionDialog(QWidget* parent) :
     QWidget(parent),
     m_ui(new Ui::BrowserOptionDialog())
 {
@@ -57,10 +56,13 @@ void BrowserOptionDialog::loadSettings()
     m_ui->bestMatchOnly->setChecked(settings.bestMatchOnly());
     m_ui->unlockDatabase->setChecked(settings.unlockDatabase());
     m_ui->matchUrlScheme->setChecked(settings.matchUrlScheme());
-    if (settings.sortByUsername())
+
+    if (settings.sortByUsername()) {
         m_ui->sortByUsername->setChecked(true);
-    else
+    } else {
         m_ui->sortByTitle->setChecked(true);
+    }
+
     m_ui->udpPort->setText(QString::number(settings.udpPort()));
     m_ui->alwaysAllowAccess->setChecked(settings.alwaysAllowAccess());
     m_ui->alwaysAllowUpdate->setChecked(settings.alwaysAllowUpdate());

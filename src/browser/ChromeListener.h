@@ -40,7 +40,8 @@ class ChromeListener : public QObject
         ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED = 3,
         ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE = 4,
         ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED = 5,
-        ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED = 6
+        ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED = 6,
+        ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE = 7
     };
 
 public:
@@ -51,21 +52,22 @@ public:
     void        stop();
 
 private:
+    void        readResponse(const QByteArray& arr);
     void        readLine();
     void        readHeader(boost::asio::posix::stream_descriptor& sd);
     void        readBody(boost::asio::posix::stream_descriptor& sd, const size_t len);
 
-    void        handleAction(const QJsonObject &json);
-    void        handleGetDatabaseHash(const QJsonObject &json, const QString &action);
-    void        handleChangePublicKeys(const QJsonObject &json, const QString &action);
-    void        handleAssociate(const QJsonObject &json, const QString &action);
-    void        handleTestAssociate(const QJsonObject &json, const QString &action);
-    void        handleGetLogins(const QJsonObject &json, const QString &action);
-    void        handleGeneratePassword(const QJsonObject &json, const QString &action);
-    void        handleSetLogin(const QJsonObject &json, const QString &action);
+    void        handleAction(const QJsonObject& json);
+    void        handleGetDatabaseHash(const QJsonObject& json, const QString& action);
+    void        handleChangePublicKeys(const QJsonObject& json, const QString& action);
+    void        handleAssociate(const QJsonObject& json, const QString& action);
+    void        handleTestAssociate(const QJsonObject& json, const QString& action);
+    void        handleGetLogins(const QJsonObject& json, const QString& action);
+    void        handleGeneratePassword(const QJsonObject& json, const QString& action);
+    void        handleSetLogin(const QJsonObject& json, const QString& action);
 
     void        sendReply(const QJsonObject json);
-    void        sendErrorReply(const QString &action, const int errorCode);
+    void        sendErrorReply(const QString& action, const int errorCode);
     QString     getErrorMessage(const int errorCode) const;
 
     QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
@@ -79,7 +81,7 @@ private:
     QString     getDatabaseRootUuid();
     QString     getDatabaseRecycleBinUuid();
     Entry*      getConfigEntry(bool create);
-    QString     storeKey(const QString &key);
+    QString     storeKey(const QString& key);
 
 signals:
     void        quit();
@@ -89,7 +91,7 @@ public slots:
     void        removeStoredPermissions();
 
 private:
-    static QString      getBase64FromKey(const uchar *array, const uint len);
+    static QString      getBase64FromKey(const uchar* array, const uint len);
     static QByteArray   getQByteArray(const uchar* array, const uint len);
     static QJsonObject  getJSonObject(const uchar* pArray, const uint len);
     static QJsonObject  getJSonObject(const QByteArray ba);

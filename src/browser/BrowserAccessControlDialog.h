@@ -33,11 +33,11 @@ class BrowserAccessControlDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit BrowserAccessControlDialog(QWidget *parent = nullptr);
+    explicit BrowserAccessControlDialog(QWidget* parent = nullptr);
     ~BrowserAccessControlDialog();
 
-    void setUrl(const QString & url);
-    void setItems(const QList<Entry *> & items);
+    void setUrl(const QString& url);
+    void setItems(const QList<Entry*>& items);
     bool remember() const;
     void setRemember(bool r);
 

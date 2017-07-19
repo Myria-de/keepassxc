@@ -116,11 +116,11 @@ class BrowserPlugin: public ISettingsPage
 {
     public:
         BrowserPlugin(DatabaseTabWidget * tabWidget) {
-            m_chromeListener = new ChromeListener(tabWidget);
+            m_chromeListener = QSharedPointer<ChromeListener>(new ChromeListener(tabWidget));
         }
 
         ~BrowserPlugin() {
-            delete m_chromeListener;
+
         }
 
         QString name() override
@@ -135,8 +135,8 @@ class BrowserPlugin: public ISettingsPage
 
         QWidget * createWidget() override {
             BrowserOptionDialog * dlg = new BrowserOptionDialog();
-            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener, SLOT(removeSharedEncryptionKeys()));
-            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener, SLOT(removeStoredPermissions()));
+            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener.data(), SLOT(removeSharedEncryptionKeys()));
+            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener.data(), SLOT(removeStoredPermissions()));
             return dlg;
         }
 
@@ -154,7 +154,7 @@ class BrowserPlugin: public ISettingsPage
                 m_chromeListener->stop();
         }
     private:
-        ChromeListener *m_chromeListener;
+        QSharedPointer<ChromeListener>  m_chromeListener;
 };
 #endif
 

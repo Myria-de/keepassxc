@@ -20,7 +20,7 @@
 #include "ui_BrowserAccessControlDialog.h"
 #include "core/Entry.h"
 
-BrowserAccessControlDialog::BrowserAccessControlDialog(QWidget *parent) :
+BrowserAccessControlDialog::BrowserAccessControlDialog(QWidget* parent) :
     QDialog(parent),
     ui(new Ui::BrowserAccessControlDialog())
 {
@@ -43,8 +43,9 @@ void BrowserAccessControlDialog::setUrl(const QString &url)
 
 void BrowserAccessControlDialog::setItems(const QList<Entry *> &items)
 {
-    Q_FOREACH (Entry * entry, items)
+    for (Entry* entry : items) {
         ui->itemsList->addItem(entry->title() + " - " + entry->username());
+    }
 }
 
 bool BrowserAccessControlDialog::remember() const

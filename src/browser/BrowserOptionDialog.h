@@ -31,7 +31,7 @@ class BrowserOptionDialog : public QWidget
     Q_OBJECT
 
 public:
-    explicit BrowserOptionDialog(QWidget *parent = nullptr);
+    explicit BrowserOptionDialog(QWidget* parent = nullptr);
     ~BrowserOptionDialog();
 
 public slots:

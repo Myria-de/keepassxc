@@ -32,15 +32,16 @@ class BrowserService : public QObject
     class SortEntries
     {
     public:
-        SortEntries(const QHash<const Entry*, int>& priorities, const QString & field):
+        SortEntries(const QHash<const Entry*, int>& priorities, const QString& field):
             m_priorities(priorities), m_field(field)
         {}
 
         bool operator()(const Entry* left, const Entry* right) const
         {
             int res = m_priorities.value(left) - m_priorities.value(right);
-            if (res == 0)
+            if (res == 0) {
                 return QString::localeAwareCompare(left->attributes()->value(m_field), right->attributes()->value(m_field)) < 0;
+            }
             return res < 0;
         }
 
@@ -74,11 +75,12 @@ private:
 
 private:
     QJsonObject     prepareEntry(const Entry* entry);
-    Access          checkAccess(const Entry* entry, const QString&  host, const QString&  submitHost, const QString&  realm);
+    Access          checkAccess(const Entry* entry, const QString& host, const QString& submitHost, const QString& realm);
     Group*          findCreateAddEntryGroup();
     int             sortPriority(const Entry *entry, const QString &host, const QString &submitUrl, const QString &baseSubmitUrl) const;
     bool            matchUrlScheme(const QString& url);
     bool            removeFirstDomain(QString& hostname);
+    Database*       getDatabase();
 
 private:
     DatabaseTabWidget* const m_dbTabWidget;

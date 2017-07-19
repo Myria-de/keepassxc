@@ -156,138 +156,145 @@ void BrowserSettings::setSupportBrowserProxy(bool enabled)
 
 bool BrowserSettings::passwordUseNumbers()
 {
-    return config()->get("Browser/generator/Numbers", true).toBool();
+    return config()->get("generator/Numbers", true).toBool();
 }
 
 void BrowserSettings::setPasswordUseNumbers(bool useNumbers)
 {
-    config()->set("Browser/generator/Numbers", useNumbers);
+    config()->set("generator/Numbers", useNumbers);
 }
 
 bool BrowserSettings::passwordUseLowercase()
 {
-    return config()->get("Browser/generator/LowerCase", true).toBool();
+    return config()->get("generator/LowerCase", true).toBool();
 }
 
 void BrowserSettings::setPasswordUseLowercase(bool useLowercase)
 {
-    config()->set("Browser/generator/LowerCase", useLowercase);
+    config()->set("generator/LowerCase", useLowercase);
 }
 
 bool BrowserSettings::passwordUseUppercase()
 {
-    return config()->get("Browser/generator/UpperCase", true).toBool();
+    return config()->get("generator/UpperCase", true).toBool();
 }
 
 void BrowserSettings::setPasswordUseUppercase(bool useUppercase)
 {
-    config()->set("Browser/generator/UpperCase", useUppercase);
+    config()->set("generator/UpperCase", useUppercase);
 }
 
 bool BrowserSettings::passwordUseSpecial()
 {
-    return config()->get("Browser/generator/SpecialChars", false).toBool();
+    return config()->get("generator/SpecialChars", false).toBool();
 }
 
 void BrowserSettings::setPasswordUseSpecial(bool useSpecial)
 {
-    config()->set("Browser/generator/SpecialChars", useSpecial);
+    config()->set("generator/SpecialChars", useSpecial);
 }
 
 bool BrowserSettings::passwordUseEASCII()
 {
-    return config()->get("Browser/generator/EASCII", false).toBool();
+    return config()->get("generator/EASCII", false).toBool();
 }
 
 void BrowserSettings::setPasswordUseEASCII(bool useEASCII)
 {
-    config()->set("Browser/generator/EASCII", useEASCII);
+    config()->set("generator/EASCII", useEASCII);
 }
 
 int BrowserSettings::passPhraseWordCount()
 {
-    return config()->get("Browser/generator/WordCount", 6).toInt();
+    return config()->get("generator/WordCount", 6).toInt();
 }
 
 void BrowserSettings::setPassPhraseWordCount(int wordCount)
 {
-    config()->set("Browser/generator/WordCount", wordCount);
+    config()->set("generator/WordCount", wordCount);
 }
 
 QString BrowserSettings::passPhraseWordSeparator()
 {
-    return config()->get("Browser/generator/WordSeparator", " ").toString();
+    return config()->get("generator/WordSeparator", " ").toString();
 }
 
 void BrowserSettings::setPassPhraseWordSeparator(QString separator)
 {
-    config()->set("Browser/generator/WordSeparator", separator);
+    config()->set("generator/WordSeparator", separator);
 }
 
 int BrowserSettings::generatorType()
 {
-    return config()->get("Browser/generator/Type", 0).toInt();
+    return config()->get("generator/Type", 0).toInt();
 }
 
 void BrowserSettings::setGeneratorType(int type)
 {
-    config()->set("Browser/generator/Type", type);
+    config()->set("generator/Type", type);
 }
 
 bool BrowserSettings::passwordEveryGroup()
 {
-    return config()->get("Browser/generator/EnsureEvery", true).toBool();
+    return config()->get("generator/EnsureEvery", true).toBool();
 }
 
 void BrowserSettings::setPasswordEveryGroup(bool everyGroup)
 {
-    config()->get("Browser/generator/EnsureEvery", everyGroup);
+    config()->get("generator/EnsureEvery", everyGroup);
 }
 
 bool BrowserSettings::passwordExcludeAlike()
 {
-    return config()->get("Browser/generator/ExcludeAlike", true).toBool();
+    return config()->get("generator/ExcludeAlike", true).toBool();
 }
 
 void BrowserSettings::setPasswordExcludeAlike(bool excludeAlike)
 {
-    config()->set("Browser/generator/ExcludeAlike", excludeAlike);
+    config()->set("generator/ExcludeAlike", excludeAlike);
 }
 
 int BrowserSettings::passwordLength()
 {
-    return config()->get("Browser/generator/Length", 20).toInt();
+    return config()->get("generator/Length", 20).toInt();
 }
 
 void BrowserSettings::setPasswordLength(int length)
 {
-    config()->set("Browser/generator/Length", length);
+    config()->set("generator/Length", length);
     m_passwordGenerator.setLength(length);
 }
 
 PasswordGenerator::CharClasses BrowserSettings::passwordCharClasses()
 {
     PasswordGenerator::CharClasses classes;
-    if (passwordUseLowercase())
+    if (passwordUseLowercase()) {
         classes |= PasswordGenerator::LowerLetters;
-    if (passwordUseUppercase())
+    }
+    if (passwordUseUppercase()) {
         classes |= PasswordGenerator::UpperLetters;
-    if (passwordUseNumbers())
+    }
+    if (passwordUseNumbers()) {
         classes |= PasswordGenerator::Numbers;
-    if (passwordUseSpecial())
+    }
+    if (passwordUseSpecial()) {
         classes |= PasswordGenerator::SpecialCharacters;
-    if (passwordUseEASCII())
+    }
+    if (passwordUseEASCII()) {
         classes |= PasswordGenerator::EASCII;
+    }
     return classes;
 }
 
 PasswordGenerator::GeneratorFlags BrowserSettings::passwordGeneratorFlags()
 {
     PasswordGenerator::GeneratorFlags flags;
-    if (passwordExcludeAlike())
+    if (passwordExcludeAlike()) {
         flags |= PasswordGenerator::ExcludeLookAlike;
-    if (passwordEveryGroup())
+    }
+    if (passwordEveryGroup()) {
         flags |= PasswordGenerator::CharFromEveryGroup;
+    }
     return flags;
 }
 
@@ -298,8 +305,7 @@ QString BrowserSettings::generatePassword()
         m_passwordGenerator.setCharClasses(passwordCharClasses());
         m_passwordGenerator.setFlags(passwordGeneratorFlags());
         return m_passwordGenerator.generatePassword();
-    }
-    else {
+    } else {
         m_passPhraseGenerator.setWordCount(passPhraseWordCount());
         m_passPhraseGenerator.setWordSeparator(passPhraseWordSeparator());
         return m_passPhraseGenerator.generatePassphrase();

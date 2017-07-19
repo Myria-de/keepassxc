@@ -18,6 +18,8 @@
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
 #include <QMutexLocker>
+#include <QtNetwork>
+#include <QDataStream>
 #include <iostream>
 #include "sodium.h"
 #include "sodium/crypto_box.h"
@@ -25,9 +27,6 @@
 #include "ChromeListener.h"
 #include "BrowserSettings.h"
 #include "config-keepassx.h"
-
-#include <QtNetwork>
-#include <QDataStream>
 
 #define MESSAGE_LENGTH  4096
 
@@ -45,8 +44,9 @@ void throw_exception(std::exception const& e) {
 
 ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO)), m_running(false), m_peerPort(0), m_localPort(19700)
 {
-    if (BrowserSettings::isEnabled() && !m_running)
+    if (BrowserSettings::isEnabled() && !m_running) {
         run();
+    }
 }
 
 ChromeListener::~ChromeListener()
@@ -75,8 +75,7 @@ void ChromeListener::run()
         m_localPort = BrowserSettings::udpPort();
         m_udpSocket.bind(QHostAddress::LocalHost, m_localPort, QUdpSocket::DontShareAddress);
         connect(&m_udpSocket, SIGNAL(readyRead()), this, SLOT(readDatagrams()));
-    }
-    else {
+    } else {
         m_udpSocket.close();
     }
 }
@@ -86,14 +85,14 @@ void ChromeListener::stop()
     QMutexLocker locker(&m_mutex);
     m_udpSocket.close();
 
-    if (m_sd.is_open())
-    {
+    if (m_sd.is_open()) {
         m_sd.cancel();
         m_sd.close();
     }
 
-    if (!m_io_service.stopped())
+    if (!m_io_service.stopped()) {
         m_io_service.stop();
+    }
 
     m_fut.waitForFinished();
     m_running = false;
@@ -108,23 +107,7 @@ void ChromeListener::readDatagrams()
         m_udpSocket.readDatagram(dgram.data(), dgram.size(), &m_peerAddr, &m_peerPort);
     }
 
-    QJsonParseError err;
-    QJsonDocument doc(QJsonDocument::fromJson(dgram, &err));
-    if (doc.isObject()) {
-        QJsonObject json = doc.object();
-        QString val = json.value("action").toString();
-        if (!val.isEmpty()) {
-            // Allow public keys to be changed without database being opened
-            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
-                if (!m_service.openDatabase()) {
-                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
-                }
-            }
-            else {
-                handleAction(json);
-            }
-        }
-    }
+    readResponse(dgram);
 }
 
 void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
@@ -148,26 +131,30 @@ void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const s
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br > 0) {
             QByteArray arr(buf, br);
-            QJsonParseError err;
-            QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
-            if (doc.isObject()) {
-                QJsonObject json = doc.object();
-                QString val = json.value("action").toString();
-                if (!val.isEmpty()) {
-                    // Allow public keys to be changed without database being opened
-                    if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
-                        if (!m_service.openDatabase()) {
-                            sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
-                        }
-                    }
-                    else {
-                        handleAction(json);
-                    }
-                }
-            }
+            readResponse(arr);
             readHeader(sd);
         }
     });
+}
+
+void ChromeListener::readResponse(const QByteArray& arr)
+{
+    QJsonParseError err;
+    QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
+    if (doc.isObject()) {
+        QJsonObject json = doc.object();
+        QString val = json.value("action").toString();
+        if (!val.isEmpty()) {
+            // Allow public keys to be changed without database being opened
+            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
+                if (!m_service.openDatabase()) {
+                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+                }
+            } else {
+                handleAction(json);
+            }
+        }
+    }
 }
 
 void ChromeListener::readLine()
@@ -177,28 +164,29 @@ void ChromeListener::readLine()
     m_io_service.run();
 }
 
-void ChromeListener::handleAction(const QJsonObject &json)
+void ChromeListener::handleAction(const QJsonObject& json)
 {
     QString action = json.value("action").toString();
     if (!action.isEmpty()) {
-        if (action == "get-databasehash")
+        if (action == "get-databasehash") {
             handleGetDatabaseHash(json, action);
-        else if (action == "change-public-keys")
+        } else if (action == "change-public-keys") {
             handleChangePublicKeys(json, action);
-        else if (action == "associate")
+        } else if (action == "associate") {
             handleAssociate(json, action);
-        else if (action == "test-associate")
+        } else if (action == "test-associate") {
             handleTestAssociate(json, action);
-        else if (action == "get-logins")
+        } else if (action == "get-logins") {
             handleGetLogins(json, action);
-        else if (action == "generate-password")
+        } else if (action == "generate-password") {
             handleGeneratePassword(json, action);
-        else if (action == "set-login")
+        } else if (action == "set-login") {
             handleSetLogin(json, action);
+        }
     }
 }
 
-void ChromeListener::handleGetDatabaseHash(const QJsonObject &json, const QString &action)
+void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
@@ -219,8 +207,7 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject &json, const QStrin
             response["nonce"] = nonce;
 
             sendReply(response);
-        }
-        else {
+        } else {
             sendErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
         }
     }
@@ -243,13 +230,12 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
     return json;
 }
 
-void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QString &action)
+void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
     m_clientPublicKey = json.value("publicKey").toString();
 
-    if (!m_clientPublicKey.isEmpty())
-    {
+    if (!m_clientPublicKey.isEmpty()) {
         unsigned char pk[crypto_box_PUBLICKEYBYTES];
         unsigned char sk[crypto_box_SECRETKEYBYTES];
         crypto_box_keypair(pk, sk);
@@ -267,13 +253,12 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject &json, const QStri
         response["success"] = "true";
 
         sendReply(response);
-    }
-    else {
+    } else {
         sendErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
     }
 }
 
-void ChromeListener::handleAssociate(const QJsonObject &json, const QString &action)
+void ChromeListener::handleAssociate(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
@@ -310,7 +295,7 @@ void ChromeListener::handleAssociate(const QJsonObject &json, const QString &act
     }
 }
 
-void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString &action)
+void ChromeListener::handleTestAssociate(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
@@ -320,12 +305,12 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
     if (!decrypted.isEmpty()) {
         QString responseKey = decrypted.value("key").toString();
         QString id = decrypted.value("id").toString();
-        if (!id.isEmpty() && !responseKey.isEmpty())
-        {
+        if (!id.isEmpty() && !responseKey.isEmpty()) {
             QMutexLocker locker(&m_mutex);
             QString key = m_service.getKey(id);
-            if (key.isEmpty() || key != responseKey)
+            if (key.isEmpty() || key != responseKey) {
                 return;
+            }
 
             // Encrypt a reply message
             QJsonObject message;
@@ -342,15 +327,13 @@ void ChromeListener::handleTestAssociate(const QJsonObject &json, const QString 
             response["nonce"] = nonce;
 
             sendReply(response);
-        }
-        else
-        {
+        } else {
             sendErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
         }
     }
 }
 
-void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &action)
+void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
@@ -388,7 +371,7 @@ void ChromeListener::handleGetLogins(const QJsonObject &json, const QString &act
     }
 }
 
-void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QString &action)
+void ChromeListener::handleGeneratePassword(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
     QString password = BrowserSettings::generatePassword();
@@ -415,7 +398,7 @@ void ChromeListener::handleGeneratePassword(const QJsonObject &json, const QStri
     sendReply(response);
 }
 
-void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &action)
+void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
@@ -432,10 +415,11 @@ void ChromeListener::handleSetLogin(const QJsonObject &json, const QString &acti
             QString uuid = decrypted.value("uuid").toString();
             QString realm = ""; // ?
             QMutexLocker locker(&m_mutex);
-            if (uuid.isEmpty())
+            if (uuid.isEmpty()) {
                 m_service.addEntry(id, login, password, url, submitUrl, realm);
-            else
+            } else {
                 m_service.updateEntry(id, uuid, login, password, url);
+            }
 
             QJsonObject message;
             message["count"] = QJsonValue::Null;
@@ -473,7 +457,7 @@ void ChromeListener::sendReply(const QJsonObject json)
     }
 }
 
-void ChromeListener::sendErrorReply(const QString &action, const int errorCode)
+void ChromeListener::sendErrorReply(const QString& action, const int errorCode)
 {
     QJsonObject response;
     response["action"] = action;
@@ -484,7 +468,7 @@ void ChromeListener::sendErrorReply(const QString &action, const int errorCode)
 
 QString ChromeListener::getErrorMessage(const int errorCode) const
 {
-    switch(errorCode) {
+    switch (errorCode) {
         case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
         case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
         case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
@@ -498,25 +482,22 @@ QString ChromeListener::getErrorMessage(const int errorCode) const
 QString ChromeListener::encrypt(const QString decrypted, const QString nonce) const
 {
     QString result;
-    unsigned char n[crypto_box_NONCEBYTES];
-    unsigned char ck[crypto_box_PUBLICKEYBYTES];
-    unsigned char sk[crypto_box_SECRETKEYBYTES];
-    unsigned char m[MESSAGE_LENGTH] = {0};
-    unsigned char e[MESSAGE_LENGTH] = {0};
-
     const QByteArray ma = decrypted.toUtf8();
     const QByteArray na = base64Decode(nonce);
     const QByteArray ca = base64Decode(m_clientPublicKey);
     const QByteArray sa = base64Decode(m_secretKey);
 
-    std::memcpy(m, ma.toStdString().data(), ma.length());
-    std::memcpy(n, na.toStdString().data(), na.length());
-    std::memcpy(ck, ca.toStdString().data(), ca.length());
-    std::memcpy(sk, sa.toStdString().data(), sa.length());
+    std::vector<unsigned char> m(ma.cbegin(), ma.cend());
+    std::vector<unsigned char> n(na.cbegin(), na.cend());
+    std::vector<unsigned char> ck(ca.cbegin(), ca.cend());
+    std::vector<unsigned char> sk(sa.cbegin(), sa.cend());
 
-    if (crypto_box_easy(e, m, ma.length(), n, ck, sk) == 0) {
-        QByteArray res = getQByteArray(e, (crypto_box_MACBYTES + ma.length()));
-        result = res.toBase64();
+    std::vector<unsigned char> e;
+    e.resize(MESSAGE_LENGTH);
+
+    if (crypto_box_easy(e.data(), m.data(), m.size(), n.data(), ck.data(), sk.data()) == 0) {
+       QByteArray res = getQByteArray(e.data(), (crypto_box_MACBYTES + ma.length()));
+       result = res.toBase64();
     }
 
     return result;
@@ -524,31 +505,29 @@ QString ChromeListener::encrypt(const QString decrypted, const QString nonce) co
 
 QByteArray ChromeListener::decrypt(const QString encrypted, const QString nonce) const
 {
-    QByteArray result;
-    unsigned char n[crypto_box_NONCEBYTES];
-    unsigned char ck[crypto_box_PUBLICKEYBYTES];
-    unsigned char sk[crypto_box_SECRETKEYBYTES];
-    unsigned char m[MESSAGE_LENGTH] = {0};
-    unsigned char d[MESSAGE_LENGTH] = {0};
 
+    QByteArray result;
     const QByteArray ma = base64Decode(encrypted);
     const QByteArray na = base64Decode(nonce);
     const QByteArray ca = base64Decode(m_clientPublicKey);
     const QByteArray sa = base64Decode(m_secretKey);
 
-    std::memcpy(m, ma.toStdString().data(), ma.length());
-    std::memcpy(n, na.toStdString().data(), na.length());
-    std::memcpy(ck, ca.toStdString().data(), ca.length());
-    std::memcpy(sk, sa.toStdString().data(), sa.length());
+    std::vector<unsigned char> m(ma.cbegin(), ma.cend());
+    std::vector<unsigned char> n(na.cbegin(), na.cend());
+    std::vector<unsigned char> ck(ca.cbegin(), ca.cend());
+    std::vector<unsigned char> sk(sa.cbegin(), sa.cend());
 
-    if (crypto_box_open_easy(d, m, ma.length(), n, ck, sk) == 0) {
-        result = getQByteArray(d, strlen(reinterpret_cast<const char *>(d)));
+    std::vector<unsigned char> d;
+    d.resize(MESSAGE_LENGTH);
+
+    if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
+        result = getQByteArray(d.data(), strlen(reinterpret_cast<const char *>(d.data())));
     }
 
     return result;
 }
 
-QString ChromeListener::getBase64FromKey(const uchar *array, const uint len)
+QString ChromeListener::getBase64FromKey(const uchar* array, const uint len)
 {
     return getQByteArray(array, len).toBase64();
 }

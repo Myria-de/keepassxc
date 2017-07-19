@@ -35,22 +35,22 @@ class BrowserEntryConfig : public QObject
     Q_PROPERTY(QString     Realm READ realm        WRITE setRealm       )
 
 public:
-    BrowserEntryConfig(QObject * object = 0);
+    BrowserEntryConfig(QObject* object = 0);
 
-    bool load(const Entry * entry);
-    void save(Entry * entry);
-    bool isAllowed(const QString & host);
-    void allow(const QString & host);
-    bool isDenied(const QString & host);
-    void deny(const QString & host);
+    bool load(const Entry* entry);
+    void save(Entry* entry);
+    bool isAllowed(const QString& host);
+    void allow(const QString& host);
+    bool isDenied(const QString& host);
+    void deny(const QString& host);
     QString realm() const;
-    void setRealm(const QString &realm);
+    void setRealm(const QString& realm);
 
 private:
     QStringList allowedHosts() const;
-    void setAllowedHosts(const QStringList &allowedHosts);
+    void setAllowedHosts(const QStringList& allowedHosts);
     QStringList deniedHosts() const;
-    void setDeniedHosts(const QStringList &deniedHosts);
+    void setDeniedHosts(const QStringList& deniedHosts);
 
     QSet<QString> m_allowedHosts;
     QSet<QString> m_deniedHosts;
