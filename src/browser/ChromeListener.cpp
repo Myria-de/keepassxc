@@ -113,11 +113,11 @@ void ChromeListener::readDatagrams()
 void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
 {
     std::array<char, 4> buf;
-    async_read(sd, buffer(buf), transfer_at_least(1), [&](error_code ec, size_t br) {
+    async_read(sd, buffer(buf, buf.size()), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br >= 1) {
             uint len = 0;
             for (int i = 0; i < 4; i++) {
-                uint rc = buf[i];
+                uint rc = buf.at(i);
                 len = len | (rc << i*8);
             }
             readBody(sd, len);
@@ -128,7 +128,7 @@ void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
 void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const size_t len)
 {
     std::array<char, MESSAGE_LENGTH> buf;
-    async_read(sd, buffer(buf), transfer_at_least(1), [&](error_code ec, size_t br) {
+    async_read(sd, buffer(buf, buf.size()), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br > 0) {
             QByteArray arr(buf.data(), br);
             readResponse(arr);
