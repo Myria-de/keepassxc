@@ -1,6 +1,6 @@
 if(WITH_XC_BROWSER)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-    
+
     find_package(Boost 1.55 COMPONENTS system REQUIRED)
     include_directories(${Boost_INCLUDE_DIR})
     link_directories(${Boost_LIBRARY_DIRS})
@@ -25,7 +25,6 @@ if(WITH_XC_BROWSER)
     set(keepassbrowser_SOURCES
         BrowserAccessControlDialog.cpp
         ChromeListener.cpp
-        BrowserPasswordGeneratorWidget.cpp
         BrowserSettings.cpp
         BrowserOptionDialog.cpp
         BrowserService.cpp
@@ -34,7 +33,6 @@ if(WITH_XC_BROWSER)
     )
     set(keepassbrowser_FORMS
         BrowserAccessControlDialog.ui
-        BrowserPasswordGeneratorWidget.ui
         BrowserOptionDialog.ui
     )
 

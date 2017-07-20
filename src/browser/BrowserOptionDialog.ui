@@ -135,7 +135,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="BrowserPasswordGeneratorWidget" name="passwordGenerator" native="true"/>
+        <widget class="PasswordGeneratorWidget" name="passwordGenerator" native="true"/>
        </item>
        <item>
         <spacer name="verticalSpacer_3">
@@ -291,9 +291,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>BrowserPasswordGeneratorWidget</class>
+   <class>PasswordGeneratorWidget</class>
    <extends>QWidget</extends>
-   <header>browser/BrowserPasswordGeneratorWidget.h</header>
+   <header>gui/PasswordGeneratorWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
