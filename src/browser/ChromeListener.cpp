@@ -127,14 +127,16 @@ void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
 
 void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const size_t len)
 {
-    std::array<char, MESSAGE_LENGTH> buf;
-    async_read(sd, buffer(buf, buf.size()), transfer_at_least(1), [&](error_code ec, size_t br) {
-        if (!ec && br > 0) {
-            QByteArray arr(buf.data(), br);
-            readResponse(arr);
-            readHeader(sd);
-        }
-    });
+    if (len > 0 && len >= MESSAGE_LENGTH) {
+        std::array<char, MESSAGE_LENGTH> buf;
+        async_read(sd, buffer(buf, buf.size()), transfer_at_least(1), [&](error_code ec, size_t br) {
+            if (!ec && br > 0) {
+                QByteArray arr(buf.data(), br);
+                readResponse(arr);
+                readHeader(sd);
+            }
+        });
+    }
 }
 
 void ChromeListener::readResponse(const QByteArray& arr)
