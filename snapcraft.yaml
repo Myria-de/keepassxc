@@ -23,6 +23,7 @@ parts:
       - -DWITH_XC_AUTOTYPE=ON
       - -DWITH_XC_HTTP=ON
       - -DWITH_XC_YUBIKEY=ON
+      - -DWITH_XC_BROWSER=ON
     build-packages:
       - g++
       - libgcrypt20-dev
@@ -35,6 +36,8 @@ parts:
       - libxtst-dev
       - libyubikey-dev
       - libykpers-1-dev
+      - libsodium-dev
+      - libboost-system-dev
     after: [desktop-qt5]
   desktop-qt5:
     # Redefine stage packages to work with Ubuntu 17.04

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
         qWarning() << QCoreApplication::translate("Main", "Another instance of KeePassXC is already running.").toUtf8().constData();
         return 0;
     }
-    
+
     QApplication::setQuitOnLastWindowClosed(false);
 
     if (!Crypto::init()) {
@@ -85,12 +85,17 @@ int main(int argc, char** argv)
                                      "keyfile");
     QCommandLineOption pwstdinOption("pw-stdin",
                                      QCoreApplication::translate("main", "read password of the database from stdin"));
-
+    // This is needed under Windows where clients send --parent-window parameter with Native Messaging connect method
+    QCommandLineOption parentWindowOption(QStringList() << "pw"
+                                                        << "parent-window",
+                                                        QCoreApplication::translate("main", "Parent window handle"),
+                                                        "handle");
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addOption(configOption);
     parser.addOption(keyfileOption);
     parser.addOption(pwstdinOption);
+    parser.addOption(parentWindowOption);
 
     parser.process(app);
     const QStringList args = parser.positionalArguments();
@@ -118,7 +123,7 @@ int main(int argc, char** argv)
                         mainWindow.activateWindow();
                     });
     QObject::connect(&app, SIGNAL(openFile(QString)), &mainWindow, SLOT(openDatabase(QString)));
-    
+
     // start minimized if configured
     bool minimizeOnStartup = config()->get("GUI/MinimizeOnStartup").toBool();
     bool minimizeToTray    = config()->get("GUI/MinimizeToTray").toBool();
@@ -128,7 +133,7 @@ int main(int argc, char** argv)
     if (!(minimizeOnStartup && minimizeToTray)) {
         mainWindow.show();
     }
-    
+
     if (config()->get("OpenPreviousDatabasesOnStartup").toBool()) {
         const QStringList filenames = config()->get("LastOpenedDatabases").toStringList();
         for (const QString& filename : filenames) {
@@ -140,7 +145,8 @@ int main(int argc, char** argv)
 
     for (int ii=0; ii < args.length(); ii++) {
         QString filename = args[ii];
-        if (!filename.isEmpty() && QFile::exists(filename)) {
+        // Checking "browser.json" disables a Native Messaging command line parameter launched from Firefox
+        if (!filename.isEmpty() && QFile::exists(filename) && !filename.endsWith("browser.json", Qt::CaseInsensitive)) {
             QString password;
             if (parser.isSet(pwstdinOption)) {
                 static QTextStream in(stdin, QIODevice::ReadOnly);

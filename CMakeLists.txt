@@ -40,9 +40,10 @@ option(WITH_ASAN "Enable address sanitizer checks (Linux only)" OFF)
 option(WITH_COVERAGE "Use to build with coverage tests (GCC only)." OFF)
 option(WITH_APP_BUNDLE "Enable Application Bundle for OS X" ON)
 
-option(WITH_XC_AUTOTYPE "Include Auto-Type." ON)
-option(WITH_XC_HTTP "Include KeePassHTTP and Custom Icon Downloads." OFF)
-option(WITH_XC_YUBIKEY "Include YubiKey support." OFF)
+option(WITH_XC_AUTOTYPE "Include Autotype." OFF)
+option(WITH_XC_HTTP "Include KeePassHTTP." OFF)
+option(WITH_XC_YUBIKEY "Include Yubikey support." OFF)
+option(WITH_XC_BROWSER "Include browser extension support." OFF)
 
 # Process ui files automatically from source files
 set(CMAKE_AUTOUIC ON)

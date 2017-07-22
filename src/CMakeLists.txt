@@ -176,10 +176,16 @@ set(keepassx_SOURCES_MAINEXE
 add_feature_info(AutoType WITH_XC_AUTOTYPE "Automatic password typing")
 add_feature_info(KeePassHTTP WITH_XC_HTTP "Browser integration compatible with ChromeIPass and PassIFox")
 add_feature_info(YubiKey WITH_XC_YUBIKEY "YubiKey HMAC-SHA1 challenge-response")
+add_feature_info(keepassxc-browser WITH_XC_BROWSER "KeePassXC browser support with keepassxc-browser")
 
 add_subdirectory(http)
 if(WITH_XC_HTTP)
     set(keepasshttp_LIB keepasshttp qhttp Qt5::Network)
+endif()
+
+add_subdirectory(browser)
+if(WITH_XC_BROWSER)
+    set(keepassbrowser_LIB keepassbrowser)
 endif()
 
 add_subdirectory(autotype)
@@ -220,6 +226,7 @@ add_library(keepassx_core STATIC ${keepassx_SOURCES})
 set_target_properties(keepassx_core PROPERTIES COMPILE_DEFINITIONS KEEPASSX_BUILDING_CORE)
 target_link_libraries(keepassx_core
                       ${keepasshttp_LIB}
+                      ${keepassbrowser_LIB}
                       ${autotype_LIB}
                       ${YUBIKEY_LIBRARIES}
                       ${ZXCVBN_LIBRARIES}

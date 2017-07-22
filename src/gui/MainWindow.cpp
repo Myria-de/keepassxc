@@ -49,6 +49,18 @@
 #include "http/OptionDialog.h"
 #endif
 
+#ifdef WITH_XC_BROWSER
+#include "browser/ChromeListener.h"
+#include "browser/BrowserSettings.h"
+#include "browser/BrowserOptionDialog.h"
+#endif
+
+#ifdef WITH_XC_BROWSER
+#include "browser/ChromeListener.h"
+#include "browser/BrowserSettings.h"
+#include "browser/BrowserOptionDialog.h"
+#endif
+
 #include "gui/SettingsWidget.h"
 #include "gui/PasswordGeneratorWidget.h"
 
@@ -99,6 +111,53 @@ private:
 };
 #endif
 
+#ifdef WITH_XC_BROWSER
+class BrowserPlugin: public ISettingsPage
+{
+    public:
+        BrowserPlugin(DatabaseTabWidget * tabWidget) {
+            m_chromeListener = QSharedPointer<ChromeListener>(new ChromeListener(tabWidget));
+        }
+
+        ~BrowserPlugin() {
+
+        }
+
+        QString name() override
+        {
+            return QObject::tr("Browser extension (Native Messaging)");
+        }
+
+        QIcon icon() override
+        {
+            return FilePath::instance()->icon("apps", "internet-web-browser");
+        }
+
+        QWidget * createWidget() override {
+            BrowserOptionDialog * dlg = new BrowserOptionDialog();
+            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener.data(), SLOT(removeSharedEncryptionKeys()));
+            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener.data(), SLOT(removeStoredPermissions()));
+            return dlg;
+        }
+
+        void loadSettings(QWidget * widget) override
+        {
+            qobject_cast<BrowserOptionDialog*>(widget)->loadSettings();
+        }
+
+        void saveSettings(QWidget * widget) override
+        {
+            qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
+            if (BrowserSettings::isEnabled())
+                m_chromeListener->run();
+            else
+                m_chromeListener->stop();
+        }
+    private:
+        QSharedPointer<ChromeListener>  m_chromeListener;
+};
+#endif
+
 const QString MainWindow::BaseWindowTitle = "KeePassXC";
 
 MainWindow::MainWindow()
@@ -120,6 +179,9 @@ MainWindow::MainWindow()
     restoreGeometry(config()->get("GUI/MainWindowGeometry").toByteArray());
     #ifdef WITH_XC_HTTP
     m_ui->settingsWidget->addSettingsPage(new HttpPlugin(m_ui->tabWidget));
+    #endif
+    #ifdef WITH_XC_BROWSER
+    m_ui->settingsWidget->addSettingsPage(new BrowserPlugin(m_ui->tabWidget));
     #endif
 
     setWindowIcon(filePath()->applicationIcon());
