@@ -119,6 +119,15 @@ QString HostInstaller::getPath(const supportedBrowsers browser)
     return QString("%1%2/%3.json").arg(QDir::homePath(), path, HostInstaller::HOST_NAME);
 }
 
+QString HostInstaller::getInstallDir(const supportedBrowsers browser)
+{
+    #ifdef Q_OS_WIN
+        return QCoreApplication::applicationDirPath();
+    #endif
+        QString path = getTargetPath(browser);
+        return QString("%1%2").arg(QDir::homePath(), path);
+}
+
 QJsonObject HostInstaller::constructFile(const supportedBrowsers browser)
 {
     QString path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
@@ -152,8 +161,13 @@ bool HostInstaller::registryEntryFound(const QSettings& settings){
 bool HostInstaller::saveFile(const supportedBrowsers browser, const QJsonObject script)
 {
     QString path = getPath(browser);
-    QFile scriptFile(path);
+    QString installDir = getInstallDir(browser);
+    QDir dir(installDir);
+    if (!dir.exists()) {
+        QDir().mkpath(installDir);
+    }
 
+    QFile scriptFile(path);
     if (!scriptFile.open(QIODevice::WriteOnly)) {
         return false;
     }

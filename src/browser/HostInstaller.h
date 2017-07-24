@@ -42,6 +42,7 @@ public:
 private:
     QString     getTargetPath(const supportedBrowsers browser);
     QString     getPath(const supportedBrowsers browser);
+    QString     getInstallDir(const supportedBrowsers browser);
     QJsonObject constructFile(const supportedBrowsers browser);
     bool        registryEntryFound(const QSettings& settings);
     bool        saveFile(const supportedBrowsers browser, const QJsonObject script);
