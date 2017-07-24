@@ -22,6 +22,7 @@
 
 #include "core/PasswordGenerator.h"
 #include "core/PassphraseGenerator.h"
+#include "HostInstaller.h"
 
 class BrowserSettings
 {
@@ -54,6 +55,15 @@ public:
     static bool supportBrowserProxy();
     static void setSupportBrowserProxy(bool enabled);
 
+    static bool chromeSupport();
+    static void setChromeSupport(bool enabled);
+    static bool chromiumSupport();
+    static void setChromiumSupport(bool enabled);
+    static bool firefoxSupport();
+    static void setFirefoxSupport(bool enabled);
+    static bool vivaldiSupport();
+    static void setVivaldiSupport(bool enabled);
+
     static bool passwordUseNumbers();
     static void setPasswordUseNumbers(bool useNumbers);
     static bool passwordUseLowercase();
@@ -84,6 +94,7 @@ public:
 private:
     static PasswordGenerator m_passwordGenerator;
     static PassphraseGenerator m_passPhraseGenerator;
+    static HostInstaller m_hostInstaller;
 };
 
 #endif // BROWSERSETTINGS_H

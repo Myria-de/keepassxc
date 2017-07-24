@@ -69,7 +69,11 @@ void BrowserOptionDialog::loadSettings()
     m_ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
     m_ui->supportKphFields->setChecked(settings.supportKphFields());
     m_ui->supportBrowserProxy->setChecked(settings.supportBrowserProxy());
-    m_ui->passwordGenerator->loadSettings();
+    //m_ui->passwordGenerator->loadSettings();
+    m_ui->chromeSupport->setChecked(settings.chromeSupport());
+    m_ui->chromiumSupport->setChecked(settings.chromiumSupport());
+    m_ui->firefoxSupport->setChecked(settings.firefoxSupport());
+    m_ui->vivaldiSupport->setChecked(settings.vivaldiSupport());
 }
 
 void BrowserOptionDialog::saveSettings()
@@ -95,5 +99,10 @@ void BrowserOptionDialog::saveSettings()
     settings.setSearchInAllDatabases(m_ui->searchInAllDatabases->isChecked());
     settings.setSupportKphFields(m_ui->supportKphFields->isChecked());
 
-    m_ui->passwordGenerator->saveSettings();
+    settings.setChromeSupport(m_ui->chromeSupport->isChecked());
+    settings.setChromiumSupport(m_ui->chromiumSupport->isChecked());
+    settings.setFirefoxSupport(m_ui->firefoxSupport->isChecked());
+    settings.setVivaldiSupport(m_ui->vivaldiSupport->isChecked());
+
+    //m_ui->passwordGenerator->saveSettings();
 }

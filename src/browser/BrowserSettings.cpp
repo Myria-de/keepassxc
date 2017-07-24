@@ -22,6 +22,7 @@
 
 PasswordGenerator BrowserSettings::m_passwordGenerator;
 PassphraseGenerator BrowserSettings::m_passPhraseGenerator;
+HostInstaller BrowserSettings::m_hostInstaller;
 
 bool BrowserSettings::isEnabled()
 {
@@ -152,6 +153,38 @@ bool BrowserSettings::supportBrowserProxy()
 void BrowserSettings::setSupportBrowserProxy(bool enabled)
 {
     config()->set("Browser/SupportBrowserProxy", enabled);
+}
+
+bool BrowserSettings::chromeSupport() {
+    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::CHROME);
+}
+
+void BrowserSettings::setChromeSupport(bool enabled) {
+    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::CHROME, enabled);
+}
+
+bool BrowserSettings::chromiumSupport() {
+    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::CHROMIUM);
+}
+
+void BrowserSettings::setChromiumSupport(bool enabled) {
+    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::CHROMIUM, enabled);
+}
+
+bool BrowserSettings::firefoxSupport() {
+    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::FIREFOX);
+}
+
+void BrowserSettings::setFirefoxSupport(bool enabled) {
+    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::FIREFOX, enabled);
+}
+
+bool BrowserSettings::vivaldiSupport() {
+    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::VIVALDI);
+}
+
+void BrowserSettings::setVivaldiSupport(bool enabled) {
+    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::VIVALDI, enabled);
 }
 
 bool BrowserSettings::passwordUseNumbers()

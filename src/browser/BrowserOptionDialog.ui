@@ -131,12 +131,69 @@
      </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
-       <string>Password Generator</string>
+       <string>Supported browsers</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
+       <!--<item>
         <widget class="PasswordGeneratorWidget" name="passwordGenerator" native="true"/>
-       </item>
+        </item>-->
+        <item>
+          <widget class="QLabel" name="browserLabel1">
+           <property name="text">
+            <string>Native messaging requires certain .json files to be installed. Already installed browsers are automatically detected.</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+        </item>
+        <item>
+          <widget class="QLabel" name="browserLabel2">
+           <property name="text">
+            <string>Enable KeePassXC Native Messaging extension for these browsers:</string>
+           </property>
+          </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="chromeSupport">
+          <property name="text">
+           <string>Chrome</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="chromiumSupport">
+          <property name="text">
+           <string>Chromium</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="firefoxSupport">
+          <property name="text">
+           <string>Firefox</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="vivaldiSupport">
+          <property name="text">
+           <string>Vivaldi</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
        <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
@@ -290,12 +347,12 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
+  <!--<customwidget>
    <class>PasswordGeneratorWidget</class>
    <extends>QWidget</extends>
    <header>gui/PasswordGeneratorWidget.h</header>
    <container>1</container>
-  </customwidget>
+  </customwidget>-->
   <customwidget>
    <class>MessageWidget</class>
    <extends>QWidget</extends>

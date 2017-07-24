@@ -24,11 +24,12 @@ if(WITH_XC_BROWSER)
 
     set(keepassbrowser_SOURCES
         BrowserAccessControlDialog.cpp
-        ChromeListener.cpp
         BrowserSettings.cpp
         BrowserOptionDialog.cpp
         BrowserService.cpp
         BrowserEntryConfig.cpp
+        ChromeListener.cpp
+        HostInstaller.cpp
         Variant.cpp
     )
     set(keepassbrowser_FORMS
