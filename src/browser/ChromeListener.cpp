@@ -28,8 +28,14 @@
 #include "BrowserSettings.h"
 #include "config-keepassx.h"
 
+#ifdef Q_OS_WIN
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 #define MESSAGE_LENGTH  4096
 
+#ifndef Q_OS_WIN
 using namespace boost::asio;
 using boost::system::error_code;
 
@@ -41,9 +47,22 @@ void throw_exception(std::exception const& e) {
 };
 #endif
 }
+#endif
 
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) : m_service(parent), m_sd(m_io_service, ::dup(STDIN_FILENO)), m_running(false), m_peerPort(0), m_localPort(19700)
+ChromeListener::ChromeListener(DatabaseTabWidget* parent) :
+   m_service(parent),
+#ifndef Q_OS_WIN
+    m_sd(m_io_service, ::dup(STDIN_FILENO)),
+#endif
+    m_running(false),
+    m_peerPort(0),
+    m_localPort(19700)
 {
+#ifdef Q_OS_WIN
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    m_interrupted = false;
+#endif
     if (BrowserSettings::isEnabled() && !m_running) {
         run();
     }
@@ -85,6 +104,9 @@ void ChromeListener::stop()
     QMutexLocker locker(&m_mutex);
     m_udpSocket.close();
 
+#ifdef Q_OS_WIN
+    m_interrupted = true;
+#else
     if (m_sd.is_open()) {
         m_sd.cancel();
         m_sd.close();
@@ -93,6 +115,7 @@ void ChromeListener::stop()
     if (!m_io_service.stopped()) {
         m_io_service.stop();
     }
+#endif
 
     m_fut.waitForFinished();
     m_running = false;
@@ -110,6 +133,23 @@ void ChromeListener::readDatagrams()
     readResponse(dgram);
 }
 
+// Windows only
+void ChromeListener::readMessages()
+{
+    quint32 length = 0;
+    while (!m_interrupted) {
+        length = 0;
+        std::cin.read(reinterpret_cast<char*>(&length), 4);
+        QByteArray arr;
+        for (quint32 i = 0; i < length; i++) {
+            arr.append(getchar());
+        }
+        readResponse(arr);
+        QThread::usleep(10);
+    }
+}
+
+#ifndef Q_OS_WIN
 void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
 {
     std::array<char, 4> buf;
@@ -136,6 +176,7 @@ void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const s
         }
     });
 }
+#endif
 
 void ChromeListener::readResponse(const QByteArray& arr)
 {
@@ -159,9 +200,14 @@ void ChromeListener::readResponse(const QByteArray& arr)
 
 void ChromeListener::readLine()
 {
+#ifdef Q_OS_WIN
+    m_interrupted = false;
+    readMessages();
+#else
     // Read the message header
     readHeader(m_sd);
     m_io_service.run();
+#endif
 }
 
 void ChromeListener::handleAction(const QJsonObject& json)

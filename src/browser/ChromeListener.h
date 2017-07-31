@@ -26,9 +26,11 @@
 #include <QMutex>
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
+#ifndef Q_OS_WIN
 #include <boost/asio.hpp>
-
+#endif
 #include <QUdpSocket>
+#include <atomic>
 
 class ChromeListener : public QObject
 {
@@ -54,9 +56,11 @@ public:
 private:
     void        readResponse(const QByteArray& arr);
     void        readLine();
+    void        readMessages();
+#ifndef Q_OS_WIN
     void        readHeader(boost::asio::posix::stream_descriptor& sd);
     void        readBody(boost::asio::posix::stream_descriptor& sd, const size_t len);
-
+#endif
     void        handleAction(const QJsonObject& json);
     void        handleGetDatabaseHash(const QJsonObject& json, const QString& action);
     void        handleChangePublicKeys(const QJsonObject& json, const QString& action);
@@ -102,8 +106,11 @@ private:
      QString                                m_publicKey;
      QString                                m_secretKey;
      BrowserService                         m_service;
+     std::atomic<bool>                      m_interrupted;
+#ifndef Q_OS_WIN
      boost::asio::io_service                m_io_service;
      boost::asio::posix::stream_descriptor  m_sd;
+#endif
      QFuture<void>                          m_fut;
      QMutex                                 m_mutex;
      bool                                   m_running;

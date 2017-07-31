@@ -42,10 +42,10 @@ const QStringList HostInstaller::ALLOWED_EXTENSIONS = QStringList()
     const QString HostInstaller::TARGET_DIR_FIREFOX = "/.mozilla/native-messaging-hosts";
     const QString HostInstaller::TARGET_DIR_VIVALDI = "/.config/vivaldi/NativeMessagingHosts";
 #elif defined(Q_OS_WIN)
-    const QString HostInstaller::TARGET_DIR_CHROME = "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\NativeMessagingHosts";
-    const QString HostInstaller::TARGET_DIR_CHROMIUM = "HKEY_CURRENT_USER\\Software\\Chromium\\NativeMessagingHosts";
-    const QString HostInstaller::TARGET_DIR_FIREFOX = "HKEY_CURRENT_USER\\Software\\Mozilla\\NativeMessagingHosts";
-    const QString HostInstaller::TARGET_DIR_VIVALDI = "HKEY_CURRENT_USER\\Software\\Vivaldi\\NativeMessagingHosts";
+    const QString HostInstaller::TARGET_DIR_CHROME = "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\NativeMessagingHosts\\" + HostInstaller::HOST_NAME;
+    const QString HostInstaller::TARGET_DIR_CHROMIUM = "HKEY_CURRENT_USER\\Software\\Chromium\\NativeMessagingHosts\\" + HostInstaller::HOST_NAME;
+    const QString HostInstaller::TARGET_DIR_FIREFOX = "HKEY_CURRENT_USER\\Software\\Mozilla\\NativeMessagingHosts\\" + HostInstaller::HOST_NAME;
+    const QString HostInstaller::TARGET_DIR_VIVALDI = "HKEY_CURRENT_USER\\Software\\Vivaldi\\NativeMessagingHosts\\" + HostInstaller::HOST_NAME;
 #endif
 
 HostInstaller::HostInstaller()
@@ -113,7 +113,9 @@ QString HostInstaller::getTargetPath(const supportedBrowsers browser)
 QString HostInstaller::getPath(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
-    return QString("%1/%2.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME);
+    QString winPath = QString("%1/%2.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME);
+    winPath.replace("/","\\");
+    return winPath;
 #endif
     QString path = getTargetPath(browser);
     return QString("%1%2/%3.json").arg(QDir::homePath(), path, HostInstaller::HOST_NAME);
@@ -131,6 +133,9 @@ QString HostInstaller::getInstallDir(const supportedBrowsers browser)
 QJsonObject HostInstaller::constructFile(const supportedBrowsers browser)
 {
     QString path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
+#ifdef Q_OS_WIN
+    path.replace("/","\\");
+#endif
 
     QJsonObject script;
     script["name"]          = HostInstaller::HOST_NAME;
