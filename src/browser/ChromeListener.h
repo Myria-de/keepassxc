@@ -43,7 +43,11 @@ class ChromeListener : public QObject
         ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE = 4,
         ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED = 5,
         ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED = 6,
-        ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE = 7
+        ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE = 7,
+        ERROR_KEEPASS_ASSOCIATION_FAILED = 8,
+        ERROR_KEEPASS_KEY_CHANGE_FAILED = 9,
+        ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED = 10,
+        ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND = 11
     };
 
 public:
@@ -79,14 +83,6 @@ private:
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;
     QString     getDataBaseHash();
 
-    // Database functions
-    bool        isDatabaseOpened() const;
-    bool        openDatabase();
-    QString     getDatabaseRootUuid();
-    QString     getDatabaseRecycleBinUuid();
-    Entry*      getConfigEntry(bool create);
-    QString     storeKey(const QString& key);
-
 signals:
     void        quit();
 
@@ -114,6 +110,7 @@ private:
      QFuture<void>                          m_fut;
      QMutex                                 m_mutex;
      bool                                   m_running;
+     bool                                   m_associated;
 
      QUdpSocket                             m_udpSocket;
      QHostAddress                           m_peerAddr;

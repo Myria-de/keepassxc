@@ -55,6 +55,7 @@ ChromeListener::ChromeListener(DatabaseTabWidget* parent) :
     m_sd(m_io_service, ::dup(STDIN_FILENO)),
 #endif
     m_running(false),
+    m_associated(false),
     m_peerPort(0),
     m_localPort(19700)
 {
@@ -284,6 +285,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QStri
     m_clientPublicKey = json.value("publicKey").toString();
 
     if (!m_clientPublicKey.isEmpty()) {
+        m_associated = false;
         unsigned char pk[crypto_box_PUBLICKEYBYTES];
         unsigned char sk[crypto_box_SECRETKEYBYTES];
         crypto_box_keypair(pk, sk);
@@ -341,6 +343,8 @@ void ChromeListener::handleAssociate(const QJsonObject& json, const QString& act
             response["nonce"] = nonce;
 
             sendReply(response);
+        } else {
+            sendErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
         }
     }
 }
@@ -363,6 +367,8 @@ void ChromeListener::handleTestAssociate(const QJsonObject& json, const QString&
             if (key.isEmpty() || key != responseKey) {
                 return;
             }
+
+            m_associated = true;
 
             // Encrypt a reply message
             QJsonObject message;
@@ -392,7 +398,7 @@ void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& act
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty()) {
+    if (decrypted.isEmpty() || !m_associated) {
         return;
     } else {
         QJsonValue val = decrypted.value("url");
@@ -461,7 +467,7 @@ void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& acti
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty()) {
+    if (decrypted.isEmpty() || !m_associated) {
         return;
     } else {
         QString url = decrypted.value("url").toString();
@@ -535,6 +541,11 @@ QString ChromeListener::getErrorMessage(const int errorCode) const
         case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
         case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
         case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
+        case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:          return "Cannot encrypt message or public key not found. Is Native Messaging enabled in KeePassXC?";
+        case ERROR_KEEPASS_ASSOCIATION_FAILED:              return "KeePassXC association failed, try again.";
+        case ERROR_KEEPASS_KEY_CHANGE_FAILED:               return "Key change was not successful.";
+        case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:     return "Encryption key is not recognized";
+        case ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND:        return "No saved databases found";
         default:                                            return "Unknown error";
     }
 }
