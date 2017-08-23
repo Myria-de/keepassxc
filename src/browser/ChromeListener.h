@@ -78,9 +78,9 @@ private:
     void        sendErrorReply(const QString& action, const int errorCode);
     QString     getErrorMessage(const int errorCode) const;
 
-    QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
     QString     encrypt(const QString decrypted, const QString nonce) const;
     QByteArray  decrypt(const QString encrypted, const QString nonce) const;
+    QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
     QString     getDataBaseHash();
 
 signals:

@@ -145,7 +145,8 @@ int main(int argc, char** argv)
 
     for (int ii=0; ii < args.length(); ii++) {
         QString filename = args[ii];
-        if (!filename.isEmpty() && QFile::exists(filename)) {
+        // Checking "browser.json" disables a Native Messaging command line parameter launched from Firefox
+        if (!filename.isEmpty() && QFile::exists(filename) && !filename.endsWith("browser.json", Qt::CaseInsensitive)) {
             QString password;
             if (parser.isSet(pwstdinOption)) {
                 static QTextStream in(stdin, QIODevice::ReadOnly);

@@ -262,23 +262,6 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QStrin
     }
 }
 
-QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce, const QString& action)
-{
-    QJsonObject json;
-    if (message.length() > 0) {
-        QByteArray ba = decrypt(message, nonce);
-        if (ba.length() > 0) {
-            json = getJSonObject(ba);
-        } else {
-            //qWarning("Cannot decrypt message");
-            sendErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
-        }
-    } else {
-        //qWarning("No message received");
-    }
-    return json;
-}
-
 void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
@@ -595,6 +578,23 @@ QByteArray ChromeListener::decrypt(const QString encrypted, const QString nonce)
     }
 
     return result;
+}
+
+QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce, const QString& action)
+{
+    QJsonObject json;
+    if (message.length() > 0) {
+        QByteArray ba = decrypt(message, nonce);
+        if (ba.length() > 0) {
+            json = getJSonObject(ba);
+        } else {
+            //qWarning("Cannot decrypt message");
+            sendErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+        }
+    } else {
+        //qWarning("No message received");
+    }
+    return json;
 }
 
 QString ChromeListener::getBase64FromKey(const uchar* array, const uint len)
