@@ -90,6 +90,9 @@ public slots:
     void        removeSharedEncryptionKeys();
     void        removeStoredPermissions();
 
+private slots:
+    void        readDatagrams();
+
 private:
     static QString      getBase64FromKey(const uchar* array, const uint len);
     static QByteArray   getQByteArray(const uchar* array, const uint len);
@@ -116,9 +119,6 @@ private:
      QHostAddress                           m_peerAddr;
      quint16                                m_peerPort;
      quint16                                m_localPort;
-
-private slots:
-    void        readDatagrams();
 };
 
 #endif // CHROMELISTENER_H

@@ -77,7 +77,7 @@ bool BrowserService::openDatabase()
         switch (dbWidget->currentMode()) {
             case DatabaseWidget::None:
             case DatabaseWidget::LockedMode:
-                return false;
+                break;
 
             case DatabaseWidget::ViewMode:
             case DatabaseWidget::EditMode:
@@ -486,7 +486,7 @@ QJsonObject BrowserService::prepareEntry(const Entry* entry)
     return res;
 }
 
-BrowserService::Access BrowserService::checkAccess(const Entry *entry, const QString & host, const QString & submitHost, const QString & realm)
+BrowserService::Access BrowserService::checkAccess(const Entry *entry, const QString& host, const QString& submitHost, const QString& realm)
 {
     BrowserEntryConfig config;
     if (!config.load(entry)) {
