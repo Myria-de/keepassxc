@@ -311,6 +311,8 @@ void ChromeListener::handleAssociate(const QJsonObject& json, const QString& act
                 return;
             }
 
+            m_associated = true;
+
             // Encrypt a reply message
             QJsonObject message;
             message["hash"] = hash;
