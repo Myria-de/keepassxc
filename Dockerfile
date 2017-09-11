@@ -26,7 +26,7 @@ RUN set -x \
 ENV QT_VERSION=qt59
 
 RUN set -x \
-    && add-apt-repository --yes ppa:beineri/opt-${QT_VERSION}-trusty
+    && add-apt-repository --yes ppa:beineri/opt-${QT_VERSION}-trusty \
     && add-apt-repository --yes ppa:chris-lea/libsodium
 
 

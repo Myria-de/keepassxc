@@ -2,7 +2,7 @@ if(WITH_XC_BROWSER)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
     if(NOT MINGW)
-	    find_package(Boost 1.55 COMPONENTS system REQUIRED)
+	    find_package(Boost 1.54 COMPONENTS system REQUIRED)
 	    include_directories(${Boost_INCLUDE_DIR})
 	    link_directories(${Boost_LIBRARY_DIRS})
 	    set(Boost_USE_STATIC_LIBS           OFF)
