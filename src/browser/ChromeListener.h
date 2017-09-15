@@ -78,8 +78,8 @@ private:
     void        sendErrorReply(const QString& action, const int errorCode);
     QString     getErrorMessage(const int errorCode) const;
 
-    QString     encrypt(const QString decrypted, const QString nonce) const;
-    QByteArray  decrypt(const QString encrypted, const QString nonce) const;
+    QString     encrypt(const QString& decrypted, const QString& nonce) const;
+    QByteArray  decrypt(const QString& encrypted, const QString& nonce) const;
     QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
     QString     getDataBaseHash();
 
@@ -101,11 +101,11 @@ private:
     static QByteArray   base64Decode(const QString str);
 
 private:
-     QString                                m_clientPublicKey;
-     QString                                m_publicKey;
-     QString                                m_secretKey;
-     BrowserService                         m_service;
-     std::atomic<bool>                      m_interrupted;
+    QString                                 m_clientPublicKey;
+    QString                                 m_publicKey;
+    QString                                 m_secretKey;
+    BrowserService                          m_service;
+    std::atomic<bool>                       m_interrupted;
 #ifndef Q_OS_WIN
      boost::asio::io_service                m_io_service;
      boost::asio::posix::stream_descriptor  m_sd;

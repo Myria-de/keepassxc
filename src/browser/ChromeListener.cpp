@@ -54,6 +54,7 @@ ChromeListener::ChromeListener(DatabaseTabWidget* parent) :
 #ifndef Q_OS_WIN
     m_sd(m_io_service, ::dup(STDIN_FILENO)),
 #endif
+    m_mutex(QMutex::Recursive),
     m_running(false),
     m_associated(false),
     m_peerPort(0),
@@ -215,19 +216,19 @@ void ChromeListener::handleAction(const QJsonObject& json)
 {
     QString action = json.value("action").toString();
     if (!action.isEmpty()) {
-        if (action == "get-databasehash") {
+        if (action.compare("get-databasehash", Qt::CaseSensitive) == 0) {
             handleGetDatabaseHash(json, action);
-        } else if (action == "change-public-keys") {
+        } else if (action.compare("change-public-keys", Qt::CaseSensitive) == 0) {
             handleChangePublicKeys(json, action);
-        } else if (action == "associate") {
+        } else if (action.compare("associate", Qt::CaseSensitive) == 0) {
             handleAssociate(json, action);
-        } else if (action == "test-associate") {
+        } else if (action.compare("test-associate", Qt::CaseSensitive) == 0) {
             handleTestAssociate(json, action);
-        } else if (action == "get-logins") {
+        } else if (action.compare("get-logins", Qt::CaseSensitive) == 0) {
             handleGetLogins(json, action);
-        } else if (action == "generate-password") {
+        } else if (action.compare("generate-password", Qt::CaseSensitive) == 0) {
             handleGeneratePassword(json, action);
-        } else if (action == "set-login") {
+        } else if (action.compare("set-login", Qt::CaseSensitive) == 0) {
             handleSetLogin(json, action);
         }
     }
@@ -243,8 +244,8 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QStrin
     if (decrypted.isEmpty()) {
         return;
     } else {
-        QJsonValue command = decrypted.value("action");
-        if (!hash.isEmpty() && command.toString() == "get-databasehash") {
+        QString command =  decrypted.value("action").toString();
+        if (!hash.isEmpty() && command.compare("get-databasehash", Qt::CaseSensitive) == 0) {
             QJsonObject message;
             message["hash"] = hash;
             message["version"] = KEEPASSX_VERSION;
@@ -265,9 +266,10 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QStrin
 void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
-    m_clientPublicKey = json.value("publicKey").toString();
+    QString clientPublicKey = json.value("publicKey").toString();
 
-    if (!m_clientPublicKey.isEmpty()) {
+    if (!clientPublicKey.isEmpty()) {
+        QMutexLocker locker(&m_mutex);
         m_associated = false;
         unsigned char pk[crypto_box_PUBLICKEYBYTES];
         unsigned char sk[crypto_box_SECRETKEYBYTES];
@@ -277,6 +279,7 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QStri
         QString secretKey = getBase64FromKey(sk, crypto_box_SECRETKEYBYTES);
         m_publicKey = publicKey;
         m_secretKey = secretKey;
+        m_clientPublicKey = clientPublicKey;
 
         QJsonObject response;
         response["action"] = action;
@@ -301,11 +304,11 @@ void ChromeListener::handleAssociate(const QJsonObject& json, const QString& act
     if (decrypted.isEmpty()) {
         return;
     } else {
-        QJsonValue key = decrypted.value("key");
-        if (key.isString() && key.toString() == m_clientPublicKey) {
+        QString key = decrypted.value("key").toString();
+        if (!key.isEmpty() && key.compare(m_clientPublicKey, Qt::CaseSensitive) == 0) {
             //qDebug("Keys match. Associate.");
             QMutexLocker locker(&m_mutex);
-            QString id = m_service.storeKey(key.toString());
+            QString id = m_service.storeKey(key);
             if (id.isEmpty()) {
                 sendErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
                 return;
@@ -494,7 +497,7 @@ void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& acti
 
 void ChromeListener::sendReply(const QJsonObject json)
 {
-    QString reply(QJsonDocument(json).toJson());
+    QString reply(QJsonDocument(json).toJson(QJsonDocument::Compact));
     uint len = reply.length();
 
     std::cout << char(((len>>0) & 0xFF))
@@ -535,7 +538,7 @@ QString ChromeListener::getErrorMessage(const int errorCode) const
     }
 }
 
-QString ChromeListener::encrypt(const QString decrypted, const QString nonce) const
+QString ChromeListener::encrypt(const QString& decrypted, const QString& nonce) const
 {
     QString result;
     const QByteArray ma = decrypted.toUtf8();
@@ -559,7 +562,7 @@ QString ChromeListener::encrypt(const QString decrypted, const QString nonce) co
     return result;
 }
 
-QByteArray ChromeListener::decrypt(const QString encrypted, const QString nonce) const
+QByteArray ChromeListener::decrypt(const QString& encrypted, const QString& nonce) const
 {
     QByteArray result;
     const QByteArray ma = base64Decode(encrypted);
