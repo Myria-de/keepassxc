@@ -26,7 +26,8 @@ if(WITH_XC_BROWSER)
         BrowserOptionDialog.cpp
         BrowserService.cpp
         BrowserEntryConfig.cpp
-        ChromeListener.cpp
+        BrowserAction.cpp
+        NativeMessagingHost.cpp
         HostInstaller.cpp
         Variant.cpp
     )

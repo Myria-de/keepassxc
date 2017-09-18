@@ -58,7 +58,7 @@ public:
     QString         getDatabaseRootUuid();
     QString         getDatabaseRecycleBinUuid();
     Entry*          getConfigEntry(bool create = false);
-    QString         getKey(const QString &id);
+    QString         getKey(const QString& id);
     void            addEntry(const QString& id, const QString& login, const QString& password, const QString& url, const QString& submitUrl, const QString& realm);
     QList<Entry*>   searchEntries(Database* db, const QString& hostname);
     QList<Entry*>   searchEntries(const QString& text);
@@ -67,7 +67,7 @@ public:
 
 public slots:
     QJsonArray      findMatchingEntries(const QString& id, const QString& url, const QString& submitUrl, const QString& realm);
-    QString         storeKey(const QString &key);
+    QString         storeKey(const QString& key);
     void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
 
 private:
@@ -77,7 +77,7 @@ private:
     QJsonObject     prepareEntry(const Entry* entry);
     Access          checkAccess(const Entry* entry, const QString& host, const QString& submitHost, const QString& realm);
     Group*          findCreateAddEntryGroup();
-    int             sortPriority(const Entry *entry, const QString &host, const QString &submitUrl, const QString &baseSubmitUrl) const;
+    int             sortPriority(const Entry* entry, const QString &host, const QString& submitUrl, const QString& baseSubmitUrl) const;
     bool            matchUrlScheme(const QString& url);
     bool            removeFirstDomain(QString& hostname);
     Database*       getDatabase();

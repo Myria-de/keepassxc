@@ -18,232 +18,113 @@
 #include <QJsonArray>
 #include <QtCore/QCryptographicHash>
 #include <QMutexLocker>
-#include <QtNetwork>
-#include <QDataStream>
-#include <iostream>
 #include "sodium.h"
 #include "sodium/crypto_box.h"
 #include "sodium/randombytes.h"
-#include "ChromeListener.h"
+#include "BrowserAction.h"
 #include "BrowserSettings.h"
 #include "config-keepassx.h"
 
-#ifdef Q_OS_WIN
-#include <fcntl.h>
-#include <io.h>
-#endif
-
-#define MESSAGE_LENGTH  4096
-
-#ifndef Q_OS_WIN
-using namespace boost::asio;
-using boost::system::error_code;
-
-namespace boost
-{
-#ifdef BOOST_NO_EXCEPTIONS
-void throw_exception(std::exception const& e) {
-    std::cout << e.what();
-};
-#endif
-}
-#endif
-
-ChromeListener::ChromeListener(DatabaseTabWidget* parent) :
-   m_service(parent),
-#ifndef Q_OS_WIN
-    m_sd(m_io_service, ::dup(STDIN_FILENO)),
-#endif
+BrowserAction::BrowserAction(DatabaseTabWidget* parent) :
+    m_browserService(parent),
     m_mutex(QMutex::Recursive),
-    m_running(false),
-    m_associated(false),
-    m_peerPort(0),
-    m_localPort(19700)
+    m_associated(false)
 {
-#ifdef Q_OS_WIN
-    _setmode(_fileno(stdin), _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-    m_interrupted = false;
-#endif
-    if (BrowserSettings::isEnabled() && !m_running) {
-        run();
-    }
+
 }
 
-ChromeListener::~ChromeListener()
+BrowserAction::~BrowserAction()
 {
-    stop();
+
 }
 
-int ChromeListener::init()
+int BrowserAction::init()
 {
     return sodium_init();
 }
 
-void ChromeListener::run()
-{
-    QMutexLocker locker(&m_mutex);
-    if (!m_running) {
-        if (init() == -1) {
-            return;
-        }
-
-        m_running = true;
-        m_fut = QtConcurrent::run(this, &ChromeListener::readLine);
-    }
-
-    if (BrowserSettings::supportBrowserProxy()) {
-        m_localPort = BrowserSettings::udpPort();
-        m_udpSocket.bind(QHostAddress::LocalHost, m_localPort, QUdpSocket::DontShareAddress);
-        connect(&m_udpSocket, SIGNAL(readyRead()), this, SLOT(readDatagrams()));
-    } else {
-        m_udpSocket.close();
-    }
-}
-
-void ChromeListener::stop()
-{
-    QMutexLocker locker(&m_mutex);
-    m_udpSocket.close();
-
-#ifdef Q_OS_WIN
-    m_interrupted = true;
-#else
-    if (m_sd.is_open()) {
-        m_sd.cancel();
-        m_sd.close();
-    }
-
-    if (!m_io_service.stopped()) {
-        m_io_service.stop();
-    }
-#endif
-
-    m_fut.waitForFinished();
-    m_running = false;
-}
-
-void ChromeListener::readDatagrams()
-{
-    QByteArray dgram;
-
-    while (m_udpSocket.hasPendingDatagrams()) {
-        dgram.resize(m_udpSocket.pendingDatagramSize());
-        m_udpSocket.readDatagram(dgram.data(), dgram.size(), &m_peerAddr, &m_peerPort);
-    }
-
-    readResponse(dgram);
-}
-
-// Windows only
-void ChromeListener::readMessages()
-{
-    quint32 length = 0;
-    while (!m_interrupted) {
-        length = 0;
-        std::cin.read(reinterpret_cast<char*>(&length), 4);
-        QByteArray arr;
-        for (quint32 i = 0; i < length; i++) {
-            arr.append(getchar());
-        }
-        readResponse(arr);
-        QThread::usleep(10);
-    }
-}
-
-#ifndef Q_OS_WIN
-void ChromeListener::readHeader(boost::asio::posix::stream_descriptor& sd)
-{
-    std::array<char, 4> buf;
-    async_read(sd, buffer(buf, buf.size()), transfer_at_least(1), [&](error_code ec, size_t br) {
-        if (!ec && br >= 1) {
-            uint len = 0;
-            for (int i = 0; i < 4; i++) {
-                uint rc = buf.at(i);
-                len = len | (rc << i*8);
-            }
-            readBody(sd, len);
-        }
-    });
-}
-
-void ChromeListener::readBody(boost::asio::posix::stream_descriptor& sd, const size_t len)
-{
-    std::array<char, MESSAGE_LENGTH> buf;
-    async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
-        if (!ec && br > 0) {
-            QByteArray arr(buf.data(), br);
-            readResponse(arr);
-            readHeader(sd);
-        }
-    });
-}
-#endif
-
-void ChromeListener::readResponse(const QByteArray& arr)
+QJsonObject BrowserAction::readResponse(const QByteArray& arr)
 {
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(arr, &err));
     if (doc.isObject()) {
         QJsonObject json = doc.object();
-        QString val = json.value("action").toString();
-        if (!val.isEmpty()) {
+        QString action = json.value("action").toString();
+        if (!action.isEmpty()) {
             // Allow public keys to be changed without database being opened
-            if (val != "change-public-keys" && !m_service.isDatabaseOpened()) {
-                if (!m_service.openDatabase()) {
-                    sendErrorReply(val, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+            if (action != "change-public-keys" && !m_browserService.isDatabaseOpened()) {
+                if (!m_browserService.openDatabase()) {
+                    return getErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
                 }
             } else {
-                handleAction(json);
+                return handleAction(json);
             }
         }
     }
+    return QJsonObject();
 }
 
-void ChromeListener::readLine()
+QString BrowserAction::getErrorMessage(const int errorCode) const
 {
-#ifdef Q_OS_WIN
-    m_interrupted = false;
-    readMessages();
-#else
-    // Read the message header
-    readHeader(m_sd);
-    m_io_service.run();
-#endif
+    switch (errorCode) {
+        case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
+        case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
+        case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
+        case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
+        case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
+        case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
+        case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:          return "Cannot encrypt message or public key not found. Is Native Messaging enabled in KeePassXC?";
+        case ERROR_KEEPASS_ASSOCIATION_FAILED:              return "KeePassXC association failed, try again.";
+        case ERROR_KEEPASS_KEY_CHANGE_FAILED:               return "Key change was not successful.";
+        case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:     return "Encryption key is not recognized";
+        case ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND:        return "No saved databases found";
+        default:                                            return "Unknown error";
+    }
 }
 
-void ChromeListener::handleAction(const QJsonObject& json)
+void BrowserAction::removeSharedEncryptionKeys()
+{
+    QMutexLocker locker(&m_mutex);
+    m_browserService.removeSharedEncryptionKeys();
+}
+
+void BrowserAction::removeStoredPermissions()
+{
+    QMutexLocker locker(&m_mutex);
+    m_browserService.removeStoredPermissions();
+}
+
+QJsonObject BrowserAction::handleAction(const QJsonObject& json)
 {
     QString action = json.value("action").toString();
     if (!action.isEmpty()) {
         if (action.compare("get-databasehash", Qt::CaseSensitive) == 0) {
-            handleGetDatabaseHash(json, action);
+            return handleGetDatabaseHash(json, action);
         } else if (action.compare("change-public-keys", Qt::CaseSensitive) == 0) {
-            handleChangePublicKeys(json, action);
+            return handleChangePublicKeys(json, action);
         } else if (action.compare("associate", Qt::CaseSensitive) == 0) {
-            handleAssociate(json, action);
+            return handleAssociate(json, action);
         } else if (action.compare("test-associate", Qt::CaseSensitive) == 0) {
-            handleTestAssociate(json, action);
+            return handleTestAssociate(json, action);
         } else if (action.compare("get-logins", Qt::CaseSensitive) == 0) {
-            handleGetLogins(json, action);
+            return handleGetLogins(json, action);
         } else if (action.compare("generate-password", Qt::CaseSensitive) == 0) {
-            handleGeneratePassword(json, action);
+            return handleGeneratePassword(json, action);
         } else if (action.compare("set-login", Qt::CaseSensitive) == 0) {
-            handleSetLogin(json, action);
+            return handleSetLogin(json, action);
         }
     }
+    return QJsonObject();
 }
 
-void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleGetDatabaseHash(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty()) {
-        return;
-    } else {
+    if (!decrypted.isEmpty()) {
         QString command =  decrypted.value("action").toString();
         if (!hash.isEmpty() && command.compare("get-databasehash", Qt::CaseSensitive) == 0) {
             QJsonObject message;
@@ -256,14 +137,16 @@ void ChromeListener::handleGetDatabaseHash(const QJsonObject& json, const QStrin
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
-            sendReply(response);
+            return response;
         } else {
-            sendErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
+            return getErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
         }
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
 }
 
-void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleChangePublicKeys(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
     QString clientPublicKey = json.value("publicKey").toString();
@@ -288,30 +171,28 @@ void ChromeListener::handleChangePublicKeys(const QJsonObject& json, const QStri
         response["version"] = KEEPASSX_VERSION;
         response["success"] = "true";
 
-        sendReply(response);
-    } else {
-        sendErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
+        return response;
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
 }
 
-void ChromeListener::handleAssociate(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleAssociate(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty()) {
-        return;
-    } else {
+    if (!decrypted.isEmpty()) {
         QString key = decrypted.value("key").toString();
         if (!key.isEmpty() && key.compare(m_clientPublicKey, Qt::CaseSensitive) == 0) {
-            //qDebug("Keys match. Associate.");
+            // Keys match, associate
             QMutexLocker locker(&m_mutex);
-            QString id = m_service.storeKey(key);
+            QString id = m_browserService.storeKey(key);
+
             if (id.isEmpty()) {
-                sendErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
-                return;
+                return getErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
             }
 
             m_associated = true;
@@ -330,30 +211,31 @@ void ChromeListener::handleAssociate(const QJsonObject& json, const QString& act
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
-            sendReply(response);
+            return response;
         } else {
-            sendErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+            return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
         }
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
 }
 
-void ChromeListener::handleTestAssociate(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleTestAssociate(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty()) {
-        return;
-    } else {
+    if (!decrypted.isEmpty()) {
         QString responseKey = decrypted.value("key").toString();
         QString id = decrypted.value("id").toString();
         if (!id.isEmpty() && !responseKey.isEmpty()) {
             QMutexLocker locker(&m_mutex);
-            QString key = m_service.getKey(id);
+            QString key = m_browserService.getKey(id);
+
             if (key.isEmpty() || key != responseKey) {
-                return;
+                return QJsonObject();
             }
 
             m_associated = true;
@@ -372,33 +254,37 @@ void ChromeListener::handleTestAssociate(const QJsonObject& json, const QString&
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
-            sendReply(response);
+            return response;
         } else {
-            sendErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+            return getErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
         }
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
 }
 
-void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
+    if (!m_associated) {
+        return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+    }
+
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty() || !m_associated) {
-        return;
-    } else {
+    if (!decrypted.isEmpty()) {
         QJsonValue val = decrypted.value("url");
         if (val.isString()) {
             QString id = decrypted.value("id").toString();
             QString url = decrypted.value("url").toString();
             QString submit = decrypted.value("submitUrl").toString();
             QMutexLocker locker(&m_mutex);
-            QJsonArray users = m_service.findMatchingEntries(id, url, submit, "");
+            QJsonArray users = m_browserService.findMatchingEntries(id, url, submit, "");
 
             if (users.count() <= 0) {
-                return;
+                return QJsonObject();   // Empty response. Not an actual error you want to display
             } else {
                 QJsonObject message;
                 message["count"] = users.count();
@@ -415,13 +301,15 @@ void ChromeListener::handleGetLogins(const QJsonObject& json, const QString& act
                 response["message"] = encrypt(replyMessage, nonce);
                 response["nonce"] = nonce;
 
-                sendReply(response);
+                return response;
             }
         }
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
 }
 
-void ChromeListener::handleGeneratePassword(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleGeneratePassword(const QJsonObject& json, const QString& action)
 {
     QString nonce = json.value("nonce").toString();
     QString password = BrowserSettings::generatePassword();
@@ -445,34 +333,37 @@ void ChromeListener::handleGeneratePassword(const QJsonObject& json, const QStri
     response["message"] = encrypt(replyMessage, nonce);
     response["nonce"] = nonce;
 
-    sendReply(response);
+    return response;
 }
 
-void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handleSetLogin(const QJsonObject& json, const QString& action)
 {
     QString hash = getDataBaseHash();
     QString nonce = json.value("nonce").toString();
     QString encrypted = json.value("message").toString();
 
+    if (!m_associated) {
+        return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+    }
+
     QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
-    if (decrypted.isEmpty() || !m_associated) {
-        return;
-    } else {
+    if (!decrypted.isEmpty()) {
         QString url = decrypted.value("url").toString();
         if (url.isEmpty()) {
-            return;
+            return QJsonObject();   // Empty response. Not an actual error you want to display
         } else {
             QString id = decrypted.value("id").toString();
             QString login = decrypted.value("login").toString();
             QString password = decrypted.value("password").toString();
             QString submitUrl = decrypted.value("submitUrl").toString();
             QString uuid = decrypted.value("uuid").toString();
-            QString realm = ""; // ?
+            QString realm = "";
             QMutexLocker locker(&m_mutex);
+
             if (uuid.isEmpty()) {
-                m_service.addEntry(id, login, password, url, submitUrl, realm);
+                m_browserService.addEntry(id, login, password, url, submitUrl, realm);
             } else {
-                m_service.updateEntry(id, uuid, login, password, url);
+                m_browserService.updateEntry(id, uuid, login, password, url);
             }
 
             QJsonObject message;
@@ -490,55 +381,23 @@ void ChromeListener::handleSetLogin(const QJsonObject& json, const QString& acti
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
-            sendReply(response);
+            return response;
         }
     }
+
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
 }
 
-void ChromeListener::sendReply(const QJsonObject json)
-{
-    QString reply(QJsonDocument(json).toJson(QJsonDocument::Compact));
-    uint len = reply.length();
-
-    std::cout << char(((len>>0) & 0xFF))
-                << char(((len>>8) & 0xFF))
-                << char(((len>>16) & 0xFF))
-                << char(((len>>24) & 0xFF));
-    std::cout << reply.toStdString() << std::flush;
-
-    if (BrowserSettings::supportBrowserProxy()) {
-        m_udpSocket.writeDatagram(reply.toUtf8(), m_peerAddr, m_peerPort);
-    }
-}
-
-void ChromeListener::sendErrorReply(const QString& action, const int errorCode)
+QJsonObject BrowserAction::getErrorReply(const QString& action, const int errorCode)
 {
     QJsonObject response;
     response["action"] = action;
     response["errorCode"] = QString::number(errorCode);
     response["error"] = getErrorMessage(errorCode);
-    sendReply(response);
+    return response;
 }
 
-QString ChromeListener::getErrorMessage(const int errorCode) const
-{
-    switch (errorCode) {
-        case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
-        case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
-        case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
-        case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
-        case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
-        case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
-        case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:          return "Cannot encrypt message or public key not found. Is Native Messaging enabled in KeePassXC?";
-        case ERROR_KEEPASS_ASSOCIATION_FAILED:              return "KeePassXC association failed, try again.";
-        case ERROR_KEEPASS_KEY_CHANGE_FAILED:               return "Key change was not successful.";
-        case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:     return "Encryption key is not recognized";
-        case ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND:        return "No saved databases found";
-        default:                                            return "Unknown error";
-    }
-}
-
-QString ChromeListener::encrypt(const QString& decrypted, const QString& nonce) const
+QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce) const
 {
     QString result;
     const QByteArray ma = decrypted.toUtf8();
@@ -562,7 +421,7 @@ QString ChromeListener::encrypt(const QString& decrypted, const QString& nonce) 
     return result;
 }
 
-QByteArray ChromeListener::decrypt(const QString& encrypted, const QString& nonce) const
+QByteArray BrowserAction::decrypt(const QString& encrypted, const QString& nonce) const
 {
     QByteArray result;
     const QByteArray ma = base64Decode(encrypted);
@@ -585,7 +444,7 @@ QByteArray ChromeListener::decrypt(const QString& encrypted, const QString& nonc
     return result;
 }
 
-QJsonObject ChromeListener::decryptMessage(const QString& message, const QString& nonce, const QString& action)
+QJsonObject BrowserAction::decryptMessage(const QString& message, const QString& nonce, const QString& action)
 {
     QJsonObject json;
     if (message.length() > 0) {
@@ -594,7 +453,7 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
             json = getJSonObject(ba);
         } else {
             //qWarning("Cannot decrypt message");
-            sendErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+            return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
         }
     } else {
         //qWarning("No message received");
@@ -602,12 +461,12 @@ QJsonObject ChromeListener::decryptMessage(const QString& message, const QString
     return json;
 }
 
-QString ChromeListener::getBase64FromKey(const uchar* array, const uint len)
+QString BrowserAction::getBase64FromKey(const uchar* array, const uint len)
 {
     return getQByteArray(array, len).toBase64();
 }
 
-QByteArray ChromeListener::getQByteArray(const uchar* array, const uint len)
+QByteArray BrowserAction::getQByteArray(const uchar* array, const uint len)
 {
     QByteArray qba;
     for (uint i = 0; i < len; i++) {
@@ -616,7 +475,7 @@ QByteArray ChromeListener::getQByteArray(const uchar* array, const uint len)
     return qba;
 }
 
-QJsonObject ChromeListener::getJSonObject(const uchar* pArray, const uint len)
+QJsonObject BrowserAction::getJSonObject(const uchar* pArray, const uint len)
 {
     QByteArray arr = getQByteArray(pArray, len);
     QJsonParseError err;
@@ -629,7 +488,7 @@ QJsonObject ChromeListener::getJSonObject(const uchar* pArray, const uint len)
     return doc.object();
 }
 
-QJsonObject ChromeListener::getJSonObject(const QByteArray ba)
+QJsonObject BrowserAction::getJSonObject(const QByteArray ba)
 {
     QJsonParseError err;
     QJsonDocument doc(QJsonDocument::fromJson(ba, &err));
@@ -641,28 +500,16 @@ QJsonObject ChromeListener::getJSonObject(const QByteArray ba)
     return doc.object();
 }
 
-QByteArray ChromeListener::base64Decode(const QString str)
+QByteArray BrowserAction::base64Decode(const QString str)
 {
     return QByteArray::fromBase64(str.toUtf8());
 }
 
-QString ChromeListener::getDataBaseHash()
+QString BrowserAction::getDataBaseHash()
 {
     QMutexLocker locker(&m_mutex);
-    QByteArray hash = QCryptographicHash::hash(
-        (m_service.getDatabaseRootUuid() + m_service.getDatabaseRecycleBinUuid()).toUtf8(),
-         QCryptographicHash::Sha256).toHex();
+    QString rootUuid = m_browserService.getDatabaseRootUuid();
+    QString recycleBinUuid = m_browserService.getDatabaseRecycleBinUuid();
+    QByteArray hash = QCryptographicHash::hash((rootUuid + recycleBinUuid).toUtf8(), QCryptographicHash::Sha256).toHex();
     return QString(hash);
-}
-
-void ChromeListener::removeSharedEncryptionKeys()
-{
-    QMutexLocker locker(&m_mutex);
-    m_service.removeSharedEncryptionKeys();
-}
-
-void ChromeListener::removeStoredPermissions()
-{
-    QMutexLocker locker(&m_mutex);
-    m_service.removeStoredPermissions();
 }

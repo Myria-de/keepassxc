@@ -81,7 +81,7 @@ void BrowserEntryConfig::setRealm(const QString& realm)
     m_realm = realm;
 }
 
-bool BrowserEntryConfig::load(const Entry *entry)
+bool BrowserEntryConfig::load(const Entry* entry)
 {
     QString s = entry->attributes()->value(KEEPASSBROWSER_NAME);
     if (s.isEmpty()) {

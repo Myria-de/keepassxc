@@ -170,7 +170,7 @@ QString BrowserService::storeKey(const QString& key)
     return id;
 }
 
-QString BrowserService::getKey(const QString &id)
+QString BrowserService::getKey(const QString& id)
 {
     if (Entry* config = getConfigEntry()) {
         return config->attributes()->value(QLatin1String(ASSOCIATE_KEY_PREFIX) + id);
@@ -486,7 +486,7 @@ QJsonObject BrowserService::prepareEntry(const Entry* entry)
     return res;
 }
 
-BrowserService::Access BrowserService::checkAccess(const Entry *entry, const QString& host, const QString& submitHost, const QString& realm)
+BrowserService::Access BrowserService::checkAccess(const Entry* entry, const QString& host, const QString& submitHost, const QString& realm)
 {
     BrowserEntryConfig config;
     if (!config.load(entry)) {
@@ -516,8 +516,7 @@ Group* BrowserService::findCreateAddEntryGroup()
                 }
             }
 
-            Group* group;
-            group = new Group();
+            Group* group = new Group();
             group->setUuid(Uuid::random());
             group->setName(groupName);
             group->setIcon(KEEPASSBROWSER_DEFAULT_ICON);

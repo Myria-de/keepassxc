@@ -50,13 +50,7 @@
 #endif
 
 #ifdef WITH_XC_BROWSER
-#include "browser/ChromeListener.h"
-#include "browser/BrowserSettings.h"
-#include "browser/BrowserOptionDialog.h"
-#endif
-
-#ifdef WITH_XC_BROWSER
-#include "browser/ChromeListener.h"
+#include "browser/NativeMessagingHost.h"
 #include "browser/BrowserSettings.h"
 #include "browser/BrowserOptionDialog.h"
 #endif
@@ -116,7 +110,7 @@ class BrowserPlugin: public ISettingsPage
 {
     public:
         BrowserPlugin(DatabaseTabWidget * tabWidget) {
-            m_chromeListener = QSharedPointer<ChromeListener>(new ChromeListener(tabWidget));
+            m_nativeMessagingHost = QSharedPointer<NativeMessagingHost>(new NativeMessagingHost(tabWidget));
         }
 
         ~BrowserPlugin() {
@@ -135,8 +129,8 @@ class BrowserPlugin: public ISettingsPage
 
         QWidget * createWidget() override {
             BrowserOptionDialog * dlg = new BrowserOptionDialog();
-            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_chromeListener.data(), SLOT(removeSharedEncryptionKeys()));
-            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_chromeListener.data(), SLOT(removeStoredPermissions()));
+            QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_nativeMessagingHost.data(), SLOT(removeSharedEncryptionKeys()));
+            QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_nativeMessagingHost.data(), SLOT(removeStoredPermissions()));
             return dlg;
         }
 
@@ -149,12 +143,12 @@ class BrowserPlugin: public ISettingsPage
         {
             qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
             if (BrowserSettings::isEnabled())
-                m_chromeListener->run();
+                m_nativeMessagingHost->run();
             else
-                m_chromeListener->stop();
+                m_nativeMessagingHost->stop();
         }
     private:
-        QSharedPointer<ChromeListener>  m_chromeListener;
+        QSharedPointer<NativeMessagingHost>  m_nativeMessagingHost;
 };
 #endif
 

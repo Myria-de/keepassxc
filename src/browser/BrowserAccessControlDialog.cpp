@@ -35,13 +35,13 @@ BrowserAccessControlDialog::~BrowserAccessControlDialog()
 {
 }
 
-void BrowserAccessControlDialog::setUrl(const QString &url)
+void BrowserAccessControlDialog::setUrl(const QString& url)
 {
     ui->label->setText(QString(tr("%1 has requested access to passwords for the following item(s).\n"
                                   "Please select whether you want to allow access.")).arg(QUrl(url).host()));
 }
 
-void BrowserAccessControlDialog::setItems(const QList<Entry *> &items)
+void BrowserAccessControlDialog::setItems(const QList<Entry*>& items)
 {
     for (Entry* entry : items) {
         ui->itemsList->addItem(entry->title() + " - " + entry->username());
