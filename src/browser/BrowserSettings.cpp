@@ -339,6 +339,7 @@ QString BrowserSettings::generatePassword()
         m_passwordGenerator.setFlags(passwordGeneratorFlags());
         return m_passwordGenerator.generatePassword();
     } else {
+        m_passPhraseGenerator.setDefaultWordList();
         m_passPhraseGenerator.setWordCount(passPhraseWordCount());
         m_passPhraseGenerator.setWordSeparator(passPhraseWordSeparator());
         return m_passPhraseGenerator.generatePassphrase();

@@ -79,7 +79,8 @@ PasswordGeneratorWidget::PasswordGeneratorWidget(QWidget* parent)
         m_ui->comboBoxWordList->setVisible(false);
         m_ui->labelWordList->setVisible(false);
     }
-    
+
+    m_dicewareGenerator->setDefaultWordList();
     loadSettings();
     reset();
 }
@@ -150,7 +151,7 @@ void PasswordGeneratorWidget::setStandaloneMode(bool standalone)
 }
 
 void PasswordGeneratorWidget::regeneratePassword()
-{   
+{
     if (m_ui->tabWidget->currentIndex() == Password) {
         if (m_passwordGenerator->isValid()) {
             QString password = m_passwordGenerator->generatePassword();

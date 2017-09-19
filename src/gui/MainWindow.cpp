@@ -109,7 +109,7 @@ private:
 class BrowserPlugin: public ISettingsPage
 {
     public:
-        BrowserPlugin(DatabaseTabWidget * tabWidget) {
+        BrowserPlugin(DatabaseTabWidget* tabWidget) {
             m_nativeMessagingHost = QSharedPointer<NativeMessagingHost>(new NativeMessagingHost(tabWidget));
         }
 
@@ -127,25 +127,26 @@ class BrowserPlugin: public ISettingsPage
             return FilePath::instance()->icon("apps", "internet-web-browser");
         }
 
-        QWidget * createWidget() override {
-            BrowserOptionDialog * dlg = new BrowserOptionDialog();
+        QWidget* createWidget() override {
+            BrowserOptionDialog* dlg = new BrowserOptionDialog();
             QObject::connect(dlg, SIGNAL(removeSharedEncryptionKeys()), m_nativeMessagingHost.data(), SLOT(removeSharedEncryptionKeys()));
             QObject::connect(dlg, SIGNAL(removeStoredPermissions()), m_nativeMessagingHost.data(), SLOT(removeStoredPermissions()));
             return dlg;
         }
 
-        void loadSettings(QWidget * widget) override
+        void loadSettings(QWidget* widget) override
         {
             qobject_cast<BrowserOptionDialog*>(widget)->loadSettings();
         }
 
-        void saveSettings(QWidget * widget) override
+        void saveSettings(QWidget* widget) override
         {
             qobject_cast<BrowserOptionDialog*>(widget)->saveSettings();
-            if (BrowserSettings::isEnabled())
+            if (BrowserSettings::isEnabled()) {
                 m_nativeMessagingHost->run();
-            else
+            } else {
                 m_nativeMessagingHost->stop();
+            }
         }
     private:
         QSharedPointer<NativeMessagingHost>  m_nativeMessagingHost;
