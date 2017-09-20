@@ -92,7 +92,7 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
 #ifdef Q_OS_WIN
         // Remove the registry entry
         QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
-        if (!registryEntryFound(settings)) {
+        if (registryEntryFound(settings)) {
             settings.remove("Default");
         }
 #endif
@@ -113,7 +113,9 @@ QString HostInstaller::getTargetPath(const supportedBrowsers browser)
 QString HostInstaller::getPath(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
-    QString winPath = QString("%1/%2.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME);
+    QString winPath = (browser == supportedBrowsers::FIREFOX)
+        ? QString("%1/%2_firefox.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME)
+        : QString("%1/%2.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME);
     winPath.replace("/","\\");
     return winPath;
 #endif
@@ -123,11 +125,11 @@ QString HostInstaller::getPath(const supportedBrowsers browser)
 
 QString HostInstaller::getInstallDir(const supportedBrowsers browser)
 {
-    #ifdef Q_OS_WIN
-        return QCoreApplication::applicationDirPath();
-    #endif
-        QString path = getTargetPath(browser);
-        return QString("%1%2").arg(QDir::homePath(), path);
+#ifdef Q_OS_WIN
+    return QCoreApplication::applicationDirPath();
+#endif
+    QString path = getTargetPath(browser);
+    return QString("%1%2").arg(QDir::homePath(), path);
 }
 
 QJsonObject HostInstaller::constructFile(const supportedBrowsers browser)
