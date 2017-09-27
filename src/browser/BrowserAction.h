@@ -25,7 +25,7 @@
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 
-#define MESSAGE_LENGTH  16*1024
+#define MESSAGE_LENGTH  16*2014
 
 class BrowserAction : public QObject
 {

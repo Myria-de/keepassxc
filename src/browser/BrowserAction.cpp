@@ -398,8 +398,7 @@ QJsonObject BrowserAction::getErrorReply(const QString& action, const int errorC
     return response;
 }
 
-QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce)
-{
+QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce) {
     QString result;
     QMutexLocker locker(&m_mutex);
     const QByteArray ma = decrypted.toUtf8();
@@ -444,8 +443,7 @@ QByteArray BrowserAction::decrypt(const QString& encrypted, const QString& nonce
 
     if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
         if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
-            std::string response(d.begin(), d.end());
-            result = QByteArray(response.c_str(), response.length());
+            result = getQByteArray(d.data(), strlen(reinterpret_cast<const char *>(d.data())));
         }
     }
 
