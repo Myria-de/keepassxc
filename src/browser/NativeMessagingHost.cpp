@@ -67,6 +67,7 @@ NativeMessagingHost::~NativeMessagingHost()
 
 int NativeMessagingHost::init()
 {
+    QMutexLocker locker(&m_mutex);
     return m_browserAction.init();
 }
 
@@ -122,6 +123,7 @@ void NativeMessagingHost::readDatagrams()
         m_udpSocket.readDatagram(dgram.data(), dgram.size(), &m_peerAddr, &m_peerPort);
     }
 
+    QMutexLocker locker(&m_mutex);
     QJsonObject response = m_browserAction.readResponse(dgram);
     sendReply(response);
 }
@@ -198,6 +200,7 @@ void NativeMessagingHost::sendReply(const QJsonObject json)
         std::cout << reply.toStdString() << std::flush;
 
         if (BrowserSettings::supportBrowserProxy()) {
+            QMutexLocker locker(&m_mutex);
             m_udpSocket.writeDatagram(reply.toUtf8(), m_peerAddr, m_peerPort);
         }
     }

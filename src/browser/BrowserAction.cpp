@@ -52,6 +52,7 @@ QJsonObject BrowserAction::readResponse(const QByteArray& arr)
         QString action = json.value("action").toString();
         if (!action.isEmpty()) {
             // Allow public keys to be changed without database being opened
+            QMutexLocker locker(&m_mutex);
             if (action != "change-public-keys" && !m_browserService.isDatabaseOpened()) {
                 if (!m_browserService.openDatabase()) {
                     return getErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
@@ -397,9 +398,10 @@ QJsonObject BrowserAction::getErrorReply(const QString& action, const int errorC
     return response;
 }
 
-QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce) const
+QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce)
 {
     QString result;
+    QMutexLocker locker(&m_mutex);
     const QByteArray ma = decrypted.toUtf8();
     const QByteArray na = base64Decode(nonce);
     const QByteArray ca = base64Decode(m_clientPublicKey);
@@ -413,17 +415,20 @@ QString BrowserAction::encrypt(const QString& decrypted, const QString& nonce) c
     std::vector<unsigned char> e;
     e.resize(MESSAGE_LENGTH);
 
-    if (crypto_box_easy(e.data(), m.data(), m.size(), n.data(), ck.data(), sk.data()) == 0) {
-       QByteArray res = getQByteArray(e.data(), (crypto_box_MACBYTES + ma.length()));
-       result = res.toBase64();
+    if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
+        if (crypto_box_easy(e.data(), m.data(), m.size(), n.data(), ck.data(), sk.data()) == 0) {
+           QByteArray res = getQByteArray(e.data(), (crypto_box_MACBYTES + ma.length()));
+           result = res.toBase64();
+        }
     }
 
     return result;
 }
 
-QByteArray BrowserAction::decrypt(const QString& encrypted, const QString& nonce) const
+QByteArray BrowserAction::decrypt(const QString& encrypted, const QString& nonce)
 {
     QByteArray result;
+    QMutexLocker locker(&m_mutex);
     const QByteArray ma = base64Decode(encrypted);
     const QByteArray na = base64Decode(nonce);
     const QByteArray ca = base64Decode(m_clientPublicKey);
@@ -437,8 +442,11 @@ QByteArray BrowserAction::decrypt(const QString& encrypted, const QString& nonce
     std::vector<unsigned char> d;
     d.resize(MESSAGE_LENGTH);
 
-    if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
-        result = getQByteArray(d.data(), strlen(reinterpret_cast<const char *>(d.data())));
+    if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
+        if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
+            std::string response(d.begin(), d.end());
+            result = QByteArray(response.c_str(), response.length());
+        }
     }
 
     return result;

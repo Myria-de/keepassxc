@@ -25,7 +25,7 @@
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 
-#define MESSAGE_LENGTH  4096
+#define MESSAGE_LENGTH  16*1024
 
 class BrowserAction : public QObject
 {
@@ -64,8 +64,8 @@ private:
     QJsonObject         handleGeneratePassword(const QJsonObject& json, const QString& action);
     QJsonObject         handleSetLogin(const QJsonObject& json, const QString& action);
     QJsonObject         getErrorReply(const QString& action, const int errorCode);
-    QString             encrypt(const QString& decrypted, const QString& nonce) const;
-    QByteArray          decrypt(const QString& encrypted, const QString& nonce) const;
+    QString             encrypt(const QString& decrypted, const QString& nonce);
+    QByteArray          decrypt(const QString& encrypted, const QString& nonce);
     QJsonObject         decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
     QString             getDataBaseHash();
 
