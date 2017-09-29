@@ -138,7 +138,7 @@ QJsonObject BrowserAction::handleGetDatabaseHash(const QJsonObject& json, const 
             response["message"] = encrypt(replyMessage, nonce);
             response["nonce"] = nonce;
 
-            return response;
+            return response["message"].toString().isEmpty() ? getErrorReply(action, ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE) : response;
         } else {
             return getErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
         }
