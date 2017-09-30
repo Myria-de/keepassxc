@@ -22,7 +22,6 @@ if(WITH_XC_BROWSER)
 
     set(keepassbrowser_SOURCES
         BrowserAccessControlDialog.cpp
-        BrowserAction.cpp
         BrowserEntryConfig.cpp
         BrowserOptionDialog.cpp
         BrowserService.cpp
