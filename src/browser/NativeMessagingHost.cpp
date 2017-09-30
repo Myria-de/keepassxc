@@ -139,6 +139,7 @@ void NativeMessagingHost::readMessages()
         for (quint32 i = 0; i < length; i++) {
             arr.append(getchar());
         }
+        QMutexLocker locker(&m_mutex);
         QJsonObject response = m_browserAction.readResponse(arr);
         sendReply(response);
         QThread::usleep(10);
@@ -167,6 +168,7 @@ void NativeMessagingHost::readBody(boost::asio::posix::stream_descriptor& sd, co
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br > 0) {
             QByteArray arr(buf.data(), br);
+            QMutexLocker locker(&m_mutex);
             QJsonObject response = m_browserAction.readResponse(arr);
             sendReply(response);
             readHeader(sd);
@@ -192,11 +194,7 @@ void NativeMessagingHost::sendReply(const QJsonObject json)
     if (!json.isEmpty()) {
         QString reply(QJsonDocument(json).toJson(QJsonDocument::Compact));
         uint len = reply.length();
-
-        std::cout << char(((len>>0) & 0xFF))
-                    << char(((len>>8) & 0xFF))
-                    << char(((len>>16) & 0xFF))
-                    << char(((len>>24) & 0xFF));
+        std::cout << char(((len>>0) & 0xFF)) << char(((len>>8) & 0xFF)) << char(((len>>16) & 0xFF)) << char(((len>>24) & 0xFF));
         std::cout << reply.toStdString() << std::flush;
 
         if (BrowserSettings::supportBrowserProxy()) {
