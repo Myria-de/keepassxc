@@ -22,13 +22,13 @@ if(WITH_XC_BROWSER)
 
     set(keepassbrowser_SOURCES
         BrowserAccessControlDialog.cpp
-        BrowserSettings.cpp
+        BrowserAction.cpp
+        BrowserEntryConfig.cpp
         BrowserOptionDialog.cpp
         BrowserService.cpp
-        BrowserEntryConfig.cpp
-        BrowserAction.cpp
-        NativeMessagingHost.cpp
+        BrowserSettings.cpp
         HostInstaller.cpp
+        NativeMessagingHost.cpp
         Variant.cpp
     )
     set(keepassbrowser_FORMS

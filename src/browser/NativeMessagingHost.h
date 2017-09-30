@@ -65,16 +65,16 @@ private:
     BrowserAction                           m_browserAction;
     std::atomic<bool>                       m_interrupted;
 #ifndef Q_OS_WIN
-     boost::asio::io_service                m_io_service;
-     boost::asio::posix::stream_descriptor  m_sd;
+    boost::asio::io_service                 m_io_service;
+    boost::asio::posix::stream_descriptor   m_sd;
 #endif
-     QFuture<void>                          m_fut;
-     QMutex                                 m_mutex;
-     bool                                   m_running;
-     QUdpSocket                             m_udpSocket;
-     QHostAddress                           m_peerAddr;
-     quint16                                m_peerPort;
-     quint16                                m_localPort;
+    QFuture<void>                           m_fut;
+    QMutex                                  m_mutex;
+    bool                                    m_running;
+    QUdpSocket                              m_udpSocket;
+    QHostAddress                            m_peerAddr;
+    quint16                                 m_peerPort;
+    quint16                                 m_localPort;
 };
 
 #endif // NATIVEMESSAGINGHOST_H

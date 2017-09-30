@@ -164,7 +164,7 @@ void NativeMessagingHost::readHeader(boost::asio::posix::stream_descriptor& sd)
 
 void NativeMessagingHost::readBody(boost::asio::posix::stream_descriptor& sd, const size_t len)
 {
-    std::array<char, MESSAGE_LENGTH> buf;
+    std::array<char, max_length> buf;
     async_read(sd, buffer(buf, len), transfer_at_least(1), [&](error_code ec, size_t br) {
         if (!ec && br > 0) {
             QByteArray arr(buf.data(), br);
