@@ -200,7 +200,7 @@ const QJsonObject BrowserAction::handleTestAssociate(const QJsonObject& json, co
             QMutexLocker locker(&m_mutex);
             const QString key = m_browserService.getKey(id);
             if (key.isEmpty() || key.compare(responseKey, Qt::CaseSensitive) != 0) {
-                return QJsonObject();   // Can this error be handled? Or is it handled in keepassxc-browser?
+                return getErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
             }
 
             m_associated = true;
