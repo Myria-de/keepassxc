@@ -231,10 +231,10 @@ const QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const 
     const QString nonce = json.value("nonce").toString();
     const QString encrypted = json.value("message").toString();
 
-    /*QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutex);
     if (!m_associated) {
         return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
-    }*/
+    }
 
     const QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
     if (!decrypted.isEmpty()) {
