@@ -57,6 +57,7 @@ public:
 
     bool            isDatabaseOpened() const;
     bool            openDatabase();
+    void            lockDatabase();
     QString         getDatabaseRootUuid();
     QString         getDatabaseRecycleBinUuid();
     Entry*          getConfigEntry(bool create = false);

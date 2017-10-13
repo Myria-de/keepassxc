@@ -56,6 +56,7 @@ private:
     const QJsonObject   handleGetLogins(const QJsonObject& json, const QString& action);
     const QJsonObject   handleGeneratePassword(const QJsonObject& json, const QString& action);
     const QJsonObject   handleSetLogin(const QJsonObject& json, const QString& action);
+    const QJsonObject   handleLockDatabase(const QJsonObject& json, const QString& action);
 
     const QJsonObject   getErrorReply(const QString& action, const int errorCode) const;
     const QString       getErrorMessage(const int errorCode) const;

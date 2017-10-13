@@ -90,6 +90,15 @@ bool BrowserService::openDatabase()
     return false;
 }
 
+void BrowserService::lockDatabase()
+{
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
+        if (dbWidget->currentMode() == DatabaseWidget::ViewMode || dbWidget->currentMode() == DatabaseWidget::EditMode) {
+            dbWidget->lock();
+        }
+    }
+}
+
 QString BrowserService::getDatabaseRootUuid()
 {
     if (Database* db = getDatabase()) {
