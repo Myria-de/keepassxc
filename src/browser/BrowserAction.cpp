@@ -86,6 +86,8 @@ const QJsonObject BrowserAction::handleAction(const QJsonObject& json)
             return handleGeneratePassword(json, action);
         } else if (action.compare("set-login", Qt::CaseSensitive) == 0) {
             return handleSetLogin(json, action);
+        } else if (action.compare("lock-database", Qt::CaseSensitive) == 0) {
+            return handleLockDatabase(json, action);
         }
     }
     return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
@@ -342,6 +344,26 @@ const QJsonObject BrowserAction::handleSetLogin(const QJsonObject& json, const Q
             response["nonce"] = nonce;
 
             return response;
+        }
+    }
+    return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+}
+
+const QJsonObject BrowserAction::handleLockDatabase(const QJsonObject& json, const QString& action)
+{
+    const QString hash = getDataBaseHash();
+    const QString nonce = json.value("nonce").toString();
+    const QString encrypted = json.value("message").toString();
+    const QJsonObject decrypted = decryptMessage(encrypted, nonce, action);
+
+    if (!decrypted.isEmpty()) {
+        QString command = decrypted.value("action").toString();
+        if (!hash.isEmpty() && command.compare("lock-database", Qt::CaseSensitive) == 0) {
+            QMutexLocker locker(&m_mutex);
+            m_browserService.lockDatabase();
+            return getErrorReply(action, ERROR_KEEPASS_DATABASE_NOT_OPENED);
+        } else {
+            return getErrorReply(action, ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED);
         }
     }
     return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
