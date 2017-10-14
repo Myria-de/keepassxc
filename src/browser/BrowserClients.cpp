@@ -86,7 +86,6 @@ const BrowserClients::Client BrowserClients::getClient(const QString& clientID, 
     }
 
     // clientID not found, create a new client
-    //m_clients.push_back({ clientID, clientPort, (isProxy ? QSharedPointer<BrowserAction>(new BrowserAction(m_dbTabWidget)) : nullptr) });
     m_clients.push_back({ clientID, clientPort, QSharedPointer<BrowserAction>(isProxy ? new BrowserAction(m_dbTabWidget) : nullptr)  });
     return m_clients.back();
 }
