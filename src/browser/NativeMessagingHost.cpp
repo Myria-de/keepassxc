@@ -127,7 +127,7 @@ void NativeMessagingHost::readDatagrams()
     }
 
     QMutexLocker locker(&m_mutex);
-    const QJsonObject json = m_browserClients.readResponse(dgram, clientPort);
+    const QJsonObject json = m_browserClients.readResponse(dgram, clientPort, true);
     sendReply(json, clientPort);
 }
 
@@ -142,9 +142,13 @@ void NativeMessagingHost::readMessages()
         for (quint32 i = 0; i < length; i++) {
             arr.append(getchar());
         }
-        QMutexLocker locker(&m_mutex);
-        const QJsonObject json = m_browserClients.readResponse(arr);
-        sendReply(json);
+
+        if (arr.length() > 0) {
+            QMutexLocker locker(&m_mutex);
+            const QJsonObject json = m_browserClients.readResponse(arr);
+            sendReply(json);
+        }
+
         QThread::usleep(10);
     }
 }
@@ -171,7 +175,7 @@ void NativeMessagingHost::handleHeader(const boost::system::error_code ec, const
 void NativeMessagingHost::readBody(const size_t len)
 {
     std::array<char, max_length> buf;
-    async_read(m_sd, buffer(buf, len), transfer_at_least(1), [this, &buf, &len](error_code ec, size_t br) {
+    m_sd.async_read_some(buffer(buf, len), [this, &buf, &len](const error_code ec, size_t br) {
         if (!ec && br > 0) {
             const QByteArray arr(buf.data(), br);
             QMutexLocker locker(&m_mutex);
@@ -180,7 +184,9 @@ void NativeMessagingHost::readBody(const size_t len)
             readHeader();
         }
     });
+
 }
+
 #endif
 
 void NativeMessagingHost::readLine()
