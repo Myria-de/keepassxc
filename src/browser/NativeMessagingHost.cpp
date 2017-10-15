@@ -48,8 +48,8 @@ NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
     m_mutex(QMutex::Recursive),
     m_running(false),
     m_localPort(19700),
-    m_browserClients(parent),
-    m_dbTabWidget(parent)
+    m_browserClients(m_browserService),
+    m_browserService(parent)
 {
 #ifdef Q_OS_WIN
     _setmode(_fileno(stdin), _O_BINARY);
@@ -127,7 +127,7 @@ void NativeMessagingHost::readDatagrams()
     }
 
     QMutexLocker locker(&m_mutex);
-    const QJsonObject json = m_browserClients.readResponse(dgram, clientPort, true);
+    const QJsonObject json = m_browserClients.readResponse(dgram, clientPort);
     sendReply(json, clientPort);
 }
 
@@ -203,27 +203,27 @@ void NativeMessagingHost::readLine()
 
 void NativeMessagingHost::sendReply(const QJsonObject json, const quint16 clientPort)
 {
-    QString reply(QJsonDocument(json).toJson(QJsonDocument::Compact));
-    uint len = reply.length();
-    std::cout << char(((len>>0) & 0xFF)) << char(((len>>8) & 0xFF)) << char(((len>>16) & 0xFF)) << char(((len>>24) & 0xFF));
-    std::cout << reply.toStdString() << std::flush;
+    if (!json.isEmpty()) {
+        QString reply(QJsonDocument(json).toJson(QJsonDocument::Compact));
+        uint len = reply.length();
+        std::cout << char(((len>>0) & 0xFF)) << char(((len>>8) & 0xFF)) << char(((len>>16) & 0xFF)) << char(((len>>24) & 0xFF));
+        std::cout << reply.toStdString() << std::flush;
 
-    if (BrowserSettings::supportBrowserProxy()) {
-        m_udpSocket.writeDatagram(reply.toUtf8(), QHostAddress::LocalHost, clientPort);
-    }
+        if (BrowserSettings::supportBrowserProxy()) {
+            m_udpSocket.writeDatagram(reply.toUtf8(), QHostAddress::LocalHost, clientPort);
+        }
+    }    
 }
 
 
 void NativeMessagingHost::removeSharedEncryptionKeys()
 {
     QMutexLocker locker(&m_mutex);
-    BrowserService browserService(m_dbTabWidget);
-    browserService.removeSharedEncryptionKeys();
+    m_browserService.removeSharedEncryptionKeys();
 }
 
 void NativeMessagingHost::removeStoredPermissions()
 {
     QMutexLocker locker(&m_mutex);
-    BrowserService browserService(m_dbTabWidget);
-    browserService.removeStoredPermissions();
+    m_browserService.removeStoredPermissions();
 }

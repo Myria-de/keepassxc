@@ -24,9 +24,9 @@
 #include "sodium/randombytes.h"
 #include "config-keepassx.h"
 
-BrowserAction::BrowserAction(DatabaseTabWidget* parent) :
+BrowserAction::BrowserAction(BrowserService& browserService) :
     m_mutex(QMutex::Recursive),
-    m_browserService(parent),
+    m_browserService(browserService),
     m_associated(false)
 {
 
@@ -59,10 +59,6 @@ const QJsonObject BrowserAction::readResponse(const QJsonObject& json)
     }
     return QJsonObject();
 }
-
-
-
-
 
 
 // Private functions
@@ -202,7 +198,7 @@ const QJsonObject BrowserAction::handleTestAssociate(const QJsonObject& json, co
             QMutexLocker locker(&m_mutex);
             const QString key = m_browserService.getKey(id);
             if (key.isEmpty() || key.compare(responseKey, Qt::CaseSensitive) != 0) {
-                return getErrorReply(action, ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED);
+                return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
             }
 
             m_associated = true;

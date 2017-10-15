@@ -34,21 +34,20 @@ class BrowserClients
     };
 
 public:
-    BrowserClients(DatabaseTabWidget* parent);
+    BrowserClients(BrowserService& browserService);
     ~BrowserClients();
 
-    const QJsonObject               readResponse(const QByteArray& arr, const quint16 clientPort = 0, const bool isProxy = false);
+    const QJsonObject               readResponse(const QByteArray& arr, const quint16 clientPort = 0);
 
 private:
     QJsonObject                     byteArrayToJson(const QByteArray& arr) const;
     QString                         getClientID(const QJsonObject& json) const;
-    const BrowserClients::Client    getClient(const QString& clientID, const quint16 clientPort, const bool isProxy);
+    const BrowserClients::Client    getClient(const QString& clientID, const quint16 clientPort);
 
 private:
     QMutex                          m_mutex;
     QVector<Client>                 m_clients;
-    DatabaseTabWidget*              m_dbTabWidget;
-    QSharedPointer<BrowserAction>   m_browserAction;
+    BrowserService&                 m_browserService;
 };
 
 #endif // BROWSERCLIENTS_H

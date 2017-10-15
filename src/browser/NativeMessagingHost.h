@@ -24,6 +24,7 @@
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
 #include <QMutex>
+#include "BrowserClients.h"
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 #ifndef Q_OS_WIN
@@ -33,7 +34,6 @@
 #include <QUdpSocket>
 #include <atomic>
 
-#include "BrowserClients.h"
 
 class NativeMessagingHost : public QObject
 {
@@ -78,8 +78,8 @@ private:
      QUdpSocket                             m_udpSocket;
      quint16                                m_localPort;
      BrowserClients                         m_browserClients;
-     DatabaseTabWidget*                     m_dbTabWidget;
      std::array<char, 4>                    m_headerBuf;
+     BrowserService                         m_browserService;
 };
 
 #endif // NATIVEMESSAGINGHOST_H

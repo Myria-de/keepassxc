@@ -42,7 +42,7 @@ class BrowserAction
     };
 
 public:
-    BrowserAction(DatabaseTabWidget* parent);
+    BrowserAction(BrowserService& browserService);
     ~BrowserAction();
 
     const QJsonObject   readResponse(const QJsonObject& json);
@@ -79,7 +79,7 @@ public slots:
 
 private:
     QMutex          m_mutex;
-    BrowserService  m_browserService;
+    BrowserService& m_browserService;
     QString         m_clientPublicKey;
     QString         m_publicKey;
     QString         m_secretKey;

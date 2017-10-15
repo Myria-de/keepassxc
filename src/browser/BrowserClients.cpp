@@ -19,12 +19,11 @@
 #include <QJsonParseError>
 #include "BrowserClients.h"
 
-BrowserClients::BrowserClients(DatabaseTabWidget* parent) :
+BrowserClients::BrowserClients(BrowserService& browserService) :
     m_mutex(QMutex::Recursive),
-    m_dbTabWidget(parent)
+    m_browserService(browserService)
 {
     m_clients.reserve(1000);
-    m_browserAction.reset(new BrowserAction(parent));
 }
 
 BrowserClients::~BrowserClients()
@@ -32,23 +31,16 @@ BrowserClients::~BrowserClients()
     m_clients.clear();
 }
 
-const QJsonObject BrowserClients::readResponse(const QByteArray& arr, const quint16 clientPort, const bool isProxy)
+const QJsonObject BrowserClients::readResponse(const QByteArray& arr, const quint16 clientPort)
 {
     QJsonObject json;
     const QJsonObject message = byteArrayToJson(arr);
     const QString clientID = getClientID(message);
 
     if (!clientID.isEmpty()) {
-        const BrowserClients::Client& client = getClient(clientID, clientPort, isProxy);
-        if (isProxy) {
-            if (client.browserAction) {
-                json = client.browserAction->readResponse(message);
-            }
-        } else {
-            QMutexLocker locker(&m_mutex);
-            if (m_browserAction) {
-                json = m_browserAction->readResponse(message);
-            }
+        const BrowserClients::Client& client = getClient(clientID, clientPort);
+        if (client.browserAction) {
+            json = client.browserAction->readResponse(message);
         }
     }
 
@@ -76,7 +68,7 @@ QString BrowserClients::getClientID(const QJsonObject& json) const
     return json["clientID"].toString();
 }
 
-const BrowserClients::Client BrowserClients::getClient(const QString& clientID, const quint16 clientPort, const bool isProxy)
+const BrowserClients::Client BrowserClients::getClient(const QString& clientID, const quint16 clientPort)
 {
     QMutexLocker locker(&m_mutex);
     for (const auto &i : m_clients) {
@@ -86,6 +78,6 @@ const BrowserClients::Client BrowserClients::getClient(const QString& clientID, 
     }
 
     // clientID not found, create a new client
-    m_clients.push_back({ clientID, clientPort, QSharedPointer<BrowserAction>(isProxy ? new BrowserAction(m_dbTabWidget) : nullptr)  });
+    m_clients.push_back({ clientID, clientPort, QSharedPointer<BrowserAction>(new BrowserAction(m_browserService)) });
     return m_clients.back();
 }
