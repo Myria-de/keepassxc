@@ -34,7 +34,7 @@ class BrowserClients
     };
 
 public:
-    BrowserClients(DatabaseTabWidget* parent);
+    BrowserClients(BrowserService& browserService);
     ~BrowserClients();
 
     const QJsonObject               readResponse(const QByteArray& arr, const quint16 clientPort = 0);
@@ -47,7 +47,7 @@ private:
 private:
     QMutex                          m_mutex;
     QVector<Client>                 m_clients;
-    DatabaseTabWidget*              m_dbTabWidget;
+    BrowserService&                 m_browserService;
 };
 
 #endif // BROWSERCLIENTS_H

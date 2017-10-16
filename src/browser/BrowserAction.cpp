@@ -24,9 +24,9 @@
 #include "sodium/randombytes.h"
 #include "config-keepassx.h"
 
-BrowserAction::BrowserAction(DatabaseTabWidget* parent) :
+BrowserAction::BrowserAction(BrowserService& browserService) :
     m_mutex(QMutex::Recursive),
-    m_browserService(parent),
+    m_browserService(browserService),
     m_associated(false)
 {
 
@@ -59,10 +59,6 @@ const QJsonObject BrowserAction::readResponse(const QJsonObject& json)
     }
     return QJsonObject();
 }
-
-
-
-
 
 
 // Private functions

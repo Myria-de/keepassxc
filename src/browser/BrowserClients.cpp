@@ -19,9 +19,9 @@
 #include <QJsonParseError>
 #include "BrowserClients.h"
 
-BrowserClients::BrowserClients(DatabaseTabWidget* parent) :
+BrowserClients::BrowserClients(BrowserService& browserService) :
     m_mutex(QMutex::Recursive),
-    m_dbTabWidget(parent)
+    m_browserService(browserService)
 {
     m_clients.reserve(1000);
 }
@@ -78,6 +78,6 @@ const BrowserClients::Client BrowserClients::getClient(const QString& clientID, 
     }
 
     // clientID not found, create a new client
-    m_clients.push_back({ clientID, clientPort, QSharedPointer<BrowserAction>(new BrowserAction(m_dbTabWidget)) });
+    m_clients.push_back({ clientID, clientPort, QSharedPointer<BrowserAction>(new BrowserAction(m_browserService)) });
     return m_clients.back();
 }
