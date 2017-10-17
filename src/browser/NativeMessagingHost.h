@@ -55,6 +55,7 @@ private:
     void        handleHeader(const boost::system::error_code ec, const size_t br);
 #endif
     void        sendReply(const QJsonObject json, const quint16 clientPort = 0);
+    void        sendReplyToAllClients(const QJsonObject json);
 
 signals:
     void        quit();
@@ -65,6 +66,8 @@ public slots:
 
 private slots:
     void        readDatagrams();
+    void        databaseLocked();
+    void        databaseUnlocked();
 
 private:
      std::atomic<bool>                      m_interrupted;

@@ -68,10 +68,18 @@ public:
     void            removeSharedEncryptionKeys();
     void            removeStoredPermissions();
 
+signals:
+    void            databaseIsLocked();
+    void            databaseIsUnlocked();
+    void            databaseIsChanged();
+
 public slots:
     QJsonArray      findMatchingEntries(const QString& id, const QString& url, const QString& submitUrl, const QString& realm);
     QString         storeKey(const QString& key);
     void            updateEntry(const QString& id, const QString& uuid, const QString& login, const QString& password, const QString& url);
+    void            databaseLocked(DatabaseWidget* dbWidget);
+    void            databaseUnlocked(DatabaseWidget* dbWidget);
+    void            activateDatabaseChanged(DatabaseWidget* dbWidget);
 
 private:
     enum Access     { Denied, Unknown, Allowed};

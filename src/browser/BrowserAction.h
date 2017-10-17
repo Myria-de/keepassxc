@@ -18,12 +18,16 @@
 #ifndef BROWSERACTION_H
 #define BROWSERACTION_H
 
+#include <QtCore>
+#include <QObject>
 #include <QJsonObject>
 #include <QMutex>
 #include "BrowserService.h"
 
-class BrowserAction
+class BrowserAction : public QObject
 {
+    Q_OBJECT
+
     enum {
         ERROR_KEEPASS_DATABASE_NOT_OPENED = 1,
         ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED = 2,
@@ -78,12 +82,12 @@ public slots:
     void                removeStoredPermissions();
 
 private:
-    QMutex          m_mutex;
-    BrowserService& m_browserService;
-    QString         m_clientPublicKey;
-    QString         m_publicKey;
-    QString         m_secretKey;
-    bool            m_associated;
+    QMutex              m_mutex;
+    BrowserService&     m_browserService;
+    QString             m_clientPublicKey;
+    QString             m_publicKey;
+    QString             m_secretKey;
+    bool                m_associated;
 };
 
 #endif // BROWSERACTION_H

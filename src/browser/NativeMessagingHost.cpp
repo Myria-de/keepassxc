@@ -59,6 +59,9 @@ NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
     if (BrowserSettings::isEnabled() && !m_running) {
         run();
     }
+
+    connect(&m_browserService, SIGNAL(databaseIsLocked()), this, SLOT(databaseLocked()));
+    connect(&m_browserService, SIGNAL(databaseIsUnlocked()), this, SLOT(databaseUnlocked()));
 }
 
 NativeMessagingHost::~NativeMessagingHost()
@@ -212,7 +215,16 @@ void NativeMessagingHost::sendReply(const QJsonObject json, const quint16 client
         if (BrowserSettings::supportBrowserProxy()) {
             m_udpSocket.writeDatagram(reply.toUtf8(), QHostAddress::LocalHost, clientPort);
         }
-    }    
+    }
+}
+
+void NativeMessagingHost::sendReplyToAllClients(const QJsonObject json)
+{
+    QMutexLocker locker(&m_mutex);
+    QVector<quint16> ports = m_browserClients.getAllActivePorts();
+    for (const auto &i : ports) {
+        sendReply(json, i);
+    }
 }
 
 
@@ -226,4 +238,18 @@ void NativeMessagingHost::removeStoredPermissions()
 {
     QMutexLocker locker(&m_mutex);
     m_browserService.removeStoredPermissions();
+}
+
+void NativeMessagingHost::databaseLocked()
+{
+    QJsonObject response;
+    response["action"] = "database-locked";
+    sendReplyToAllClients(response);
+}
+
+void NativeMessagingHost::databaseUnlocked()
+{
+    QJsonObject response;
+    response["action"] = "database-unlocked";
+    sendReplyToAllClients(response);
 }
