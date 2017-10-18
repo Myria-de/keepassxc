@@ -32,6 +32,7 @@
 #include "core/Uuid.h"
 #include "core/PasswordGenerator.h"
 
+
 // de887cc3-0363-43b8-974b-5911b8816224
 static const unsigned char KEEPASSBROWSER_UUID_DATA[] = {
     0xde, 0x88, 0x7c, 0xc3, 0x03, 0x63, 0x43, 0xb8,
@@ -45,7 +46,9 @@ static int        KEEPASSBROWSER_DEFAULT_ICON = 1;
 
 BrowserService::BrowserService(DatabaseTabWidget* parent) : m_dbTabWidget(parent)
 {
-
+    connect(m_dbTabWidget, SIGNAL(databaseLocked(DatabaseWidget*)), this, SLOT(databaseLocked(DatabaseWidget*)));
+    connect(m_dbTabWidget, SIGNAL(databaseUnlocked(DatabaseWidget*)), this, SLOT(databaseUnlocked(DatabaseWidget*)));
+    connect(m_dbTabWidget, SIGNAL(activateDatabaseChanged(DatabaseWidget*)), this, SLOT(activateDatabaseChanged(DatabaseWidget*)));
 }
 
 bool BrowserService::isDatabaseOpened() const
@@ -608,4 +611,30 @@ Database* BrowserService::getDatabase()
         }
     }
     return nullptr;
+}
+
+void BrowserService::databaseLocked(DatabaseWidget* dbWidget)
+{
+    if (dbWidget) {
+        emit databaseIsLocked();
+    }
+}
+
+void BrowserService::databaseUnlocked(DatabaseWidget* dbWidget)
+{
+    if (dbWidget) {
+        emit databaseIsUnlocked();
+    }
+}
+
+void BrowserService::activateDatabaseChanged(DatabaseWidget* dbWidget)
+{
+    if (dbWidget) {
+        auto currentMode = dbWidget->currentMode();
+        if (currentMode == DatabaseWidget::ViewMode || currentMode == DatabaseWidget::EditMode) {
+            emit databaseIsUnlocked();
+        } else {
+            emit databaseIsLocked();
+        }
+    }
 }

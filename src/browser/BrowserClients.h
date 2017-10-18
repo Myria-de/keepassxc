@@ -33,20 +33,23 @@ class BrowserClients
         QSharedPointer<BrowserAction>   browserAction;
     };
 
+    typedef QSharedPointer<Client>      ClientPtr;
+
 public:
     BrowserClients(BrowserService& browserService);
     ~BrowserClients();
 
     const QJsonObject               readResponse(const QByteArray& arr, const quint16 clientPort = 0);
+    const QVector<quint16>          getAllActivePorts();
 
 private:
     QJsonObject                     byteArrayToJson(const QByteArray& arr) const;
     QString                         getClientID(const QJsonObject& json) const;
-    const BrowserClients::Client    getClient(const QString& clientID, const quint16 clientPort);
+    const ClientPtr                 getClient(const QString& clientID, const quint16 clientPort);
 
 private:
     QMutex                          m_mutex;
-    QVector<Client>                 m_clients;
+    QVector<ClientPtr>              m_clients;
     BrowserService&                 m_browserService;
 };
 
