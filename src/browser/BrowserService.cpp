@@ -93,15 +93,6 @@ bool BrowserService::openDatabase()
     return false;
 }
 
-void BrowserService::lockDatabase()
-{
-    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
-        if (dbWidget->currentMode() == DatabaseWidget::ViewMode || dbWidget->currentMode() == DatabaseWidget::EditMode) {
-            dbWidget->lock();
-        }
-    }
-}
-
 QString BrowserService::getDatabaseRootUuid()
 {
     if (Database* db = getDatabase()) {
@@ -635,6 +626,19 @@ void BrowserService::activateDatabaseChanged(DatabaseWidget* dbWidget)
             emit databaseIsUnlocked();
         } else {
             emit databaseIsLocked();
+        }
+    }
+}
+
+void BrowserService::lockDatabase()
+{
+    if (thread() != QThread::currentThread()) {
+        QMetaObject::invokeMethod(this, "lockDatabase", Qt::BlockingQueuedConnection);
+    }
+
+    if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
+        if (dbWidget->currentMode() == DatabaseWidget::ViewMode || dbWidget->currentMode() == DatabaseWidget::EditMode) {
+            dbWidget->lock();
         }
     }
 }

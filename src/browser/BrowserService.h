@@ -57,7 +57,6 @@ public:
 
     bool            isDatabaseOpened() const;
     bool            openDatabase();
-    void            lockDatabase();
     QString         getDatabaseRootUuid();
     QString         getDatabaseRecycleBinUuid();
     Entry*          getConfigEntry(bool create = false);
@@ -80,6 +79,7 @@ public slots:
     void            databaseLocked(DatabaseWidget* dbWidget);
     void            databaseUnlocked(DatabaseWidget* dbWidget);
     void            activateDatabaseChanged(DatabaseWidget* dbWidget);
+    void            lockDatabase();
 
 private:
     enum Access     { Denied, Unknown, Allowed};
