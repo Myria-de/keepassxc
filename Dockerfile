@@ -45,7 +45,6 @@ RUN set -x \
         libyubikey-dev \
         libykpers-1-dev \
         libsodium-dev \
-        libboost-system-dev \
         xvfb \
         wget \
         file \
