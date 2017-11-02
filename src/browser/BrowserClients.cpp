@@ -31,14 +31,14 @@ BrowserClients::~BrowserClients()
     m_clients.clear();
 }
 
-const QJsonObject BrowserClients::readResponse(const QByteArray& arr, const quint16 clientPort)
+const QJsonObject BrowserClients::readResponse(const QByteArray& arr)
 {
     QJsonObject json;
     const QJsonObject message = byteArrayToJson(arr);
     const QString clientID = getClientID(message);
 
     if (!clientID.isEmpty()) {
-        const ClientPtr client = getClient(clientID, clientPort);
+        const ClientPtr client = getClient(clientID);
         if (client->browserAction) {
             json = client->browserAction->readResponse(message);
         }
@@ -46,20 +46,6 @@ const QJsonObject BrowserClients::readResponse(const QByteArray& arr, const quin
 
     return json;
 }
-
-const QVector<quint16> BrowserClients::getAllActivePorts()
-{
-    QVector<quint16> ports;
-    QMutexLocker locker(&m_mutex);
-    for (const auto &i : m_clients) {
-        ports.push_back(i->clientPort);
-    }
-
-    return ports;
-}
-
-// Private functions
-// ========================
 
 QJsonObject BrowserClients::byteArrayToJson(const QByteArray& arr) const
 {
@@ -78,7 +64,7 @@ QString BrowserClients::getClientID(const QJsonObject& json) const
     return json["clientID"].toString();
 }
 
-const BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientID, const quint16 clientPort)
+const BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientID)
 {
     QMutexLocker locker(&m_mutex);
     for (const auto &i : m_clients) {
@@ -88,6 +74,6 @@ const BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientI
     }
 
     // clientID not found, create a new client
-    m_clients.push_back(ClientPtr(new Client({ clientID, clientPort, QSharedPointer<BrowserAction>(new BrowserAction(m_browserService)) })));
+    m_clients.push_back(ClientPtr(new Client({ clientID, QSharedPointer<BrowserAction>(new BrowserAction(m_browserService)) })));
     return m_clients.back();
 }
