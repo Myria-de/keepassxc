@@ -71,7 +71,7 @@ bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
 #endif
 }
 
-void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled)
+void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy)
 {
     if (enabled) {
  #ifdef Q_OS_WIN
@@ -82,7 +82,7 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
          }
  #endif
          // Always create the script file
-         QJsonObject script = constructFile(browser);
+         QJsonObject script = constructFile(browser, proxy);
          saveFile(browser, script);
      } else {
          // Remove the script file
@@ -102,7 +102,7 @@ void HostInstaller::updateBinaryPaths(const bool proxy)
 {
     for (int i = 0; i < 4; i++) {
         if (checkIfInstalled(static_cast<supportedBrowsers>(i))) {
-            installBrowser(static_cast<supportedBrowsers>(i), proxy);
+            installBrowser(static_cast<supportedBrowsers>(i), true, proxy);
         }
     }
 }
@@ -156,9 +156,9 @@ QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const 
     if (proxy) {
         path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
 #ifdef Q_OS_WIN
-    path.append("keepassxc-proxy.exe");
+        path.append("/keepassxc-proxy.exe");
 #else
-    path.append("keepassxc-proxy");
+        path.append("/keepassxc-proxy");
 #endif
     } else {
         path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();

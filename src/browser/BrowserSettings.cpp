@@ -353,5 +353,5 @@ int BrowserSettings::getbits()
 void BrowserSettings::updateBinaryPaths()
 {
     bool isProxy = config()->get("Browser/SupportBrowserProxy", false).toBool();
-    //m_hostInstaller.updateBinaryPaths(isProxy);
+    m_hostInstaller.updateBinaryPaths(isProxy);
 }

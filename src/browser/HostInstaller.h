@@ -37,7 +37,7 @@ public:
 public:
     HostInstaller();
     bool checkIfInstalled(const supportedBrowsers browser);
-    void installBrowser(const supportedBrowsers browser, const bool enabled);
+    void installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy = false);
     void updateBinaryPaths(const bool proxy);
 
 private:
