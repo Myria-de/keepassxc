@@ -38,9 +38,6 @@ BrowserOptionDialog::BrowserOptionDialog(QWidget* parent) :
 
     m_ui->tabWidget->setEnabled(m_ui->enableBrowserSupport->isChecked());
     connect(m_ui->enableBrowserSupport, SIGNAL(toggled(bool)), m_ui->tabWidget, SLOT(setEnabled(bool)));
-
-    m_ui->udpPort->setEnabled(m_ui->supportBrowserProxy->isChecked());
-    connect(m_ui->supportBrowserProxy, SIGNAL(toggled(bool)), m_ui->udpPort, SLOT(setEnabled(bool)));
 }
 
 BrowserOptionDialog::~BrowserOptionDialog()
@@ -63,12 +60,12 @@ void BrowserOptionDialog::loadSettings()
         m_ui->sortByTitle->setChecked(true);
     }
 
-    m_ui->udpPort->setText(QString::number(settings.udpPort()));
     m_ui->alwaysAllowAccess->setChecked(settings.alwaysAllowAccess());
     m_ui->alwaysAllowUpdate->setChecked(settings.alwaysAllowUpdate());
     m_ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
     m_ui->supportKphFields->setChecked(settings.supportKphFields());
     m_ui->supportBrowserProxy->setChecked(settings.supportBrowserProxy());
+    m_ui->updateBinaryPath->setChecked(settings.updateBinaryPath());
     m_ui->chromeSupport->setChecked(settings.chromeSupport());
     m_ui->chromiumSupport->setChecked(settings.chromiumSupport());
     m_ui->firefoxSupport->setChecked(settings.firefoxSupport());
@@ -85,14 +82,8 @@ void BrowserOptionDialog::saveSettings()
     settings.setMatchUrlScheme(m_ui->matchUrlScheme->isChecked());
     settings.setSortByUsername(m_ui->sortByUsername->isChecked());
 
-    int port = m_ui->udpPort->text().toInt();
-    if (port < 1024) {
-        QMessageBox::warning(this, tr("Cannot bind to privileged ports"),
-            tr("Cannot bind to privileged ports below 1024!\nUsing default port 19700."));
-        port = 19700;
-    }
-    settings.setUdpPort(port);
     settings.setSupportBrowserProxy(m_ui->supportBrowserProxy->isChecked());
+    settings.setUpdateBinaryPath(m_ui->updateBinaryPath->isChecked());
     settings.setAlwaysAllowAccess(m_ui->alwaysAllowAccess->isChecked());
     settings.setAlwaysAllowUpdate(m_ui->alwaysAllowUpdate->isChecked());
     settings.setSearchInAllDatabases(m_ui->searchInAllDatabases->isChecked());

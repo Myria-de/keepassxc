@@ -37,7 +37,6 @@ parts:
       - libyubikey-dev
       - libykpers-1-dev
       - libsodium-dev
-      - libboost-system-dev
     after: [desktop-qt5]
   desktop-qt5:
     # Redefine stage packages to work with Ubuntu 17.04

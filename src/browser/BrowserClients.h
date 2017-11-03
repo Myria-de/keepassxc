@@ -22,14 +22,16 @@
 #include <QMutex>
 #include <QVector>
 #include <QSharedPointer>
+#include <QLocalSocket>
 
 #include "BrowserAction.h"
+
+
 
 class BrowserClients
 {
     struct Client {
         QString                         clientID;
-        quint16                         clientPort;
         QSharedPointer<BrowserAction>   browserAction;
     };
 
@@ -39,13 +41,12 @@ public:
     BrowserClients(BrowserService& browserService);
     ~BrowserClients();
 
-    const QJsonObject               readResponse(const QByteArray& arr, const quint16 clientPort = 0);
-    const QVector<quint16>          getAllActivePorts();
+    const QJsonObject               readResponse(const QByteArray& arr);
 
 private:
     QJsonObject                     byteArrayToJson(const QByteArray& arr) const;
     QString                         getClientID(const QJsonObject& json) const;
-    const ClientPtr                 getClient(const QString& clientID, const quint16 clientPort);
+    const ClientPtr                 getClient(const QString& clientID);
 
 private:
     QMutex                          m_mutex;

@@ -24,20 +24,18 @@
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
 #include <QMutex>
+#include <QSocketNotifier>
+#include <QLocalServer>
+#include <atomic>
 #include "BrowserClients.h"
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
-#ifndef Q_OS_WIN
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#endif
-#include <QUdpSocket>
-#include <atomic>
-
 
 class NativeMessagingHost : public QObject
 {
     Q_OBJECT
+
+    typedef QList<QLocalSocket*> SocketList;
 
 public:
     explicit    NativeMessagingHost(DatabaseTabWidget* parent = 0);
@@ -47,15 +45,10 @@ public:
     void        stop();
 
 private:
-    void        readLine();
-    void        readMessages();
-#ifndef Q_OS_WIN
-    void        readHeader();
-    void        readBody(const size_t len);
-    void        handleHeader(const boost::system::error_code ec, const size_t br);
-#endif
-    void        sendReply(const QJsonObject json, const quint16 clientPort = 0);
-    void        sendReplyToAllClients(const QJsonObject json);
+    void        readNativeMessages();
+    void        sendReply(const QJsonObject& json);
+    void        sendReplyToAllClients(const QJsonObject& json);
+    QString     jsonToString(const QJsonObject& json) const;
 
 signals:
     void        quit();
@@ -65,24 +58,22 @@ public slots:
     void        removeStoredPermissions();
 
 private slots:
-    void        readDatagrams();
     void        databaseLocked();
     void        databaseUnlocked();
+    void        newLocalConnection();
+    void        newNativeMessage();
+    void        newLocalMessage();
+    void        disconnectSocket();
 
 private:
-     std::atomic<bool>                      m_interrupted;
-#ifndef Q_OS_WIN
-     boost::asio::io_service                m_io_service;
-     boost::asio::posix::stream_descriptor  m_sd;
-#endif
-     QFuture<void>                          m_fut;
-     QMutex                                 m_mutex;
-     bool                                   m_running;
-     QUdpSocket                             m_udpSocket;
-     quint16                                m_localPort;
-     BrowserClients                         m_browserClients;
-     std::array<char, 4>                    m_headerBuf;
-     BrowserService                         m_browserService;
+    std::atomic_bool                m_running;
+    QMutex                          m_mutex;
+    BrowserClients                  m_browserClients;
+    BrowserService                  m_browserService;
+    QSharedPointer<QSocketNotifier> m_notifier;
+    QSharedPointer<QLocalServer>    m_localServer;
+    QFuture<void>                   m_future;
+    SocketList                      m_socketList;
 };
 
 #endif // NATIVEMESSAGINGHOST_H

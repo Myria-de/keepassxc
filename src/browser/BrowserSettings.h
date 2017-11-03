@@ -50,11 +50,11 @@ public:
     static void setSearchInAllDatabases(bool searchInAllDatabases);
     static bool supportKphFields();
     static void setSupportKphFields(bool supportKphFields);
-    static int  udpPort();
-    static void setUdpPort(int port);
+
     static bool supportBrowserProxy();
     static void setSupportBrowserProxy(bool enabled);
-
+    static bool updateBinaryPath();
+    static void setUpdateBinaryPath(bool enabled);
     static bool chromeSupport();
     static void setChromeSupport(bool enabled);
     static bool chromiumSupport();
@@ -90,6 +90,7 @@ public:
     static PasswordGenerator::GeneratorFlags passwordGeneratorFlags();
     static QString generatePassword();
     static int getbits();
+    static void updateBinaryPaths();
 
 private:
     static PasswordGenerator m_passwordGenerator;

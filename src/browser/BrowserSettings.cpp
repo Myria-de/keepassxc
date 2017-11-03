@@ -134,17 +134,6 @@ void BrowserSettings::setSupportKphFields(bool supportKphFields)
     config()->set("Browser/SupportKphFields", supportKphFields);
 }
 
-int BrowserSettings::udpPort()
-{
-    static const int PORT = 19700;
-    return config()->get("UDP/Port", PORT).toInt();
-}
-
-void BrowserSettings::setUdpPort(int port)
-{
-    config()->set("UDP/Port", port);
-}
-
 bool BrowserSettings::supportBrowserProxy()
 {
     return config()->get("Browser/SupportBrowserProxy", false).toBool();
@@ -153,6 +142,16 @@ bool BrowserSettings::supportBrowserProxy()
 void BrowserSettings::setSupportBrowserProxy(bool enabled)
 {
     config()->set("Browser/SupportBrowserProxy", enabled);
+}
+
+bool BrowserSettings::updateBinaryPath()
+{
+    return config()->get("Browser/UpdateBinaryPath", true).toBool();
+}
+
+void BrowserSettings::setUpdateBinaryPath(bool enabled)
+{
+    config()->set("Browser/UpdateBinaryPath", enabled);
 }
 
 bool BrowserSettings::chromeSupport() {
@@ -349,4 +348,10 @@ QString BrowserSettings::generatePassword()
 int BrowserSettings::getbits()
 {
     return m_passwordGenerator.getbits();
+}
+
+void BrowserSettings::updateBinaryPaths()
+{
+    // TODO: Check the installed browsers and reinstall the .json files
+    //bool isProxy = config()->get("Browser/SupportBrowserProxy", false).toBool();
 }
