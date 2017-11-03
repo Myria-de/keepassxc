@@ -72,30 +72,37 @@ bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
 
 void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled)
 {
-    if (enabled && !checkIfInstalled(browser)) {
-        QJsonObject script = constructFile(browser);
-#ifdef Q_OS_WIN
-        // Create a registry key
-        QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
-        if (!registryEntryFound(settings)) {
-            settings.setValue("Default", getPath(browser));
-        }
-#endif
-        // Install the .json file
-        if (!saveFile(browser, script)) {
+    if (enabled) {
+ #ifdef Q_OS_WIN
+         // Create a registry key
+         QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
+         if (!registryEntryFound(settings)) {
+             settings.setValue("Default", getPath(browser));
+         }
+ #endif
+         // Always create the script file
+         QJsonObject script = constructFile(browser);
+         saveFile(browser, script);
+     } else {
+         // Remove the script file
+         QString fileName = getPath(browser);
+         QFile::remove(fileName);
+ #ifdef Q_OS_WIN
+         // Remove the registry entry
+         QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
+         if (registryEntryFound(settings)) {
+             settings.remove("Default");
+         }
+ #endif
+     }
+}
 
+void HostInstaller::updateBinaryPaths(const bool proxy)
+{
+    for (int i = 0; i < 4; i++) {
+        if (checkIfInstalled(static_cast<supportedBrowsers>(i))) {
+            installBrowser(static_cast<supportedBrowsers>(i), proxy);
         }
-    } else if (!enabled && checkIfInstalled(browser)) {
-        // Uninstall the .json file
-        QString fileName = getPath(browser);
-        QFile::remove(fileName);
-#ifdef Q_OS_WIN
-        // Remove the registry entry
-        QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
-        if (registryEntryFound(settings)) {
-            settings.remove("Default");
-        }
-#endif
     }
 }
 
@@ -110,12 +117,22 @@ QString HostInstaller::getTargetPath(const supportedBrowsers browser)
     }
 }
 
+QString HostInstaller::getBrowserName(const supportedBrowsers browser)
+{
+	switch (browser) {
+        case supportedBrowsers::CHROME:     return "chrome";
+        case supportedBrowsers::CHROMIUM:   return "chromium";
+        case supportedBrowsers::FIREFOX:    return "firefox";
+        case supportedBrowsers::VIVALDI:    return "vivaldi";
+        default: return "";
+    }
+}
+
 QString HostInstaller::getPath(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
-    QString winPath = (browser == supportedBrowsers::FIREFOX)
-        ? QString("%1/%2_firefox.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME)
-        : QString("%1/%2.json").arg(QCoreApplication::applicationDirPath(), HostInstaller::HOST_NAME);
+	QString userPath = QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+	QString winPath = QString("%1/%2_%3.json").arg(userPath, HostInstaller::HOST_NAME, getBrowserName(browser));
     winPath.replace("/","\\");
     return winPath;
 #endif
@@ -132,9 +149,19 @@ QString HostInstaller::getInstallDir(const supportedBrowsers browser)
     return QString("%1%2").arg(QDir::homePath(), path);
 }
 
-QJsonObject HostInstaller::constructFile(const supportedBrowsers browser)
+QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const bool proxy)
 {
-    QString path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
+    QString path;
+    if (proxy) {
+        path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+#ifdef Q_OS_WIN
+    path.append("keepassxc-proxy.exe");
+#else
+    path.append("keepassxc-proxy");
+#endif
+    } else {
+        path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
+    }
 #ifdef Q_OS_WIN
     path.replace("/","\\");
 #endif

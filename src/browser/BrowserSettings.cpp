@@ -352,6 +352,6 @@ int BrowserSettings::getbits()
 
 void BrowserSettings::updateBinaryPaths()
 {
-    // TODO: Check the installed browsers and reinstall the .json files
-    //bool isProxy = config()->get("Browser/SupportBrowserProxy", false).toBool();
+    bool isProxy = config()->get("Browser/SupportBrowserProxy", false).toBool();
+    //m_hostInstaller.updateBinaryPaths(isProxy);
 }

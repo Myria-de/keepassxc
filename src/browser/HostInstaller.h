@@ -27,7 +27,7 @@ class HostInstaller : public QObject
     Q_OBJECT
 
 public:
-    enum supportedBrowsers {
+    enum supportedBrowsers : int {
         CHROME = 0,
         CHROMIUM = 1,
         FIREFOX = 2,
@@ -38,12 +38,14 @@ public:
     HostInstaller();
     bool checkIfInstalled(const supportedBrowsers browser);
     void installBrowser(const supportedBrowsers browser, const bool enabled);
+    void updateBinaryPaths(const bool proxy);
 
 private:
     QString     getTargetPath(const supportedBrowsers browser);
+    QString		getBrowserName(const supportedBrowsers browser);
     QString     getPath(const supportedBrowsers browser);
     QString     getInstallDir(const supportedBrowsers browser);
-    QJsonObject constructFile(const supportedBrowsers browser);
+    QJsonObject constructFile(const supportedBrowsers browser, const bool proxy = false);
     bool        registryEntryFound(const QSettings& settings);
     bool        saveFile(const supportedBrowsers browser, const QJsonObject script);
 
