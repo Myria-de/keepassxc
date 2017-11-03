@@ -18,6 +18,7 @@
 #include "HostInstaller.h"
 #include <QDir>
 #include <QFile>
+#include <QStandardPaths>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QCoreApplication>
