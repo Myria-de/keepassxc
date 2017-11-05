@@ -71,7 +71,7 @@ bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
 #endif
 }
 
-void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy)
+void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy, const QString location)
 {
     if (enabled) {
  #ifdef Q_OS_WIN
@@ -82,7 +82,7 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
          }
  #endif
          // Always create the script file
-         QJsonObject script = constructFile(browser, proxy);
+         QJsonObject script = constructFile(browser, proxy, location);
          saveFile(browser, script);
      } else {
          // Remove the script file
@@ -98,11 +98,11 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
      }
 }
 
-void HostInstaller::updateBinaryPaths(const bool proxy)
+void HostInstaller::updateBinaryPaths(const bool proxy, const QString location)
 {
     for (int i = 0; i < 4; i++) {
         if (checkIfInstalled(static_cast<supportedBrowsers>(i))) {
-            installBrowser(static_cast<supportedBrowsers>(i), true, proxy);
+            installBrowser(static_cast<supportedBrowsers>(i), true, proxy, location);
         }
     }
 }
@@ -150,16 +150,19 @@ QString HostInstaller::getInstallDir(const supportedBrowsers browser)
     return QString("%1%2").arg(QDir::homePath(), path);
 }
 
-QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const bool proxy)
+QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const bool proxy, const QString location)
 {
     QString path;
     if (proxy) {
-        path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+        if (!location.isEmpty()) {
+            path = location;
+        } else {
+            path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+            path.append("/keepassxc-proxy");
 #ifdef Q_OS_WIN
-        path.append("/keepassxc-proxy.exe");
-#else
-        path.append("/keepassxc-proxy");
+            path.append(".exe");
 #endif
+        }
     } else {
         path = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
     }
@@ -189,7 +192,8 @@ QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const 
     return script;
 }
 
-bool HostInstaller::registryEntryFound(const QSettings& settings){
+bool HostInstaller::registryEntryFound(const QSettings& settings)
+{
     return !settings.value("Default").isNull();
 }
 

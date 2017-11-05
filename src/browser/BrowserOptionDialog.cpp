@@ -38,6 +38,9 @@ BrowserOptionDialog::BrowserOptionDialog(QWidget* parent) :
 
     m_ui->tabWidget->setEnabled(m_ui->enableBrowserSupport->isChecked());
     connect(m_ui->enableBrowserSupport, SIGNAL(toggled(bool)), m_ui->tabWidget, SLOT(setEnabled(bool)));
+
+    m_ui->customProxyLocation->setEnabled(m_ui->useCustomProxy->isChecked());
+    connect(m_ui->useCustomProxy, SIGNAL(toggled(bool)), m_ui->customProxyLocation, SLOT(setEnabled(bool)));
 }
 
 BrowserOptionDialog::~BrowserOptionDialog()
@@ -65,6 +68,8 @@ void BrowserOptionDialog::loadSettings()
     m_ui->searchInAllDatabases->setChecked(settings.searchInAllDatabases());
     m_ui->supportKphFields->setChecked(settings.supportKphFields());
     m_ui->supportBrowserProxy->setChecked(settings.supportBrowserProxy());
+    m_ui->useCustomProxy->setChecked(settings.useCustomProxy());
+    m_ui->customProxyLocation->setText(settings.customProxyLocation());
     m_ui->updateBinaryPath->setChecked(settings.updateBinaryPath());
     m_ui->chromeSupport->setChecked(settings.chromeSupport());
     m_ui->chromiumSupport->setChecked(settings.chromiumSupport());
@@ -83,6 +88,12 @@ void BrowserOptionDialog::saveSettings()
     settings.setSortByUsername(m_ui->sortByUsername->isChecked());
 
     settings.setSupportBrowserProxy(m_ui->supportBrowserProxy->isChecked());
+    settings.setUseCustomProxy(m_ui->useCustomProxy->isChecked());
+
+    if (settings.useCustomProxy()) {
+        settings.setCustomProxyLocation(m_ui->customProxyLocation->text());
+    }
+
     settings.setUpdateBinaryPath(m_ui->updateBinaryPath->isChecked());
     settings.setAlwaysAllowAccess(m_ui->alwaysAllowAccess->isChecked());
     settings.setAlwaysAllowUpdate(m_ui->alwaysAllowUpdate->isChecked());

@@ -87,7 +87,7 @@ void NativeMessagingHost::run()
 
     // Update KeePassXC/keepassxc-proxy binary paths to Native Messaging scripts
     if (BrowserSettings::updateBinaryPath()) {
-        BrowserSettings::updateBinaryPaths();
+        BrowserSettings::updateBinaryPaths(BrowserSettings::useCustomProxy() ? BrowserSettings::customProxyLocation() : "");
     }
 
 #ifdef Q_OS_WIN

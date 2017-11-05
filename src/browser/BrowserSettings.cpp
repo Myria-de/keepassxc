@@ -144,9 +144,29 @@ void BrowserSettings::setSupportBrowserProxy(bool enabled)
     config()->set("Browser/SupportBrowserProxy", enabled);
 }
 
+bool BrowserSettings::useCustomProxy()
+{
+    return config()->get("Browser/UseCustomProxy", false).toBool();
+}
+
+void BrowserSettings::setUseCustomProxy(bool enabled)
+{
+    config()->set("Browser/UseCustomProxy", enabled);
+}
+
+QString BrowserSettings::customProxyLocation()
+{
+    return config()->get("Browser/CustomProxyLocation", " ").toString();
+}
+
+void BrowserSettings::setCustomProxyLocation(QString location)
+{
+    config()->set("Browser/CustomProxyLocation", location);
+}
+
 bool BrowserSettings::updateBinaryPath()
 {
-    return config()->get("Browser/UpdateBinaryPath", true).toBool();
+    return config()->get("Browser/UpdateBinaryPath", false).toBool();
 }
 
 void BrowserSettings::setUpdateBinaryPath(bool enabled)
@@ -350,8 +370,8 @@ int BrowserSettings::getbits()
     return m_passwordGenerator.getbits();
 }
 
-void BrowserSettings::updateBinaryPaths()
+void BrowserSettings::updateBinaryPaths(QString customProxyLocation)
 {
-    bool isProxy = config()->get("Browser/SupportBrowserProxy", false).toBool();
-    m_hostInstaller.updateBinaryPaths(isProxy);
+    bool isProxy = supportBrowserProxy();
+    m_hostInstaller.updateBinaryPaths(isProxy, customProxyLocation);
 }

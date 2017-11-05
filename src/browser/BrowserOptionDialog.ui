@@ -134,9 +134,6 @@
        <string>Supported browsers</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
-       <!--<item>
-        <widget class="PasswordGeneratorWidget" name="passwordGenerator" native="true"/>
-        </item>-->
         <item>
           <widget class="QLabel" name="browserLabel1">
            <property name="text">
@@ -259,16 +256,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="supportBrowserProxy">
-         <property name="toolTip">
-          <string>Support a proxy application between KeePassXC and browser extension.</string>
-         </property>
-         <property name="text">
-          <string>&amp;Enable support for proxy application between KeePassXC and browser extension</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QCheckBox" name="updateBinaryPath">
          <property name="toolTip">
           <string>Updates KeePassXC or keepassxc-proxy binary path automatically to Native Messaging scripts on startup.</string>
@@ -279,7 +266,37 @@
         </widget>
        </item>
        <item>
-        <spacer name="verticalSpacer">
+        <widget class="QCheckBox" name="supportBrowserProxy">
+         <property name="toolTip">
+          <string>Support a proxy application between KeePassXC and browser extension.</string>
+         </property>
+         <property name="text">
+          <string>&amp;Enable support for proxy application between KeePassXC and browser extension</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="useCustomProxy">
+         <property name="toolTip">
+          <string>Use a custom proxy location if you installed a proxy manually.</string>
+         </property>
+         <property name="text">
+          <string>&amp;Use a custom proxy location</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="customProxyLocation">
+         <property name="maxLength">
+          <number>999</number>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>

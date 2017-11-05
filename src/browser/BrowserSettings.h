@@ -53,6 +53,10 @@ public:
 
     static bool supportBrowserProxy();
     static void setSupportBrowserProxy(bool enabled);
+    static bool useCustomProxy();
+    static void setUseCustomProxy(bool enabled);
+    static QString customProxyLocation();
+    static void setCustomProxyLocation(QString location);
     static bool updateBinaryPath();
     static void setUpdateBinaryPath(bool enabled);
     static bool chromeSupport();
@@ -90,7 +94,7 @@ public:
     static PasswordGenerator::GeneratorFlags passwordGeneratorFlags();
     static QString generatePassword();
     static int getbits();
-    static void updateBinaryPaths();
+    static void updateBinaryPaths(QString customProxyLocation = QString());
 
 private:
     static PasswordGenerator m_passwordGenerator;

@@ -37,15 +37,15 @@ public:
 public:
     HostInstaller();
     bool checkIfInstalled(const supportedBrowsers browser);
-    void installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy = false);
-    void updateBinaryPaths(const bool proxy);
+    void installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy = false, const QString location = QString());
+    void updateBinaryPaths(const bool proxy, const QString location = QString());
 
 private:
     QString     getTargetPath(const supportedBrowsers browser);
     QString		getBrowserName(const supportedBrowsers browser);
     QString     getPath(const supportedBrowsers browser);
     QString     getInstallDir(const supportedBrowsers browser);
-    QJsonObject constructFile(const supportedBrowsers browser, const bool proxy = false);
+    QJsonObject constructFile(const supportedBrowsers browser, const bool proxy, const QString location);
     bool        registryEntryFound(const QSettings& settings);
     bool        saveFile(const supportedBrowsers browser, const QJsonObject script);
 

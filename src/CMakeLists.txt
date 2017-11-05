@@ -184,6 +184,7 @@ if(WITH_XC_HTTP)
 endif()
 
 add_subdirectory(browser)
+add_subdirectory(proxy)
 if(WITH_XC_BROWSER)
     set(keepassbrowser_LIB keepassbrowser)
 endif()
@@ -298,6 +299,15 @@ if(APPLE AND WITH_APP_BUNDLE)
                      COMMAND ${QT_BINARY_DIR}/macdeployqt ${PROGNAME}.app
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
                      COMMENT "Deploying app bundle")
+
+  if(WITH_XC_BROWSER)
+    set(PROXY_BINARY_DIR "${CMAKE_BINARY_DIR}/src/proxy/keepassxc-proxy")
+    add_custom_command(TARGET ${PROGNAME}
+                       POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy ${PROXY_BINARY_DIR} ${PROGNAME}.app/Contents/MacOS/keepassxc-proxy
+                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+                       COMMENT "Copying keepassxc-proxy inside the application")
+  endif()
 endif()
 
 if(MINGW)
