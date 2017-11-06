@@ -40,7 +40,7 @@ NativeMessagingHost::NativeMessagingHost() :
     QString client = "/tmp/kpxc_client." + QString::number(pid);
     QFile::remove(client);
 #endif
-    m_localSocket.reset(new QLocalSocket());
+    m_localSocket = new QLocalSocket();
 #ifdef Q_OS_WIN
     m_localSocket->connectToServer("kpxc_server");
     m_running = true;
@@ -48,8 +48,15 @@ NativeMessagingHost::NativeMessagingHost() :
 #else
     m_localSocket->connectToServer("/tmp/kpxc_server");
 #endif
-    connect(m_localSocket.data(), SIGNAL(readyRead()), this, SLOT(newLocalMessage()));
-    connect(m_localSocket.data(), SIGNAL(disconnected()), this, SLOT(deleteSocket()));
+    connect(m_localSocket, SIGNAL(readyRead()), this, SLOT(newLocalMessage()));
+    connect(m_localSocket, SIGNAL(disconnected()), this, SLOT(deleteSocket()));
+}
+
+NativeMessagingHost::~NativeMessagingHost()
+{
+#ifdef Q_OS_WIN
+    m_future.waitForFinished();
+#endif
 }
 
 void NativeMessagingHost::newMessage()
@@ -115,17 +122,22 @@ void NativeMessagingHost::newMessage()
 void NativeMessagingHost::readNativeMessages()
 {
     quint32 length = 0;
-    while (m_running) {
+    while (m_running && !std::cin.eof()) {
         length = 0;
         std::cin.read(reinterpret_cast<char*>(&length), 4);
         QByteArray arr;
-        for (quint32 i = 0; i < length; i++) {
-            arr.append(getchar());
-        }
 
-        if (arr.length() > 0 && m_localSocket) {
-            m_localSocket->write(arr.constData(), arr.length());
-            m_localSocket->flush();
+        if (length > 0) {
+            for (quint32 i = 0; i < length; i++) {
+                arr.append(getchar());
+            }
+
+            if (arr.length() > 0 && m_localSocket) {
+                m_localSocket->write(arr.constData(), arr.length());
+                m_localSocket->flush();
+            }
+        } else {
+            break;
         }
 
         QThread::msleep(1);
@@ -154,7 +166,9 @@ void NativeMessagingHost::sendReply(const QString& reply)
 
 void NativeMessagingHost::deleteSocket()
 {
-    m_notifier->setEnabled(false);
+    if (m_notifier) {
+        m_notifier->setEnabled(false);
+    }
     m_localSocket->deleteLater();
     QCoreApplication::quit();
 }
