@@ -44,7 +44,9 @@ static const char ASSOCIATE_KEY_PREFIX[] = "Public Key: ";
 static const char KEEPASSBROWSER_GROUP_NAME[] = "keepassxc-browser Passwords";
 static int        KEEPASSBROWSER_DEFAULT_ICON = 1;
 
-BrowserService::BrowserService(DatabaseTabWidget* parent) : m_dbTabWidget(parent)
+BrowserService::BrowserService(DatabaseTabWidget* parent) :
+    m_dbTabWidget(parent),
+    m_dialogActive(false)
 {
     connect(m_dbTabWidget, SIGNAL(databaseLocked(DatabaseWidget*)), this, SLOT(databaseLocked(DatabaseWidget*)));
     connect(m_dbTabWidget, SIGNAL(databaseUnlocked(DatabaseWidget*)), this, SLOT(databaseUnlocked(DatabaseWidget*)));
@@ -235,7 +237,8 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
         }
     }
 
-    if (!pwEntriesToConfirm.isEmpty()) {
+    if (!pwEntriesToConfirm.isEmpty() && !m_dialogActive) {
+        m_dialogActive = true;
         BrowserAccessControlDialog accessControlDialog;
         accessControlDialog.setUrl(url);
         accessControlDialog.setItems(pwEntriesToConfirm);
@@ -265,6 +268,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
         if (res == QDialog::Accepted) {
             pwEntries.append(pwEntriesToConfirm);
         }
+        m_dialogActive = false;
     }
 
     // Sort results

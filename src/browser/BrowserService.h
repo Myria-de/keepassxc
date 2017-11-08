@@ -94,7 +94,8 @@ private:
     Database*       getDatabase();
 
 private:
-    DatabaseTabWidget* const m_dbTabWidget;
+    DatabaseTabWidget* const    m_dbTabWidget;
+    bool                        m_dialogActive;
 };
 
 #endif // BROWSERSERVICE_H
