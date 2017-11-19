@@ -176,7 +176,7 @@ void NativeMessagingHost::newNativeMessage()
     event.data.fd = 0;
 
     epoll_ctl(fd, EPOLL_CTL_ADD, 0, &event);
-    int ret = epoll_wait(fd, &event, 1, -1);
+    int ret = epoll_wait(fd, &event, 1, 5000);
     if (ret < 1) {
     	m_notifier->setEnabled(false);
         ::close(fd);
