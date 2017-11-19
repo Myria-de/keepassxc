@@ -25,7 +25,7 @@
 #include <QFile>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
-#include <atomic>
+#include <QAtomicInteger>
 #include <iostream>
 #include <unistd.h>
 
@@ -40,6 +40,7 @@ public slots:
     void newMessage();
     void newLocalMessage();
     void deleteSocket();
+    void socketStateChanged(QLocalSocket::LocalSocketState socketState);
 
 private:
     void readNativeMessages();
@@ -49,7 +50,7 @@ private:
     QSharedPointer<QSocketNotifier>         m_notifier;
     QLocalSocket*                           m_localSocket;
     QFuture<void>                           m_future;
-    std::atomic_bool                        m_running;
+    QAtomicInteger<quint8>                  m_running;
 };
 
 #endif // NATIVEMESSAGINGHOST_H

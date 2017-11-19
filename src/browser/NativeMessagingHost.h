@@ -26,7 +26,7 @@
 #include <QMutex>
 #include <QSocketNotifier>
 #include <QLocalServer>
-#include <atomic>
+#include <QAtomicInteger>
 #include "BrowserClients.h"
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
@@ -66,7 +66,7 @@ private slots:
     void        disconnectSocket();
 
 private:
-    std::atomic_bool                m_running;
+    QAtomicInteger<quint8>          m_running;
     QMutex                          m_mutex;
     BrowserClients                  m_browserClients;
     BrowserService                  m_browserService;

@@ -42,7 +42,6 @@
 #endif
 
 NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
-    m_running(false),
     m_mutex(QMutex::Recursive),
     m_browserClients(m_browserService),
     m_browserService(parent)
@@ -54,6 +53,7 @@ NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
     m_localServer.reset(new QLocalServer(this));
     m_localServer->setSocketOptions(QLocalServer::UserAccessOption);
 #ifdef Q_OS_WIN
+    m_running.store(false);
     _setmode(_fileno(stdin), _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
@@ -79,7 +79,7 @@ int NativeMessagingHost::init()
 void NativeMessagingHost::run()
 {
     QMutexLocker locker(&m_mutex);
-    if (!m_running) {
+    if (!m_running.ref()) {
         if (init() == -1) {
             return;
         }
@@ -90,8 +90,8 @@ void NativeMessagingHost::run()
         BrowserSettings::updateBinaryPaths(BrowserSettings::useCustomProxy() ? BrowserSettings::customProxyLocation() : "");
     }
 
+    m_running.store(true);
 #ifdef Q_OS_WIN
-    m_running = true;
     m_future = QtConcurrent::run(this, &NativeMessagingHost::readNativeMessages);
 #endif
 
@@ -114,7 +114,7 @@ void NativeMessagingHost::stop()
     databaseLocked();
     QMutexLocker locker(&m_mutex);
     m_socketList.clear();
-    m_running = false;
+    m_running.testAndSetOrdered(true, false);
     m_future.waitForFinished();
     m_localServer->close();
 }
@@ -123,7 +123,7 @@ void NativeMessagingHost::readNativeMessages()
 {
 #ifdef Q_OS_WIN
     quint32 length = 0;
-	while (m_running) {
+	while (m_running.ref() && !std::cin.eof()) {
 		length = 0;
 		std::cin.read(reinterpret_cast<char*>(&length), 4);
 		QByteArray arr;

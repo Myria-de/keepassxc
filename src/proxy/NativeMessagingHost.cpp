@@ -15,8 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "NativeMessagingHost.h"
 #include <QCoreApplication>
+#include "NativeMessagingHost.h"
 
 #ifndef Q_OS_LINUX
 #if defined Q_OS_MAC || defined Q_OS_UNIX
@@ -30,8 +30,7 @@
 #include <sys/epoll.h>
 #endif
 
-NativeMessagingHost::NativeMessagingHost() :
-    m_running(false)
+NativeMessagingHost::NativeMessagingHost()
 {
 #ifndef Q_OS_WIN
     m_notifier.reset(new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this));
@@ -43,13 +42,14 @@ NativeMessagingHost::NativeMessagingHost() :
     m_localSocket = new QLocalSocket();
 #ifdef Q_OS_WIN
     m_localSocket->connectToServer("kpxc_server");
-    m_running = true;
+    m_running.store(true);
     m_future = QtConcurrent::run(this, &NativeMessagingHost::readNativeMessages);
 #else
     m_localSocket->connectToServer("/tmp/kpxc_server");
 #endif
     connect(m_localSocket, SIGNAL(readyRead()), this, SLOT(newLocalMessage()));
     connect(m_localSocket, SIGNAL(disconnected()), this, SLOT(deleteSocket()));
+    connect(m_localSocket, SIGNAL(stateChanged(QLocalSocket::LocalSocketState)), this, SLOT(socketStateChanged(QLocalSocket::LocalSocketState)));
 }
 
 NativeMessagingHost::~NativeMessagingHost()
@@ -92,7 +92,7 @@ void NativeMessagingHost::newMessage()
     event.data.fd = 0;
     epoll_ctl(fd, EPOLL_CTL_ADD, 0, &event);
 
-    epoll_wait(fd, &event, 1, -1);
+    epoll_wait(fd, &event, 1, 5000);
 #endif
 
     quint32 length = 0;
@@ -122,7 +122,7 @@ void NativeMessagingHost::newMessage()
 void NativeMessagingHost::readNativeMessages()
 {
     quint32 length = 0;
-    while (m_running && !std::cin.eof()) {
+    while (m_running.ref() && !std::cin.eof()) {
         length = 0;
         std::cin.read(reinterpret_cast<char*>(&length), 4);
         QByteArray arr;
@@ -132,7 +132,7 @@ void NativeMessagingHost::readNativeMessages()
                 arr.append(getchar());
             }
 
-            if (arr.length() > 0 && m_localSocket) {
+            if (arr.length() > 0 && m_localSocket && m_localSocket->state() == QLocalSocket::ConnectedState) {
                 m_localSocket->write(arr.constData(), arr.length());
                 m_localSocket->flush();
             }
@@ -171,4 +171,11 @@ void NativeMessagingHost::deleteSocket()
     }
     m_localSocket->deleteLater();
     QCoreApplication::quit();
+}
+
+void NativeMessagingHost::socketStateChanged(QLocalSocket::LocalSocketState socketState)
+{
+    if (socketState == QLocalSocket::UnconnectedState || socketState == QLocalSocket::ClosingState) {
+        m_running.testAndSetOrdered(true, false);
+    }
 }
