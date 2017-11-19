@@ -23,10 +23,7 @@
 #include <QVector>
 #include <QSharedPointer>
 #include <QLocalSocket>
-
 #include "BrowserAction.h"
-
-
 
 class BrowserClients
 {

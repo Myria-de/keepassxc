@@ -25,7 +25,7 @@
 #include "gui/DatabaseTabWidget.h"
 #include "core/Entry.h"
 
-enum { max_length = 4*1024 };
+enum { max_length = 16*1024 };
 
 class BrowserService : public QObject
 {

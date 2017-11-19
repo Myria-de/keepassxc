@@ -28,10 +28,10 @@ class HostInstaller : public QObject
 
 public:
     enum supportedBrowsers : int {
-        CHROME = 0,
-        CHROMIUM = 1,
-        FIREFOX = 2,
-        VIVALDI = 3
+        CHROME =    0,
+        CHROMIUM =  1,
+        FIREFOX =   2,
+        VIVALDI =   3
     };
 
 public:

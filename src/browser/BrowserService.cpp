@@ -160,11 +160,8 @@ QString BrowserService::storeKey(const QString& key)
     }
 
     if (Entry* config = getConfigEntry(true)) {
-        //ShowNotification("New key association requested")
-
         do {
             bool ok;
-            //Indicate who wants to associate, and request user to enter the 'name' of association key
             id = QInputDialog::getText(0,
                     tr("KeePassXC: New key association request"),
                     tr("You have received an association "
@@ -176,8 +173,6 @@ QString BrowserService::storeKey(const QString& key)
             if (!ok || id.isEmpty()) {
                 return QString();
             }
-
-            //Warn if association key already exists
         } while (config->attributes()->contains(QLatin1String(ASSOCIATE_KEY_PREFIX) + id) &&
                 QMessageBox::warning(0, tr("KeePassXC: Overwrite existing key?"),
                                      tr("A shared encryption-key with the name \"%1\" already exists.\nDo you want to overwrite it?").arg(id),
@@ -242,7 +237,6 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
         BrowserAccessControlDialog accessControlDialog;
         accessControlDialog.setUrl(url);
         accessControlDialog.setItems(pwEntriesToConfirm);
-        //accessControlDialog.setRemember();        //TODO: setting!
 
         int res = accessControlDialog.exec();
         if (accessControlDialog.remember()) {
@@ -288,7 +282,7 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
             priorities.insert(entry, sortPriority(entry, host, submitUrl, baseSubmitURL));
         }
 
-        //Sort by priorities
+        // Sort by priorities
         qSort(pwEntries.begin(), pwEntries.end(), SortEntries(priorities, BrowserSettings::sortByTitle() ? "Title" : "UserName"));
     }
 
@@ -340,7 +334,6 @@ void BrowserService::updateEntry(const QString& id, const QString& uuid, const Q
         if (Entry* entry = db->resolveEntry(Uuid::fromHex(uuid))) {
             QString u = entry->username();
             if (u != login || entry->password() != password) {
-                //ShowNotification(QString("%0: You have an entry change prompt waiting, click to activate").arg(requestId));
                 if (BrowserSettings::alwaysAllowUpdate()
                     || QMessageBox::warning(0, tr("KeePassXC: Update Entry"),
                                             tr("Do you want to update the information in %1 - %2?")
@@ -364,7 +357,7 @@ QList<Entry*> BrowserService::searchEntries(Database* db, const QString& hostnam
             QString title = entry->title();
             QString url = entry->url();
 
-            //Filter to match hostname in Title and Url fields
+            // Filter to match hostname in Title and Url fields
             if ((!title.isEmpty() && hostname.contains(title))
                 || (!url.isEmpty() && hostname.contains(url))
                 || (matchUrlScheme(title) && hostname.endsWith(QUrl(title).host()))
@@ -378,7 +371,7 @@ QList<Entry*> BrowserService::searchEntries(Database* db, const QString& hostnam
 
 QList<Entry*> BrowserService::searchEntries(const QString& text)
 {
-    //Get the list of databases to search
+    // Get the list of databases to search
     QList<Database*> databases;
     if (BrowserSettings::searchInAllDatabases()) {
         for (int i = 0; i < m_dbTabWidget->count(); i++) {
@@ -392,7 +385,7 @@ QList<Entry*> BrowserService::searchEntries(const QString& text)
         databases << db;
     }
 
-    //Search entries matching the hostname
+    // Search entries matching the hostname
     QString hostname = QUrl(text).host();
     QList<Entry*> entries;
     do {
@@ -510,18 +503,18 @@ BrowserService::Access BrowserService::checkAccess(const Entry* entry, const QSt
 {
     BrowserEntryConfig config;
     if (!config.load(entry)) {
-        return Unknown;  //not configured
+        return Unknown;
     }
     if ((config.isAllowed(host)) && (submitHost.isEmpty() || config.isAllowed(submitHost))) {
-        return Allowed;  //allowed
+        return Allowed;
     }
     if ((config.isDenied(host)) || (!submitHost.isEmpty() && config.isDenied(submitHost))) {
-        return Denied;   //denied
+        return Denied;
     }
     if (!realm.isEmpty() && config.realm() != realm) {
         return Denied;
     }
-    return Unknown;      //not configured for this host
+    return Unknown;
 }
 
 Group* BrowserService::findCreateAddEntryGroup()
