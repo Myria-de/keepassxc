@@ -57,15 +57,15 @@ bool BrowserService::isDatabaseOpened() const
 {
     if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
         switch (dbWidget->currentMode()) {
-            case DatabaseWidget::None:
-            case DatabaseWidget::LockedMode:
-                return false;
+        case DatabaseWidget::None:
+        case DatabaseWidget::LockedMode:
+            return false;
 
-            case DatabaseWidget::ViewMode:
-            case DatabaseWidget::EditMode:
-                return true;
-            default:
-                break;
+        case DatabaseWidget::ViewMode:
+        case DatabaseWidget::EditMode:
+            return true;
+        default:
+            break;
         }
     }
 
@@ -80,15 +80,15 @@ bool BrowserService::openDatabase()
 
     if (DatabaseWidget* dbWidget = m_dbTabWidget->currentDatabaseWidget()) {
         switch (dbWidget->currentMode()) {
-            case DatabaseWidget::None:
-            case DatabaseWidget::LockedMode:
-                break;
+        case DatabaseWidget::None:
+        case DatabaseWidget::LockedMode:
+            break;
 
-            case DatabaseWidget::ViewMode:
-            case DatabaseWidget::EditMode:
-                return true;
-            default:
-                break;
+        case DatabaseWidget::ViewMode:
+        case DatabaseWidget::EditMode:
+            return true;
+        default:
+            break;
         }
     }
     m_dbTabWidget->activateWindow();

@@ -22,6 +22,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QCoreApplication>
+#include <QMessageBox>
 
 const QString HostInstaller::HOST_NAME = "com.varjolintu.keepassxc_browser";
 const QStringList HostInstaller::ALLOWED_ORIGINS = QStringList()
@@ -83,7 +84,10 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
  #endif
          // Always create the script file
          QJsonObject script = constructFile(browser, proxy, location);
-         saveFile(browser, script);
+         if (!saveFile(browser, script)) {
+             QMessageBox::critical(0, tr("KeePassXC: Cannot save file!"),
+                                        tr("Cannot save the Native Messaging script file."), QMessageBox::Ok);
+         }
      } else {
          // Remove the script file
          QString fileName = getPath(browser);
@@ -110,22 +114,22 @@ void HostInstaller::updateBinaryPaths(const bool proxy, const QString location)
 QString HostInstaller::getTargetPath(const supportedBrowsers browser)
 {
     switch (browser) {
-        case supportedBrowsers::CHROME:     return HostInstaller::TARGET_DIR_CHROME;
-        case supportedBrowsers::CHROMIUM:   return HostInstaller::TARGET_DIR_CHROMIUM;
-        case supportedBrowsers::FIREFOX:    return HostInstaller::TARGET_DIR_FIREFOX;
-        case supportedBrowsers::VIVALDI:    return HostInstaller::TARGET_DIR_VIVALDI;
-        default: return "";
+    case supportedBrowsers::CHROME:     return HostInstaller::TARGET_DIR_CHROME;
+    case supportedBrowsers::CHROMIUM:   return HostInstaller::TARGET_DIR_CHROMIUM;
+    case supportedBrowsers::FIREFOX:    return HostInstaller::TARGET_DIR_FIREFOX;
+    case supportedBrowsers::VIVALDI:    return HostInstaller::TARGET_DIR_VIVALDI;
+    default: return QString();
     }
 }
 
 QString HostInstaller::getBrowserName(const supportedBrowsers browser)
 {
 	switch (browser) {
-        case supportedBrowsers::CHROME:     return "chrome";
-        case supportedBrowsers::CHROMIUM:   return "chromium";
-        case supportedBrowsers::FIREFOX:    return "firefox";
-        case supportedBrowsers::VIVALDI:    return "vivaldi";
-        default: return "";
+    case supportedBrowsers::CHROME:     return "chrome";
+    case supportedBrowsers::CHROMIUM:   return "chromium";
+    case supportedBrowsers::FIREFOX:    return "firefox";
+    case supportedBrowsers::VIVALDI:    return "vivaldi";
+    default: return QString();
     }
 }
 

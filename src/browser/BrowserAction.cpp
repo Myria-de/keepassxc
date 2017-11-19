@@ -377,21 +377,21 @@ const QJsonObject BrowserAction::getErrorReply(const QString& action, const int 
 const QString BrowserAction::getErrorMessage(const int errorCode) const
 {
     switch (errorCode) {
-        case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
-        case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
-        case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
-        case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
-        case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
-        case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
-        case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:          return "Cannot encrypt message or public key not found. Is Native Messaging enabled in KeePassXC?";
-        case ERROR_KEEPASS_ASSOCIATION_FAILED:              return "KeePassXC association failed, try again";
-        case ERROR_KEEPASS_KEY_CHANGE_FAILED:               return "Key change was not successful";
-        case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:     return "Encryption key is not recognized";
-        case ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND:        return "No saved databases found";
-        case ERROR_KEEPASS_INCORRECT_ACTION:                return "Incorrect action";
-        case ERROR_KEEPASS_EMPTY_MESSAGE_RECEIVED:          return "Empty message received";
-        case ERROR_KEEPASS_NO_URL_PROVIDED:                 return "No URL provided";
-        default:                                            return "Unknown error";
+    case ERROR_KEEPASS_DATABASE_NOT_OPENED:             return "Database not opened";
+    case ERROR_KEEPASS_DATABASE_HASH_NOT_RECEIVED:      return "Database hash not available";
+    case ERROR_KEEPASS_CLIENT_PUBLIC_KEY_NOT_RECEIVED:  return "Client public key not received";
+    case ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE:          return "Cannot decrypt message";
+    case ERROR_KEEPASS_TIMEOUT_OR_NOT_CONNECTED:        return "Timeout or cannot connect to KeePassXC";
+    case ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED:      return "Action cancelled or denied";
+    case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:          return "Cannot encrypt message or public key not found. Is Native Messaging enabled in KeePassXC?";
+    case ERROR_KEEPASS_ASSOCIATION_FAILED:              return "KeePassXC association failed, try again";
+    case ERROR_KEEPASS_KEY_CHANGE_FAILED:               return "Key change was not successful";
+    case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:     return "Encryption key is not recognized";
+    case ERROR_KEEPASS_NO_SAVED_DATABASES_FOUND:        return "No saved databases found";
+    case ERROR_KEEPASS_INCORRECT_ACTION:                return "Incorrect action";
+    case ERROR_KEEPASS_EMPTY_MESSAGE_RECEIVED:          return "Empty message received";
+    case ERROR_KEEPASS_NO_URL_PROVIDED:                 return "No URL provided";
+    default:                                            return "Unknown error";
     }
 }
 
