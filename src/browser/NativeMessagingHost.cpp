@@ -79,7 +79,7 @@ int NativeMessagingHost::init()
 void NativeMessagingHost::run()
 {
     QMutexLocker locker(&m_mutex);
-    if (!m_running.ref()) {
+    if (!m_running.load()) {
         if (init() == -1) {
             return;
         }
@@ -123,7 +123,7 @@ void NativeMessagingHost::readNativeMessages()
 {
 #ifdef Q_OS_WIN
     quint32 length = 0;
-	while (m_running.ref() && !std::cin.eof()) {
+	while (m_running.load() && !std::cin.eof()) {
 		length = 0;
 		std::cin.read(reinterpret_cast<char*>(&length), 4);
 		QByteArray arr;
