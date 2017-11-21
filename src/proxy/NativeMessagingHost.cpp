@@ -103,9 +103,16 @@ void NativeMessagingHost::newMessage()
     struct epoll_event event;
     event.events = EPOLLIN;
     event.data.fd = 0;
-    epoll_ctl(fd, EPOLL_CTL_ADD, 0, &event);
+    if (epoll_ctl(fd, EPOLL_CTL_ADD, 0, &event) != 0) {
+        m_notifier->setEnabled(false);
+        return;
+    }
 
-    epoll_wait(fd, &event, 1, 5000);
+    if (epoll_wait(fd, &event, 1, 5000) < 1) {
+    	m_notifier->setEnabled(false);
+        ::close(fd);
+        return;
+    }
 #endif
 
     quint32 length = 0;
