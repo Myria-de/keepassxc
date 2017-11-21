@@ -43,6 +43,7 @@ public slots:
     void socketStateChanged(QLocalSocket::LocalSocketState socketState);
 
 private:
+    void readStdIn(const quint32 length);
     void readNativeMessages();
     void sendReply(const QString& reply);
 

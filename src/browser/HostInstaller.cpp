@@ -104,7 +104,7 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
 
 void HostInstaller::updateBinaryPaths(const bool proxy, const QString location)
 {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; ++i) {
         if (checkIfInstalled(static_cast<supportedBrowsers>(i))) {
             installBrowser(static_cast<supportedBrowsers>(i), true, proxy, location);
         }

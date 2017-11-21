@@ -45,6 +45,7 @@ public:
     void        stop();
 
 private:
+    void        readStdIn(const quint32 length);
     void        readNativeMessages();
     void        sendReply(const QJsonObject& json);
     void        sendReplyToAllClients(const QJsonObject& json);

@@ -59,6 +59,19 @@ NativeMessagingHost::~NativeMessagingHost()
 #endif
 }
 
+void NativeMessagingHost::readStdIn(const quint32 length)
+{
+    QByteArray arr;
+    for (quint32 i = 0; i < length; ++i) {
+        arr.append(getchar());
+    }
+
+    if (arr.length() > 0 && m_localSocket && m_localSocket->state() == QLocalSocket::ConnectedState) {
+        m_localSocket->write(arr.constData(), arr.length());
+        m_localSocket->flush();
+    }
+}
+
 void NativeMessagingHost::newMessage()
 {
 #ifndef Q_OS_LINUX
@@ -100,15 +113,7 @@ void NativeMessagingHost::newMessage()
 
     if (!std::cin.eof() && length > 0)
     {
-        QByteArray arr;
-        for (quint32 i = 0; i < length; i++) {
-            arr.append(getchar());
-        }
-
-        if (arr.length() > 0 && m_localSocket) {
-            m_localSocket->write(arr.constData(), arr.length());
-            m_localSocket->flush();
-        }
+        readStdIn(length);
     } else {
     	QCoreApplication::quit();
     }
@@ -118,9 +123,9 @@ void NativeMessagingHost::newMessage()
 #endif
 }
 
-#ifdef Q_OS_WIN
 void NativeMessagingHost::readNativeMessages()
 {
+#ifdef Q_OS_WIN
     quint32 length = 0;
     while (m_running.load() && !std::cin.eof()) {
         length = 0;
@@ -128,22 +133,15 @@ void NativeMessagingHost::readNativeMessages()
         QByteArray arr;
 
         if (length > 0) {
-            for (quint32 i = 0; i < length; i++) {
-                arr.append(getchar());
-            }
-
-            if (arr.length() > 0 && m_localSocket && m_localSocket->state() == QLocalSocket::ConnectedState) {
-                m_localSocket->write(arr.constData(), arr.length());
-                m_localSocket->flush();
-            }
+            readStdIn(length);
         } else {
             break;
         }
 
         QThread::msleep(1);
     }
-}
 #endif
+}
 
 void NativeMessagingHost::newLocalMessage()
 {

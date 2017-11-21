@@ -477,7 +477,7 @@ const QByteArray BrowserAction::decrypt(const QString encrypted, const QString n
 
     if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
         if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
-            result = getQByteArray(d.data(), strlen(reinterpret_cast<const char *>(d.data())));
+            result = getQByteArray(d.data(), std::char_traits<char>::length(reinterpret_cast<const char *>(d.data())));
         }
     }
 
@@ -495,7 +495,7 @@ const QString BrowserAction::getBase64FromKey(const uchar* array, const uint len
 const QByteArray BrowserAction::getQByteArray(const uchar* array, const uint len) const
 {
     QByteArray qba;
-    for (uint i = 0; i < len; i++) {
+    for (uint i = 0; i < len; ++i) {
         qba.append(static_cast<char>(array[i]));
     }
     return qba;

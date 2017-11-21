@@ -374,7 +374,7 @@ QList<Entry*> BrowserService::searchEntries(const QString& text)
     // Get the list of databases to search
     QList<Database*> databases;
     if (BrowserSettings::searchInAllDatabases()) {
-        for (int i = 0; i < m_dbTabWidget->count(); i++) {
+        for (int i = 0; i < m_dbTabWidget->count(); ++i) {
             if (DatabaseWidget* dbWidget = qobject_cast<DatabaseWidget*>(m_dbTabWidget->widget(i))) {
                 if (Database* db = dbWidget->database()) {
                     databases << db;
@@ -458,7 +458,7 @@ void BrowserService::removeStoredPermissions()
                 entry->beginUpdate();
                 entry->attributes()->remove(KEEPASSBROWSER_NAME);
                 entry->endUpdate();
-                counter ++;
+                ++counter;
             }
             progress.setValue(progress.value() + 1);
         }

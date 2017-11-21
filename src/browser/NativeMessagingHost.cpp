@@ -119,6 +119,20 @@ void NativeMessagingHost::stop()
     m_localServer->close();
 }
 
+void NativeMessagingHost::readStdIn(const quint32 length)
+{
+    QByteArray arr;
+    for (quint32 i = 0; i < length; ++i) {
+        arr.append(getchar());
+    }
+
+    if (arr.length() > 0) {
+        QMutexLocker locker(&m_mutex);
+        const QJsonObject json = m_browserClients.readResponse(arr);
+        sendReply(json);
+    }
+}
+
 void NativeMessagingHost::readNativeMessages()
 {
 #ifdef Q_OS_WIN
@@ -126,17 +140,7 @@ void NativeMessagingHost::readNativeMessages()
 	while (m_running.load() && !std::cin.eof()) {
 		length = 0;
 		std::cin.read(reinterpret_cast<char*>(&length), 4);
-		QByteArray arr;
-		for (quint32 i = 0; i < length; i++) {
-			arr.append(getchar());
-		}
-
-		if (arr.length() > 0) {
-			QMutexLocker locker(&m_mutex);
-			const QJsonObject json = m_browserClients.readResponse(arr);
-			sendReply(json);
-		}
-
+        readStdIn(length);
 		QThread::msleep(1);
 	}
 #endif
@@ -189,16 +193,7 @@ void NativeMessagingHost::newNativeMessage()
 
     if (!std::cin.eof() &&length > 0)
     {
-        QByteArray arr;
-        for (quint32 i = 0; i < length; i++) {
-            arr.append(getchar());
-        }
-
-        if (arr.length() > 0) {
-           QMutexLocker locker(&m_mutex);
-           const QJsonObject json = m_browserClients.readResponse(arr);
-           sendReply(json);
-        }
+        readStdIn(length);
     }
 
 #ifndef Q_OS_WIN
