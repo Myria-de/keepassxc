@@ -136,8 +136,16 @@ QString HostInstaller::getBrowserName(const supportedBrowsers browser)
 QString HostInstaller::getPath(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
-	QString userPath = QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
-	QString winPath = QString("%1/%2_%3.json").arg(userPath, HostInstaller::HOST_NAME, getBrowserName(browser));
+    // If portable settings file exists save the JSON scripts to application folder
+    QString userPath;
+    QString portablePath = QCoreApplication::applicationDirPath() + "/keepassxc.ini";
+    if (QFile::exists(portablePath)) {
+        userPath = QCoreApplication::applicationDirPath();
+    } else {
+        userPath = QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    }
+
+    QString winPath = QString("%1/%2_%3.json").arg(userPath, HostInstaller::HOST_NAME, getBrowserName(browser));
     winPath.replace("/","\\");
     return winPath;
 #endif
