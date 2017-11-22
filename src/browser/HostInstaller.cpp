@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -55,7 +56,7 @@ HostInstaller::HostInstaller()
 
 }
 
-bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
+bool HostInstaller::checkIfInstalled(SupportedBrowsers browser)
 {
     QString fileName = getPath(browser);
 #ifdef Q_OS_WIN
@@ -66,7 +67,7 @@ bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
 #endif
 }
 
-void HostInstaller::installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy, const QString location)
+void HostInstaller::installBrowser(SupportedBrowsers browser, const bool enabled, const bool proxy, const QString location)
 {
     if (enabled) {
  #ifdef Q_OS_WIN
@@ -99,35 +100,35 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
 void HostInstaller::updateBinaryPaths(const bool proxy, const QString location)
 {
     for (int i = 0; i < 4; ++i) {
-        if (checkIfInstalled(static_cast<supportedBrowsers>(i))) {
-            installBrowser(static_cast<supportedBrowsers>(i), true, proxy, location);
+        if (checkIfInstalled(static_cast<SupportedBrowsers>(i))) {
+            installBrowser(static_cast<SupportedBrowsers>(i), true, proxy, location);
         }
     }
 }
 
-const QString HostInstaller::getTargetPath(const supportedBrowsers browser)
+QString HostInstaller::getTargetPath(SupportedBrowsers browser) const
 {
     switch (browser) {
-    case supportedBrowsers::CHROME:     return HostInstaller::TARGET_DIR_CHROME;
-    case supportedBrowsers::CHROMIUM:   return HostInstaller::TARGET_DIR_CHROMIUM;
-    case supportedBrowsers::FIREFOX:    return HostInstaller::TARGET_DIR_FIREFOX;
-    case supportedBrowsers::VIVALDI:    return HostInstaller::TARGET_DIR_VIVALDI;
+    case SupportedBrowsers::CHROME:     return HostInstaller::TARGET_DIR_CHROME;
+    case SupportedBrowsers::CHROMIUM:   return HostInstaller::TARGET_DIR_CHROMIUM;
+    case SupportedBrowsers::FIREFOX:    return HostInstaller::TARGET_DIR_FIREFOX;
+    case SupportedBrowsers::VIVALDI:    return HostInstaller::TARGET_DIR_VIVALDI;
     default: return QString();
     }
 }
 
-const QString HostInstaller::getBrowserName(const supportedBrowsers browser)
+QString HostInstaller::getBrowserName(SupportedBrowsers browser) const
 {
     switch (browser) {
-    case supportedBrowsers::CHROME:     return "chrome";
-    case supportedBrowsers::CHROMIUM:   return "chromium";
-    case supportedBrowsers::FIREFOX:    return "firefox";
-    case supportedBrowsers::VIVALDI:    return "vivaldi";
+    case SupportedBrowsers::CHROME:     return "chrome";
+    case SupportedBrowsers::CHROMIUM:   return "chromium";
+    case SupportedBrowsers::FIREFOX:    return "firefox";
+    case SupportedBrowsers::VIVALDI:    return "vivaldi";
     default: return QString();
     }
 }
 
-const QString HostInstaller::getPath(const supportedBrowsers browser)
+QString HostInstaller::getPath(SupportedBrowsers browser) const
 {
 #ifdef Q_OS_WIN
     // If portable settings file exists save the JSON scripts to application folder
@@ -148,7 +149,7 @@ const QString HostInstaller::getPath(const supportedBrowsers browser)
 #endif
 }
 
-const QString HostInstaller::getInstallDir(const supportedBrowsers browser)
+QString HostInstaller::getInstallDir(SupportedBrowsers browser) const
 {
 #ifdef Q_OS_WIN
     return QCoreApplication::applicationDirPath();
@@ -158,7 +159,7 @@ const QString HostInstaller::getInstallDir(const supportedBrowsers browser)
 #endif
 }
 
-QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const bool proxy, const QString location)
+QJsonObject HostInstaller::constructFile(SupportedBrowsers browser, const bool proxy, const QString location)
 {
     QString path;
     if (proxy) {
@@ -185,7 +186,7 @@ QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const 
     script["type"]          = "stdio";
 
     QJsonArray arr;
-    if (browser == supportedBrowsers::FIREFOX) {
+    if (browser == SupportedBrowsers::FIREFOX) {
         for (const QString extension : HostInstaller::ALLOWED_EXTENSIONS) {
             arr.append(extension);
         }
@@ -205,7 +206,7 @@ bool HostInstaller::registryEntryFound(const QSettings& settings)
     return !settings.value("Default").isNull();
 }
 
-bool HostInstaller::saveFile(const supportedBrowsers browser, const QJsonObject script)
+bool HostInstaller::saveFile(SupportedBrowsers browser, const QJsonObject script)
 {
     QString path = getPath(browser);
     QString installDir = getInstallDir(browser);

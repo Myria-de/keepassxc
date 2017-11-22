@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -27,7 +28,7 @@ class HostInstaller : public QObject
     Q_OBJECT
 
 public:
-    enum supportedBrowsers : int {
+    enum SupportedBrowsers : int {
         CHROME =    0,
         CHROMIUM =  1,
         FIREFOX =   2,
@@ -36,18 +37,18 @@ public:
 
 public:
     HostInstaller();
-    bool checkIfInstalled(const supportedBrowsers browser);
-    void installBrowser(const supportedBrowsers browser, const bool enabled, const bool proxy = false, const QString location = QString());
+    bool checkIfInstalled(SupportedBrowsers browser);
+    void installBrowser(SupportedBrowsers browser, const bool enabled, const bool proxy = false, const QString location = QString());
     void updateBinaryPaths(const bool proxy, const QString location = QString());
 
 private:
-    const QString     getTargetPath(const supportedBrowsers browser);
-    const QString		getBrowserName(const supportedBrowsers browser);
-    const QString     getPath(const supportedBrowsers browser);
-    const QString     getInstallDir(const supportedBrowsers browser);
-    QJsonObject constructFile(const supportedBrowsers browser, const bool proxy, const QString location);
+    QString     getTargetPath(SupportedBrowsers browser) const;
+    QString		getBrowserName(SupportedBrowsers browser) const;
+    QString     getPath(SupportedBrowsers browser) const;
+    QString     getInstallDir(SupportedBrowsers browser) const;
+    QJsonObject constructFile(SupportedBrowsers browser, const bool proxy, const QString location);
     bool        registryEntryFound(const QSettings& settings);
-    bool        saveFile(const supportedBrowsers browser, const QJsonObject script);
+    bool        saveFile(SupportedBrowsers browser, const QJsonObject script);
 
 private:
     static const QString HOST_NAME;

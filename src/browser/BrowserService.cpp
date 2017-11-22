@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2013 Francois Ferrand
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -125,7 +126,7 @@ QString BrowserService::getDatabaseRecycleBinUuid()
     }
 
     Group* recycleBin = db->metadata()->recycleBin();
-    if (recycleBin) {
+    if (!recycleBin) {
         return QString();
     }
     return recycleBin->uuid().toHex();
@@ -136,7 +137,7 @@ Entry* BrowserService::getConfigEntry(bool create)
     Entry* entry = nullptr;
     Database* db = getDatabase();
     if (!db) {
-        return entry;
+        return nullptr;
     }
 
     entry = db->resolveEntry(KEEPASSXCBROWSER_UUID);
@@ -174,7 +175,7 @@ QString BrowserService::storeKey(const QString& key)
 
     Entry* config = getConfigEntry(true);
     if (!config) {
-        return id;
+        return QString();
     }
 
     bool contains = false;
@@ -675,7 +676,7 @@ bool BrowserService::removeFirstDomain(QString& hostname)
         return false;
     }
 
-    // Don't remove the domain if it's the only one
+    // Don't remove the second-level domain if it's the only one
     if (hostname.count(".") > 1) {
         hostname = hostname.mid(pos + 1);
     }

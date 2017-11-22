@@ -61,16 +61,18 @@ NativeMessagingHost::~NativeMessagingHost()
 
 void NativeMessagingHost::readStdIn(const quint32 length)
 {
-    QByteArray arr;
-    arr.reserve(length);
+    if (length > 0) {
+        QByteArray arr;
+        arr.reserve(length);
 
-    for (quint32 i = 0; i < length; ++i) {
-        arr.append(getchar());
-    }
+        for (quint32 i = 0; i < length; ++i) {
+            arr.append(getchar());
+        }
 
-    if (arr.length() > 0 && m_localSocket && m_localSocket->state() == QLocalSocket::ConnectedState) {
-        m_localSocket->write(arr.constData(), arr.length());
-        m_localSocket->flush();
+        if (arr.length() > 0 && m_localSocket && m_localSocket->state() == QLocalSocket::ConnectedState) {
+            m_localSocket->write(arr.constData(), arr.length());
+            m_localSocket->flush();
+        }
     }
 }
 
@@ -137,14 +139,7 @@ void NativeMessagingHost::readNativeMessages()
     while (m_running.load() && !std::cin.eof()) {
         length = 0;
         std::cin.read(reinterpret_cast<char*>(&length), 4);
-        QByteArray arr;
-
-        if (length > 0) {
-            readStdIn(length);
-        } else {
-            break;
-        }
-
+        readStdIn(length);
         QThread::msleep(1);
     }
 #endif
@@ -157,7 +152,7 @@ void NativeMessagingHost::newLocalMessage()
     }
 
     QByteArray arr = m_localSocket->readAll();
-    if (arr.length() > 0) {
+    if (!arr.isEmpty()) {
        sendReply(arr);
     }
 }

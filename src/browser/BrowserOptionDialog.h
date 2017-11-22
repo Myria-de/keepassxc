@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2013 Francois Ferrand
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify

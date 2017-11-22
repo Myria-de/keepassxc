@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2013 Francois Ferrand
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -174,35 +175,35 @@ void BrowserSettings::setUpdateBinaryPath(bool enabled)
 }
 
 bool BrowserSettings::chromeSupport() {
-    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::CHROME);
+    return m_hostInstaller.checkIfInstalled(HostInstaller::SupportedBrowsers::CHROME);
 }
 
 void BrowserSettings::setChromeSupport(bool enabled) {
-    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::CHROME, enabled, supportBrowserProxy(), customProxyLocation());
+    m_hostInstaller.installBrowser(HostInstaller::SupportedBrowsers::CHROME, enabled, supportBrowserProxy(), customProxyLocation());
 }
 
 bool BrowserSettings::chromiumSupport() {
-    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::CHROMIUM);
+    return m_hostInstaller.checkIfInstalled(HostInstaller::SupportedBrowsers::CHROMIUM);
 }
 
 void BrowserSettings::setChromiumSupport(bool enabled) {
-    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::CHROMIUM, enabled, supportBrowserProxy(), customProxyLocation());
+    m_hostInstaller.installBrowser(HostInstaller::SupportedBrowsers::CHROMIUM, enabled, supportBrowserProxy(), customProxyLocation());
 }
 
 bool BrowserSettings::firefoxSupport() {
-    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::FIREFOX);
+    return m_hostInstaller.checkIfInstalled(HostInstaller::SupportedBrowsers::FIREFOX);
 }
 
 void BrowserSettings::setFirefoxSupport(bool enabled) {
-    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::FIREFOX, enabled, supportBrowserProxy(), customProxyLocation());
+    m_hostInstaller.installBrowser(HostInstaller::SupportedBrowsers::FIREFOX, enabled, supportBrowserProxy(), customProxyLocation());
 }
 
 bool BrowserSettings::vivaldiSupport() {
-    return m_hostInstaller.checkIfInstalled(HostInstaller::supportedBrowsers::VIVALDI);
+    return m_hostInstaller.checkIfInstalled(HostInstaller::SupportedBrowsers::VIVALDI);
 }
 
 void BrowserSettings::setVivaldiSupport(bool enabled) {
-    m_hostInstaller.installBrowser(HostInstaller::supportedBrowsers::VIVALDI, enabled, supportBrowserProxy(), customProxyLocation());
+    m_hostInstaller.installBrowser(HostInstaller::SupportedBrowsers::VIVALDI, enabled, supportBrowserProxy(), customProxyLocation());
 }
 
 bool BrowserSettings::passwordUseNumbers()

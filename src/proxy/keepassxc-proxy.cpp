@@ -55,7 +55,7 @@ void catchUnixSignals(std::initializer_list<int> quitSignals) {
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-#ifdef Q_OS_WIN
+#if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
     catchUnixSignals({SIGQUIT, SIGINT, SIGTERM, SIGHUP});
 #endif
     NativeMessagingHost host;

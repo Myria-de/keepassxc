@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -119,16 +120,18 @@ void NativeMessagingHost::stop()
 
 void NativeMessagingHost::readStdIn(const quint32 length)
 {
-    QByteArray arr;
-    arr.reserve(length);
+    if (length > 0) {
+        QByteArray arr;
+        arr.reserve(length);
 
-    for (quint32 i = 0; i < length; ++i) {
-        arr.append(getchar());
-    }
+        for (quint32 i = 0; i < length; ++i) {
+            arr.append(getchar());
+        }
 
-    if (arr.length() > 0) {
-        QMutexLocker locker(&m_mutex);
-        sendReply(m_browserClients.readResponse(arr));
+        if (arr.length() > 0) {
+            QMutexLocker locker(&m_mutex);
+            sendReply(m_browserClients.readResponse(arr));
+        }
     }
 }
 
@@ -136,12 +139,12 @@ void NativeMessagingHost::readNativeMessages()
 {
 #ifdef Q_OS_WIN
     quint32 length = 0;
-	while (m_running.load() && !std::cin.eof()) {
-		length = 0;
-		std::cin.read(reinterpret_cast<char*>(&length), 4);
+    while (m_running.load() && !std::cin.eof()) {
+        length = 0;
+        std::cin.read(reinterpret_cast<char*>(&length), 4);
         readStdIn(length);
-		QThread::msleep(1);
-	}
+        QThread::msleep(1);
+    }
 #endif
 }
 
@@ -217,7 +220,7 @@ void NativeMessagingHost::newLocalMessage()
     }
 
     QByteArray arr = socket->readAll();
-    if (arr.length() <= 0) {
+    if (arr.isEmpty()) {
         return;
     }
 

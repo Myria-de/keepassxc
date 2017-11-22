@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -261,7 +262,7 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
     const QString submit = decrypted.value("submitUrl").toString();
     const QJsonArray users = m_browserService.findMatchingEntries(id, url, submit, "");
 
-    if (users.count() <= 0) {
+    if (users.isEmpty()) {
         return QJsonObject();   // No logins found. Not an error, return an empty JSON object.
     }
 
@@ -462,12 +463,12 @@ QString BrowserAction::encryptMessage(const QJsonObject& message, const QString&
 
 QJsonObject BrowserAction::decryptMessage(const QString& message, const QString& nonce, const QString& action)
 {
-    if (message.length() <= 0 || nonce.isEmpty()) {
+    if (message.isEmpty() || nonce.isEmpty()) {
         return QJsonObject();
     }
 
     QByteArray ba = decrypt(message, nonce);
-    if (ba.length() > 0) {
+    if (!ba.isEmpty()) {
         return getJsonObject(ba);
     }
 
@@ -489,11 +490,14 @@ QString BrowserAction::encrypt(const QString plaintext, const QString nonce)
 
     std::vector<unsigned char> e;
     e.resize(max_length);
-    if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
-        if (crypto_box_easy(e.data(), m.data(), m.size(), n.data(), ck.data(), sk.data()) == 0) {
-           QByteArray res = getQByteArray(e.data(), (crypto_box_MACBYTES + ma.length()));
-           return res.toBase64();
-        }
+
+    if (m.empty() || n.empty() || ck.empty() || sk.empty()) {
+        return QString();
+    }
+
+    if (crypto_box_easy(e.data(), m.data(), m.size(), n.data(), ck.data(), sk.data()) == 0) {
+       QByteArray res = getQByteArray(e.data(), (crypto_box_MACBYTES + ma.length()));
+       return res.toBase64();
     }
 
     return QString();
@@ -515,10 +519,12 @@ QByteArray BrowserAction::decrypt(const QString encrypted, const QString nonce)
     std::vector<unsigned char> d;
     d.resize(max_length);
 
-    if (m.size() > 0 && n.size() > 0 && ck.size() > 0 && sk.size() > 0) {
-        if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
-            return getQByteArray(d.data(), std::char_traits<char>::length(reinterpret_cast<const char *>(d.data())));
-        }
+    if (m.empty() || n.empty() || ck.empty() || sk.empty()) {
+        return QByteArray();
+    }
+
+    if (crypto_box_open_easy(d.data(), m.data(), ma.length(), n.data(), ck.data(), sk.data()) == 0) {
+        return getQByteArray(d.data(), std::char_traits<char>::length(reinterpret_cast<const char *>(d.data())));
     }
 
     return QByteArray();
