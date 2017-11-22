@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -47,39 +47,40 @@ class BrowserAction : public QObject
 
 public:
     BrowserAction(BrowserService& browserService);
-    ~BrowserAction();
+    ~BrowserAction() = default;
 
-    const QJsonObject   readResponse(const QJsonObject& json);
-
-private:
-    const QJsonObject   handleAction(const QJsonObject& json);
-    const QJsonObject   handleChangePublicKeys(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleGetDatabaseHash(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleAssociate(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleTestAssociate(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleGetLogins(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleGeneratePassword(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleSetLogin(const QJsonObject& json, const QString& action);
-    const QJsonObject   handleLockDatabase(const QJsonObject& json, const QString& action);
-
-    const QJsonObject   getErrorReply(const QString& action, const int errorCode) const;
-    const QString       getErrorMessage(const int errorCode) const;
-    const QString       getDataBaseHash();
-
-    const QString       encryptMessage(const QJsonObject& message, const QString& nonce);
-    const QJsonObject   decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
-    const QString       encrypt(const QString decrypted, const QString nonce);
-    const QByteArray    decrypt(const QString encrypted, const QString nonce);
-
-    const QString       getBase64FromKey(const uchar* array, const uint len);
-    const QByteArray    getQByteArray(const uchar* array, const uint len) const;
-    const QJsonObject   getJSonObject(const uchar* pArray, const uint len) const;
-    const QJsonObject   getJSonObject(const QByteArray ba) const;
-    const QByteArray    base64Decode(const QString str);
+    QJsonObject readResponse(const QJsonObject& json);
 
 public slots:
-    void                removeSharedEncryptionKeys();
-    void                removeStoredPermissions();
+    void        removeSharedEncryptionKeys();
+    void        removeStoredPermissions();
+
+private:
+    QJsonObject handleAction(const QJsonObject& json);
+    QJsonObject handleChangePublicKeys(const QJsonObject& json, const QString& action);
+    QJsonObject handleGetDatabaseHash(const QJsonObject& json, const QString& action);
+    QJsonObject handleAssociate(const QJsonObject& json, const QString& action);
+    QJsonObject handleTestAssociate(const QJsonObject& json, const QString& action);
+    QJsonObject handleGetLogins(const QJsonObject& json, const QString& action);
+    QJsonObject handleGeneratePassword(const QJsonObject& json, const QString& action);
+    QJsonObject handleSetLogin(const QJsonObject& json, const QString& action);
+    QJsonObject handleLockDatabase(const QJsonObject& json, const QString& action);
+
+    QJsonObject getErrorReply(const QString& action, const int errorCode) const;
+    QString     getErrorMessage(const int errorCode) const;
+    QString     getDatabaseHash();
+
+    QString     encryptMessage(const QJsonObject& message, const QString& nonce);
+    QJsonObject decryptMessage(const QString& message, const QString& nonce, const QString& action = QString());
+    QString     encrypt(const QString plaintext, const QString nonce);
+    QByteArray  decrypt(const QString encrypted, const QString nonce);
+
+    QString     getBase64FromKey(const uchar* array, const uint len);
+    QByteArray  getQByteArray(const uchar* array, const uint len) const;
+    QJsonObject getJsonObject(const uchar* pArray, const uint len) const;
+    QJsonObject getJsonObject(const QByteArray ba) const;
+    QByteArray  base64Decode(const QString str);
+    QString     incrementNonce(const QString& nonce);
 
 private:
     QMutex              m_mutex;

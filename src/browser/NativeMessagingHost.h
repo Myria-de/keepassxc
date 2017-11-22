@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -44,19 +44,19 @@ public:
     void        run();
     void        stop();
 
+public slots:
+    void        removeSharedEncryptionKeys();
+    void        removeStoredPermissions();
+
+signals:
+    void        quit();
+
 private:
     void        readStdIn(const quint32 length);
     void        readNativeMessages();
     void        sendReply(const QJsonObject& json);
     void        sendReplyToAllClients(const QJsonObject& json);
     QString     jsonToString(const QJsonObject& json) const;
-
-signals:
-    void        quit();
-
-public slots:
-    void        removeSharedEncryptionKeys();
-    void        removeStoredPermissions();
 
 private slots:
     void        databaseLocked();

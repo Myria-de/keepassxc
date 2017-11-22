@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ void catchUnixSignals(std::initializer_list<int> quitSignals) {
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-#ifndef Q_OS_WIN
+#ifdef Q_OS_WIN
     catchUnixSignals({SIGQUIT, SIGINT, SIGTERM, SIGHUP});
 #endif
     NativeMessagingHost host;

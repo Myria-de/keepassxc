@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@ NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
         run();
     }
 
-    connect(&m_browserService, SIGNAL(databaseIsLocked()), this, SLOT(databaseLocked()));
-    connect(&m_browserService, SIGNAL(databaseIsUnlocked()), this, SLOT(databaseUnlocked()));
+    connect(&m_browserService, SIGNAL(databaseLocked()), this, SLOT(databaseLocked()));
+    connect(&m_browserService, SIGNAL(databaseUnlocked()), this, SLOT(databaseUnlocked()));
 }
 
 NativeMessagingHost::~NativeMessagingHost()
@@ -79,10 +79,8 @@ int NativeMessagingHost::init()
 void NativeMessagingHost::run()
 {
     QMutexLocker locker(&m_mutex);
-    if (!m_running.load()) {
-        if (init() == -1) {
-            return;
-        }
+    if (!m_running.load() && init() == -1) {
+        return;
     }
 
     // Update KeePassXC/keepassxc-proxy binary paths to Native Messaging scripts
@@ -122,14 +120,15 @@ void NativeMessagingHost::stop()
 void NativeMessagingHost::readStdIn(const quint32 length)
 {
     QByteArray arr;
+    arr.reserve(length);
+
     for (quint32 i = 0; i < length; ++i) {
         arr.append(getchar());
     }
 
     if (arr.length() > 0) {
         QMutexLocker locker(&m_mutex);
-        const QJsonObject json = m_browserClients.readResponse(arr);
-        sendReply(json);
+        sendReply(m_browserClients.readResponse(arr));
     }
 }
 
@@ -148,8 +147,7 @@ void NativeMessagingHost::readNativeMessages()
 
 void NativeMessagingHost::newNativeMessage()
 {
-#ifndef Q_OS_LINUX
-#if defined Q_OS_MAC || defined Q_OS_UNIX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
     struct kevent ev[1];
 	struct timespec ts = { 5, 0 };
 
@@ -171,7 +169,6 @@ void NativeMessagingHost::newNativeMessage()
         ::close(fd);
         return;
     }
-#endif
 #elif defined Q_OS_LINUX
     int fd = epoll_create(5);
 
@@ -215,22 +212,24 @@ void NativeMessagingHost::newLocalMessage()
 {
     QLocalSocket* socket = qobject_cast<QLocalSocket*>(QObject::sender());
 
-    if (socket && socket->bytesAvailable() > 0) {
-        QByteArray arr = socket->readAll();
+    if (!socket || socket->bytesAvailable() <= 0) {
+        return;
+    }
 
-        if (arr.length() > 0) {
-            QMutexLocker locker(&m_mutex);
-            if (!m_socketList.contains(socket)) {
-                m_socketList.push_back(socket);
-            }
+    QByteArray arr = socket->readAll();
+    if (arr.length() <= 0) {
+        return;
+    }
 
-            const QJsonObject json = m_browserClients.readResponse(arr);
-            QString reply = jsonToString(json);
-            if (socket && socket->isValid() && socket->state() == QLocalSocket::ConnectedState) {
-                socket->write(reply.toUtf8().constData(), reply.length()+1);
-                socket->flush();
-            }
-        }
+    QMutexLocker locker(&m_mutex);
+    if (!m_socketList.contains(socket)) {
+        m_socketList.push_back(socket);
+    }
+
+    QString reply = jsonToString(m_browserClients.readResponse(arr));
+    if (socket && socket->isValid() && socket->state() == QLocalSocket::ConnectedState) {
+        socket->write(reply.toUtf8().constData(), reply.length()+1);
+        socket->flush();
     }
 }
 

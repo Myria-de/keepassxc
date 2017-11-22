@@ -39,9 +39,9 @@ public:
 
     bool load(const Entry* entry);
     void save(Entry* entry);
-    bool isAllowed(const QString& host);
+    bool isAllowed(const QString& host) const;
     void allow(const QString& host);
-    bool isDenied(const QString& host);
+    bool isDenied(const QString& host) const;
     void deny(const QString& host);
     QString realm() const;
     void setRealm(const QString& realm);

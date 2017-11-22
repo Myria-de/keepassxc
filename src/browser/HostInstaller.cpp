@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -60,15 +60,9 @@ bool HostInstaller::checkIfInstalled(const supportedBrowsers browser)
     QString fileName = getPath(browser);
 #ifdef Q_OS_WIN
     QSettings settings(getTargetPath(browser), QSettings::NativeFormat);
-    if (registryEntryFound(settings)) {
-        return true;
-    }
-    return false;
+    return registryEntryFound(settings);
 #else
-    if (QFile::exists(fileName)) {
-        return true;
-    }
-    return false;
+    return QFile::exists(fileName);
 #endif
 }
 
@@ -86,7 +80,7 @@ void HostInstaller::installBrowser(const supportedBrowsers browser, const bool e
          QJsonObject script = constructFile(browser, proxy, location);
          if (!saveFile(browser, script)) {
              QMessageBox::critical(0, tr("KeePassXC: Cannot save file!"),
-                                        tr("Cannot save the Native Messaging script file."), QMessageBox::Ok);
+                                   tr("Cannot save the native messaging script file."), QMessageBox::Ok);
          }
      } else {
          // Remove the script file
@@ -111,7 +105,7 @@ void HostInstaller::updateBinaryPaths(const bool proxy, const QString location)
     }
 }
 
-QString HostInstaller::getTargetPath(const supportedBrowsers browser)
+const QString HostInstaller::getTargetPath(const supportedBrowsers browser)
 {
     switch (browser) {
     case supportedBrowsers::CHROME:     return HostInstaller::TARGET_DIR_CHROME;
@@ -122,9 +116,9 @@ QString HostInstaller::getTargetPath(const supportedBrowsers browser)
     }
 }
 
-QString HostInstaller::getBrowserName(const supportedBrowsers browser)
+const QString HostInstaller::getBrowserName(const supportedBrowsers browser)
 {
-	switch (browser) {
+    switch (browser) {
     case supportedBrowsers::CHROME:     return "chrome";
     case supportedBrowsers::CHROMIUM:   return "chromium";
     case supportedBrowsers::FIREFOX:    return "firefox";
@@ -133,7 +127,7 @@ QString HostInstaller::getBrowserName(const supportedBrowsers browser)
     }
 }
 
-QString HostInstaller::getPath(const supportedBrowsers browser)
+const QString HostInstaller::getPath(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
     // If portable settings file exists save the JSON scripts to application folder
@@ -148,18 +142,20 @@ QString HostInstaller::getPath(const supportedBrowsers browser)
     QString winPath = QString("%1/%2_%3.json").arg(userPath, HostInstaller::HOST_NAME, getBrowserName(browser));
     winPath.replace("/","\\");
     return winPath;
-#endif
+#else
     QString path = getTargetPath(browser);
     return QString("%1%2/%3.json").arg(QDir::homePath(), path, HostInstaller::HOST_NAME);
+#endif
 }
 
-QString HostInstaller::getInstallDir(const supportedBrowsers browser)
+const QString HostInstaller::getInstallDir(const supportedBrowsers browser)
 {
 #ifdef Q_OS_WIN
     return QCoreApplication::applicationDirPath();
-#endif
+#else
     QString path = getTargetPath(browser);
     return QString("%1%2").arg(QDir::homePath(), path);
+#endif
 }
 
 QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const bool proxy, const QString location)
@@ -184,7 +180,7 @@ QJsonObject HostInstaller::constructFile(const supportedBrowsers browser, const 
 
     QJsonObject script;
     script["name"]          = HostInstaller::HOST_NAME;
-    script["description"]   = "KeePassXC integration with Native Messaging support";
+    script["description"]   = "KeePassXC integration with native messaging support";
     script["path"]          = path;
     script["type"]          = "stdio";
 

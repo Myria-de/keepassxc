@@ -1,7 +1,6 @@
 /*
 *  Copyright (C) 2013 Francois Ferrand
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -89,10 +88,7 @@ void BrowserOptionDialog::saveSettings()
 
     settings.setSupportBrowserProxy(m_ui->supportBrowserProxy->isChecked());
     settings.setUseCustomProxy(m_ui->useCustomProxy->isChecked());
-
-    if (settings.useCustomProxy()) {
-        settings.setCustomProxyLocation(m_ui->customProxyLocation->text());
-    }
+    settings.setCustomProxyLocation(m_ui->customProxyLocation->text());
 
     settings.setUpdateBinaryPath(m_ui->updateBinaryPath->isChecked());
     settings.setAlwaysAllowAccess(m_ui->alwaysAllowAccess->isChecked());

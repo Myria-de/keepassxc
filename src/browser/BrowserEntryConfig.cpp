@@ -49,7 +49,7 @@ void BrowserEntryConfig::setDeniedHosts(const QStringList& deniedHosts)
     m_deniedHosts = deniedHosts.toSet();
 }
 
-bool BrowserEntryConfig::isAllowed(const QString& host)
+bool BrowserEntryConfig::isAllowed(const QString& host) const
 {
     return m_allowedHosts.contains(host);
 }
@@ -60,7 +60,7 @@ void BrowserEntryConfig::allow(const QString& host)
     m_deniedHosts.remove(host);
 }
 
-bool BrowserEntryConfig::isDenied(const QString& host)
+bool BrowserEntryConfig::isDenied(const QString& host) const
 {
     return m_deniedHosts.contains(host);
 }

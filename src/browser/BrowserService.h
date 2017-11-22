@@ -1,7 +1,6 @@
 /*
 *  Copyright (C) 2013 Francois Ferrand
 *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -38,14 +37,7 @@ class BrowserService : public QObject
             m_priorities(priorities), m_field(field)
         {}
 
-        bool operator()(const Entry* left, const Entry* right) const
-        {
-            int res = m_priorities.value(left) - m_priorities.value(right);
-            if (res == 0) {
-                return QString::localeAwareCompare(left->attributes()->value(m_field), right->attributes()->value(m_field)) < 0;
-            }
-            return res < 0;
-        }
+        bool operator()(const Entry* left, const Entry* right) const;
 
     private:
         const QHash<const Entry*, int>& m_priorities;
@@ -67,11 +59,6 @@ public:
     void            removeSharedEncryptionKeys();
     void            removeStoredPermissions();
 
-signals:
-    void            databaseIsLocked();
-    void            databaseIsUnlocked();
-    void            databaseIsChanged();
-
 public slots:
     QJsonArray      findMatchingEntries(const QString& id, const QString& url, const QString& submitUrl, const QString& realm);
     QString         storeKey(const QString& key);
@@ -81,10 +68,16 @@ public slots:
     void            activateDatabaseChanged(DatabaseWidget* dbWidget);
     void            lockDatabase();
 
+signals:
+    void            databaseLocked();
+    void            databaseUnlocked();
+    void            databaseChanged();
+
 private:
     enum Access     { Denied, Unknown, Allowed};
 
 private:
+    bool            confirmEntries(QList<Entry*>& pwEntriesToConfirm, const QString& url, const QString& host, const QString& submitHost, const QString& realm);
     QJsonObject     prepareEntry(const Entry* entry);
     Access          checkAccess(const Entry* entry, const QString& host, const QString& submitHost, const QString& realm);
     Group*          findCreateAddEntryGroup();

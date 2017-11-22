@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,12 +26,7 @@ BrowserClients::BrowserClients(BrowserService& browserService) :
     m_clients.reserve(1000);
 }
 
-BrowserClients::~BrowserClients()
-{
-    m_clients.clear();
-}
-
-const QJsonObject BrowserClients::readResponse(const QByteArray& arr)
+QJsonObject BrowserClients::readResponse(const QByteArray& arr)
 {
     QJsonObject json;
     const QJsonObject message = byteArrayToJson(arr);
@@ -64,7 +59,7 @@ QString BrowserClients::getClientID(const QJsonObject& json) const
     return json["clientID"].toString();
 }
 
-const BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientID)
+BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientID)
 {
     QMutexLocker locker(&m_mutex);
     for (const auto &i : m_clients) {

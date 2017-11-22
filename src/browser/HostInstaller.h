@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -41,10 +41,10 @@ public:
     void updateBinaryPaths(const bool proxy, const QString location = QString());
 
 private:
-    QString     getTargetPath(const supportedBrowsers browser);
-    QString		getBrowserName(const supportedBrowsers browser);
-    QString     getPath(const supportedBrowsers browser);
-    QString     getInstallDir(const supportedBrowsers browser);
+    const QString     getTargetPath(const supportedBrowsers browser);
+    const QString		getBrowserName(const supportedBrowsers browser);
+    const QString     getPath(const supportedBrowsers browser);
+    const QString     getInstallDir(const supportedBrowsers browser);
     QJsonObject constructFile(const supportedBrowsers browser, const bool proxy, const QString location);
     bool        registryEntryFound(const QSettings& settings);
     bool        saveFile(const supportedBrowsers browser, const QJsonObject script);

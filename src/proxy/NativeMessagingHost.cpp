@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -62,6 +62,8 @@ NativeMessagingHost::~NativeMessagingHost()
 void NativeMessagingHost::readStdIn(const quint32 length)
 {
     QByteArray arr;
+    arr.reserve(length);
+
     for (quint32 i = 0; i < length; ++i) {
         arr.append(getchar());
     }
@@ -74,8 +76,7 @@ void NativeMessagingHost::readStdIn(const quint32 length)
 
 void NativeMessagingHost::newMessage()
 {
-#ifndef Q_OS_LINUX
-#if defined Q_OS_MAC || defined Q_OS_UNIX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
     struct kevent ev[1];
 	struct timespec ts = { 5, 0 };
 
@@ -97,7 +98,6 @@ void NativeMessagingHost::newMessage()
         ::close(fd);
         return;
     }
-#endif
 #elif defined Q_OS_LINUX
     int fd = epoll_create(5);
     struct epoll_event event;
@@ -152,11 +152,13 @@ void NativeMessagingHost::readNativeMessages()
 
 void NativeMessagingHost::newLocalMessage()
 {
-    if (m_localSocket && m_localSocket->bytesAvailable() > 0) {
-        QByteArray arr = m_localSocket->readAll();
-        if (arr.length() > 0) {
-           sendReply(arr);
-        }
+    if (!m_localSocket || m_localSocket->bytesAvailable() <= 0) {
+        return;
+    }
+
+    QByteArray arr = m_localSocket->readAll();
+    if (arr.length() > 0) {
+       sendReply(arr);
     }
 }
 

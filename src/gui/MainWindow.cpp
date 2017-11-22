@@ -119,7 +119,7 @@ class BrowserPlugin: public ISettingsPage
 
         QString name() override
         {
-            return QObject::tr("Browser extension (Native Messaging)");
+            return QObject::tr("Browser extension with native messaging");
         }
 
         QIcon icon() override

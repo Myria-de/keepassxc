@@ -186,7 +186,7 @@ endif()
 add_subdirectory(browser)
 add_subdirectory(proxy)
 if(WITH_XC_BROWSER)
-    set(keepassbrowser_LIB keepassbrowser)
+    set(keepassxcbrowser_LIB keepassxcbrowser)
 endif()
 
 add_subdirectory(autotype)
@@ -227,7 +227,7 @@ add_library(keepassx_core STATIC ${keepassx_SOURCES})
 set_target_properties(keepassx_core PROPERTIES COMPILE_DEFINITIONS KEEPASSX_BUILDING_CORE)
 target_link_libraries(keepassx_core
                       ${keepasshttp_LIB}
-                      ${keepassbrowser_LIB}
+                      ${keepassxcbrowser_LIB}
                       ${autotype_LIB}
                       ${YUBIKEY_LIBRARIES}
                       ${ZXCVBN_LIBRARIES}

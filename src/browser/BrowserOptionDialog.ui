@@ -29,7 +29,7 @@
    <item>
     <widget class="QCheckBox" name="enableBrowserSupport">
      <property name="toolTip">
-      <string>This is required for accessing your databases from keepassxc-browser</string>
+      <string>This is required for accessing your databases with keepassxc-browser</string>
      </property>
      <property name="text">
       <string>Enable KeepassXC browser extension</string>
@@ -62,7 +62,7 @@
           <string>Only returns the best matches for a specific URL instead of all entries for the whole domain.</string>
          </property>
          <property name="text">
-          <string>&amp;Return only best matching entries</string>
+          <string>&amp;Return only best-matching entries</string>
          </property>
         </widget>
        </item>
@@ -79,7 +79,7 @@
        <item>
         <widget class="QCheckBox" name="matchUrlScheme">
          <property name="toolTip">
-          <string>Only entries with the same scheme (http://, https://, ftp://, ...) are returned.</string>
+          <string>Only entries with the same scheme (http://, https://, ...) are returned.</string>
          </property>
          <property name="text">
           <string>&amp;Match URL schemes</string>
@@ -147,7 +147,7 @@
         <item>
           <widget class="QLabel" name="browserLabel2">
            <property name="text">
-            <string>Enable KeePassXC Native Messaging extension for these browsers:</string>
+            <string>Enable KeePassXC native messaging extension for these browsers:</string>
            </property>
           </widget>
         </item>
@@ -258,10 +258,10 @@
        <item>
         <widget class="QCheckBox" name="updateBinaryPath">
          <property name="toolTip">
-          <string>Updates KeePassXC or keepassxc-proxy binary path automatically to Native Messaging scripts on startup.</string>
+          <string>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</string>
          </property>
          <property name="text">
-          <string>&amp;Update KeePassXC binary path automatically to Native Messaging scripts on startup</string>
+          <string>&amp;Update KeePassXC binary path automatically to native messaging scripts on startup</string>
          </property>
         </widget>
        </item>

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+*  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -36,19 +36,19 @@ class BrowserClients
 
 public:
     BrowserClients(BrowserService& browserService);
-    ~BrowserClients();
+    ~BrowserClients() = default;
 
-    const QJsonObject               readResponse(const QByteArray& arr);
-
-private:
-    QJsonObject                     byteArrayToJson(const QByteArray& arr) const;
-    QString                         getClientID(const QJsonObject& json) const;
-    const ClientPtr                 getClient(const QString& clientID);
+    QJsonObject readResponse(const QByteArray& arr);
 
 private:
-    QMutex                          m_mutex;
-    QVector<ClientPtr>              m_clients;
-    BrowserService&                 m_browserService;
+    QJsonObject byteArrayToJson(const QByteArray& arr) const;
+    QString     getClientID(const QJsonObject& json) const;
+    ClientPtr   getClient(const QString& clientID);
+
+private:
+    QMutex              m_mutex;
+    QVector<ClientPtr>  m_clients;
+    BrowserService&     m_browserService;
 };
 
 #endif // BROWSERCLIENTS_H

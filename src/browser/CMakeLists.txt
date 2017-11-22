@@ -26,7 +26,7 @@ if(WITH_XC_BROWSER)
         message(FATAL_ERROR "libsodium is not installed. Install it, then run CMake again")
     endif()
 
-    set(keepassbrowser_SOURCES
+    set(keepassxcbrowser_SOURCES
         BrowserAccessControlDialog.cpp
         BrowserAction.cpp
         BrowserClients.cpp
@@ -38,13 +38,7 @@ if(WITH_XC_BROWSER)
         NativeMessagingHost.cpp
         Variant.cpp
     )
-    set(keepassbrowser_FORMS
-        BrowserAccessControlDialog.ui
-        BrowserOptionDialog.ui
-    )
 
-    qt5_wrap_ui(keepassbrowser_SOURCES ${keepassbrowser_FORMS})
-
-    add_library(keepassbrowser STATIC ${keepassbrowser_SOURCES})
-    target_link_libraries(keepassbrowser Qt5::Core Qt5::Concurrent Qt5::Widgets Qt5::Network ${sodium_LIBRARY_RELEASE})
+    add_library(keepassxcbrowser STATIC ${keepassxcbrowser_SOURCES})
+    target_link_libraries(keepassxcbrowser Qt5::Core Qt5::Concurrent Qt5::Widgets Qt5::Network ${sodium_LIBRARY_RELEASE})
 endif()
