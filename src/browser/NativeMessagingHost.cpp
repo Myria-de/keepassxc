@@ -66,7 +66,7 @@ void NativeMessagingHost::run()
 
     m_running.store(true);
 #ifdef Q_OS_WIN
-    m_future = QtConcurrent::run(this, &NativeMessagingHost::readNativeMessages);
+    m_future = QtConcurrent::run(this, static_cast<void(NativeMessagingHost::*)()>(&NativeMessagingHost::readNativeMessages));
 #endif
 
     if (BrowserSettings::supportBrowserProxy()) {

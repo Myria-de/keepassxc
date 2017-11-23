@@ -24,7 +24,7 @@ NativeMessagingHost::NativeMessagingHost() : NativeMessagingBase()
     m_localSocket->connectToServer(getLocalServerPath());
 #ifdef Q_OS_WIN
     m_running.store(true);
-    m_future = QtConcurrent::run(this, &NativeMessagingHost::readNativeMessages);
+    m_future = QtConcurrent::run(this, static_cast<void(NativeMessagingHost::*)()>(&NativeMessagingHost::readNativeMessages));
 #endif
     connect(m_localSocket, SIGNAL(readyRead()), this, SLOT(newLocalMessage()));
     connect(m_localSocket, SIGNAL(disconnected()), this, SLOT(deleteSocket()));
