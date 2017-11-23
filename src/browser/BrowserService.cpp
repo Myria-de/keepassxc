@@ -259,27 +259,12 @@ QJsonArray BrowserService::findMatchingEntries(const QString& id, const QString&
         pwEntries.append(pwEntriesToConfirm);
     }
 
-    // Sort results
-    const bool sortSelection = true;
-    if (sortSelection) {
-        QUrl url(submitUrl);
-        if (url.scheme().isEmpty()) {
-            url.setScheme("http");
-        }
-        const QString submitUrl = url.toString(QUrl::StripTrailingSlash);
-        const QString baseSubmitURL = url.toString(QUrl::StripTrailingSlash | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
-
-        // Cache priorities
-        // TODO: QMap
-        QHash<const Entry*, int> priorities;
-        priorities.reserve(pwEntries.size());
-        for (const Entry* entry : pwEntries) {
-            priorities.insert(entry, sortPriority(entry, host, submitUrl, baseSubmitURL));
-        }
-
-        // Sort by priorities
-        qSort(pwEntries.begin(), pwEntries.end(), SortEntries(priorities, BrowserSettings::sortByTitle() ? "Title" : "UserName"));
+    if (pwEntries.isEmpty()) {
+        return QJsonArray();
     }
+
+    // Sort results
+    pwEntries = sortEntries(pwEntries, host, submitUrl);
 
     // Fill the list
     for (Entry* entry : pwEntries) {
@@ -383,6 +368,7 @@ QList<Entry*> BrowserService::searchEntries(Database* db, const QString& hostnam
                 entries.append(entry);
         }
     }
+
     return entries;
 }
 
@@ -505,6 +491,34 @@ void BrowserService::removeStoredPermissions()
                                  tr("The active database does not contain an entry with permissions."),
                                  QMessageBox::Ok);
     }
+}
+
+QList<Entry*> BrowserService::sortEntries(QList<Entry*>& pwEntries, const QString& host, const QString& entryUrl)
+{
+    QUrl url(entryUrl);
+    if (url.scheme().isEmpty()) {
+        url.setScheme("http");
+    }
+
+    const QString submitUrl = url.toString(QUrl::StripTrailingSlash);
+    const QString baseSubmitUrl = url.toString(QUrl::StripTrailingSlash | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
+
+    QMultiMap<int, Entry*> priorities;
+    for (Entry* entry : pwEntries) {
+        priorities.insert(sortPriority(entry, host, submitUrl, baseSubmitUrl), entry);
+    }
+
+    QList<Entry*> newEntries;
+    newEntries.reserve(pwEntries.count());
+
+    QMapIterator<int, Entry*> sortedMap(priorities);
+    sortedMap.toBack();
+    while (sortedMap.hasPrevious()) {
+        sortedMap.previous();
+        newEntries.append(sortedMap.value());
+    }
+
+    return newEntries;
 }
 
 bool BrowserService::confirmEntries(QList<Entry*>& pwEntriesToConfirm, const QString& url, const QString& host, const QString& submitHost, const QString& realm)
@@ -692,15 +706,6 @@ Database* BrowserService::getDatabase()
         }
     }
     return nullptr;
-}
-
-bool BrowserService::SortEntries::operator()(const Entry* left, const Entry* right) const
-{
-    int res = m_priorities.value(left) - m_priorities.value(right);
-    if (res == 0) {
-        return QString::localeAwareCompare(left->attributes()->value(m_field), right->attributes()->value(m_field)) < 0;
-    }
-    return res < 0;
 }
 
 void BrowserService::databaseLocked(DatabaseWidget* dbWidget)

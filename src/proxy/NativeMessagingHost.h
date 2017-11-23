@@ -18,18 +18,9 @@
 #ifndef NATIVEMESSAGINGHOST_H
 #define NATIVEMESSAGINGHOST_H
 
-#include <QObject>
-#include <QLocalSocket>
-#include <QSharedPointer>
-#include <QSocketNotifier>
-#include <QFile>
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
-#include <QAtomicInteger>
-#include <iostream>
-#include <unistd.h>
+#include "NativeMessagingBase.h"
 
-class NativeMessagingHost : public QObject
+class NativeMessagingHost : public NativeMessagingBase
 {
     Q_OBJECT
 public:
@@ -37,21 +28,16 @@ public:
     ~NativeMessagingHost();
 
 public slots:
-    void newMessage();
     void newLocalMessage();
     void deleteSocket();
     void socketStateChanged(QLocalSocket::LocalSocketState socketState);
 
 private:
+    void readLength();
     void readStdIn(const quint32 length);
-    void readNativeMessages();
-    void sendReply(const QString& reply);
 
 private:
-    QSharedPointer<QSocketNotifier>         m_notifier;
     QLocalSocket*                           m_localSocket;
-    QFuture<void>                           m_future;
-    QAtomicInteger<quint8>                  m_running;
 };
 
 #endif // NATIVEMESSAGINGHOST_H

@@ -31,20 +31,6 @@ class BrowserService : public QObject
 {
     Q_OBJECT
 
-    class SortEntries
-    {
-    public:
-        SortEntries(const QHash<const Entry*, int>& priorities, const QString& field):
-            m_priorities(priorities), m_field(field)
-        {}
-
-        bool operator()(const Entry* left, const Entry* right) const;
-
-    private:
-        const QHash<const Entry*, int>& m_priorities;
-        const QString m_field;
-    };
-
 public:
     explicit        BrowserService(DatabaseTabWidget* parent);
 
@@ -78,6 +64,7 @@ private:
     enum Access     { Denied, Unknown, Allowed};
 
 private:
+    QList<Entry*>   sortEntries(QList<Entry*>& pwEntries, const QString& host, const QString& submitUrl);
     bool            confirmEntries(QList<Entry*>& pwEntriesToConfirm, const QString& url, const QString& host, const QString& submitHost, const QString& realm);
     QJsonObject     prepareEntry(const Entry* entry);
     Access          checkAccess(const Entry* entry, const QString& host, const QString& submitHost, const QString& realm);

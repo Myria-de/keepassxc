@@ -29,6 +29,7 @@
 class BrowserClients
 {
     struct Client {
+        Client(const QString& id, QSharedPointer<BrowserAction> ba) : clientID(id), browserAction(ba) {}
         QString                         clientID;
         QSharedPointer<BrowserAction>   browserAction;
     };

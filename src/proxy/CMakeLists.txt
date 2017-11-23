@@ -1,4 +1,5 @@
 #  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
+#  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -13,15 +14,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set(proxy_SOURCES
-    keepassxc-proxy.cpp
-    NativeMessagingHost.cpp)
+if(WITH_XC_BROWSER)
+    include_directories(${BROWSER_SOURCE_DIR})
+    message(STATUS "Browser dir: ${BROWSER_SOURCE_DIR}")
 
-add_library(proxy STATIC ${proxy_SOURCES})
-target_link_libraries(proxy Qt5::Core Qt5::Network)
-add_executable(keepassxc-proxy keepassxc-proxy.cpp)
-target_link_libraries(keepassxc-proxy proxy)
+    set(proxy_SOURCES
+        keepassxc-proxy.cpp
+        ${BROWSER_SOURCE_DIR}/NativeMessagingBase.cpp
+        #${BROWSER_SOURCE_DIR}/NativeMessagingBase.h
+        NativeMessagingHost.cpp)
 
-install(TARGETS keepassxc-proxy
-        BUNDLE DESTINATION . COMPONENT Runtime
-        RUNTIME DESTINATION ${PROXY_INSTALL_DIR} COMPONENT Runtime)
+    add_library(proxy STATIC ${proxy_SOURCES})
+    target_link_libraries(proxy Qt5::Core Qt5::Network)
+    add_executable(keepassxc-proxy keepassxc-proxy.cpp)
+    target_link_libraries(keepassxc-proxy proxy)
+
+    install(TARGETS keepassxc-proxy
+            BUNDLE DESTINATION . COMPONENT Runtime
+            RUNTIME DESTINATION ${PROXY_INSTALL_DIR} COMPONENT Runtime)
+
+endif()

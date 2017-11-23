@@ -23,41 +23,16 @@
 #include "NativeMessagingHost.h"
 #include "BrowserSettings.h"
 
-#ifndef Q_OS_LINUX
-#if defined Q_OS_MAC || defined Q_OS_UNIX
-#include <sys/types.h>
-#include <sys/event.h>
-#include <sys/time.h>
-#include <unistd.h>
-#endif
-#endif
-
-#ifdef Q_OS_LINUX
-#include <sys/epoll.h>
-#include <unistd.h>
-#endif
-
-#ifdef Q_OS_WIN
-#include <fcntl.h>
-#include <io.h>
-#endif
-
 NativeMessagingHost::NativeMessagingHost(DatabaseTabWidget* parent) :
+    NativeMessagingBase(),
     m_mutex(QMutex::Recursive),
     m_browserClients(m_browserService),
     m_browserService(parent)
 {
-#ifndef Q_OS_WIN
-    m_notifier.reset(new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this));
-    connect(m_notifier.data(), SIGNAL(activated(int)), this, SLOT(newNativeMessage()));
-#endif
     m_localServer.reset(new QLocalServer(this));
     m_localServer->setSocketOptions(QLocalServer::UserAccessOption);
-#ifdef Q_OS_WIN
     m_running.store(false);
-    _setmode(_fileno(stdin), _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-#endif
+
     if (BrowserSettings::isEnabled() && !m_running) {
         run();
     }
@@ -95,11 +70,7 @@ void NativeMessagingHost::run()
 #endif
 
     if (BrowserSettings::supportBrowserProxy()) {
-#ifndef Q_OS_WIN
-        QString serverPath = "/tmp/kpxc_server";
-#else
-        QString serverPath = "kpxc_server";
-#endif
+        QString serverPath = getLocalServerPath();
         QFile::remove(serverPath);
         m_localServer->listen(serverPath);
         connect(m_localServer.data(), SIGNAL(newConnection()), this, SLOT(newLocalConnection()));
@@ -118,6 +89,17 @@ void NativeMessagingHost::stop()
     m_localServer->close();
 }
 
+void NativeMessagingHost::readLength()
+{
+    quint32 length = 0;
+    std::cin.read(reinterpret_cast<char*>(&length), 4);
+
+    if (!std::cin.eof() &&length > 0)
+    {
+        readStdIn(length);
+    }
+}
+
 void NativeMessagingHost::readStdIn(const quint32 length)
 {
     if (length > 0) {
@@ -133,75 +115,6 @@ void NativeMessagingHost::readStdIn(const quint32 length)
             sendReply(m_browserClients.readResponse(arr));
         }
     }
-}
-
-void NativeMessagingHost::readNativeMessages()
-{
-#ifdef Q_OS_WIN
-    quint32 length = 0;
-    while (m_running.load() && !std::cin.eof()) {
-        length = 0;
-        std::cin.read(reinterpret_cast<char*>(&length), 4);
-        readStdIn(length);
-        QThread::msleep(1);
-    }
-#endif
-}
-
-void NativeMessagingHost::newNativeMessage()
-{
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
-    struct kevent ev[1];
-	struct timespec ts = { 5, 0 };
-
-	int fd = kqueue();
-	if (fd == -1) {
-		m_notifier->setEnabled(false);
-		return;
-	}
-
-	EV_SET(ev, fileno(stdin), EVFILT_READ, EV_ADD, 0, 0, NULL);
-    if (kevent(fd, ev, 1, NULL, 0, &ts) == -1) {
-    	m_notifier->setEnabled(false);
-    	return;
-    }
-
-    int ret = kevent(fd, NULL, 0, ev, 1, &ts);
-    if (ret < 1) {
-    	m_notifier->setEnabled(false);
-        ::close(fd);
-        return;
-    }
-#elif defined Q_OS_LINUX
-    int fd = epoll_create(5);
-
-    struct epoll_event event;
-    event.events = EPOLLIN;
-    event.data.fd = 0;
-
-    if (epoll_ctl(fd, EPOLL_CTL_ADD, 0, &event) != 0) {
-        m_notifier->setEnabled(false);
-        return;
-    }
-
-    if (epoll_wait(fd, &event, 1, 5000) < 1) {
-    	m_notifier->setEnabled(false);
-        ::close(fd);
-        return;
-    }
-#endif
-
-    quint32 length = 0;
-    std::cin.read(reinterpret_cast<char*>(&length), 4);
-
-    if (!std::cin.eof() &&length > 0)
-    {
-        readStdIn(length);
-    }
-
-#ifndef Q_OS_WIN
-    ::close(fd);
-#endif
 }
 
 void NativeMessagingHost::newLocalConnection()
@@ -236,16 +149,6 @@ void NativeMessagingHost::newLocalMessage()
     }
 }
 
-void NativeMessagingHost::sendReply(const QJsonObject& json)
-{
-    if (!json.isEmpty()) {
-        QString reply = jsonToString(json);
-        uint len = reply.length();
-        std::cout << char(((len>>0) & 0xFF)) << char(((len>>8) & 0xFF)) << char(((len>>16) & 0xFF)) << char(((len>>24) & 0xFF));
-        std::cout << reply.toStdString() << std::flush;
-    }
-}
-
 void NativeMessagingHost::sendReplyToAllClients(const QJsonObject& json)
 {
     QString reply = jsonToString(json);
@@ -267,11 +170,6 @@ void NativeMessagingHost::disconnectSocket()
             m_socketList.removeOne(s);
         }
     }
-}
-
-QString NativeMessagingHost::jsonToString(const QJsonObject& json) const
-{
-    return QString(QJsonDocument(json).toJson(QJsonDocument::Compact));
 }
 
 void NativeMessagingHost::removeSharedEncryptionKeys()

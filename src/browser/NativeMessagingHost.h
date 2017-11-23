@@ -19,20 +19,12 @@
 #ifndef NATIVEMESSAGINGHOST_H
 #define NATIVEMESSAGINGHOST_H
 
-#include <QObject>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
-#include <QMutex>
-#include <QSocketNotifier>
-#include <QLocalServer>
-#include <QAtomicInteger>
+#include "NativeMessagingBase.h"
 #include "BrowserClients.h"
 #include "BrowserService.h"
 #include "gui/DatabaseTabWidget.h"
 
-class NativeMessagingHost : public QObject
+class NativeMessagingHost : public NativeMessagingBase
 {
     Q_OBJECT
 
@@ -53,28 +45,22 @@ signals:
     void        quit();
 
 private:
+    void        readLength();
     void        readStdIn(const quint32 length);
-    void        readNativeMessages();
-    void        sendReply(const QJsonObject& json);
     void        sendReplyToAllClients(const QJsonObject& json);
-    QString     jsonToString(const QJsonObject& json) const;
 
 private slots:
     void        databaseLocked();
     void        databaseUnlocked();
     void        newLocalConnection();
-    void        newNativeMessage();
     void        newLocalMessage();
     void        disconnectSocket();
 
 private:
-    QAtomicInteger<quint8>          m_running;
     QMutex                          m_mutex;
     BrowserClients                  m_browserClients;
     BrowserService                  m_browserService;
-    QSharedPointer<QSocketNotifier> m_notifier;
     QSharedPointer<QLocalServer>    m_localServer;
-    QFuture<void>                   m_future;
     SocketList                      m_socketList;
 };
 

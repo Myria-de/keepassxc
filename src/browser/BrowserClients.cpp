@@ -70,6 +70,8 @@ BrowserClients::ClientPtr BrowserClients::getClient(const QString& clientID)
     }
 
     // clientID not found, create a new client
-    m_clients.push_back(ClientPtr(new Client({ clientID, QSharedPointer<BrowserAction>(new BrowserAction(m_browserService)) })));
+    QSharedPointer<BrowserAction> ba = QSharedPointer<BrowserAction>::create(m_browserService);
+    ClientPtr client = ClientPtr::create(clientID, ba);
+    m_clients.push_back(client);
     return m_clients.back();
 }
