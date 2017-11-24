@@ -110,10 +110,12 @@ QJsonObject BrowserAction::handleChangePublicKeys(const QJsonObject& json, const
     m_publicKey = publicKey;
     m_secretKey = secretKey;
 
+    const QString newNonce = incrementNonce(nonce);
+
     QJsonObject response;
     response["action"] = action;
     response["publicKey"] = publicKey;
-    response["nonce"] = incrementNonce(nonce);
+    response["nonce"] = newNonce;
     response["version"] = KEEPASSX_VERSION;
     response["success"] = "true";
 
@@ -137,14 +139,16 @@ QJsonObject BrowserAction::handleGetDatabaseHash(const QJsonObject& json, const 
 
     QString command = decrypted.value("action").toString();
     if (!command.isEmpty() && command.compare("get-databasehash", Qt::CaseSensitive) == 0) {
+        const QString newNonce = incrementNonce(nonce);
+
         QJsonObject message;
         message["hash"] = hash;
         message["version"] = KEEPASSX_VERSION;
 
         QJsonObject response;
         response["action"] = action;
-        response["message"] = encryptMessage(message, nonce);
-        response["nonce"] = nonce;
+        response["message"] = encryptMessage(message, newNonce);
+        response["nonce"] = newNonce;
 
         return response;
     }
@@ -187,7 +191,7 @@ QJsonObject BrowserAction::handleAssociate(const QJsonObject& json, const QStrin
 
         QJsonObject response;
         response["action"] = action;
-        response["message"] = encryptMessage(message, nonce);
+        response["message"] = encryptMessage(message, newNonce);
         response["nonce"] = newNonce;
 
         return response;
@@ -231,7 +235,7 @@ QJsonObject BrowserAction::handleTestAssociate(const QJsonObject& json, const QS
 
     QJsonObject response;
     response["action"] = action;
-    response["message"] = encryptMessage(message, nonce);
+    response["message"] = encryptMessage(message, newNonce);
     response["nonce"] = newNonce;
 
     return response;
@@ -279,7 +283,7 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
 
     QJsonObject response;
     response["action"] = action;
-    response["message"] = encryptMessage(message, nonce);
+    response["message"] = encryptMessage(message, newNonce);
     response["nonce"] = newNonce;
 
     return response;
@@ -311,7 +315,7 @@ QJsonObject BrowserAction::handleGeneratePassword(const QJsonObject& json, const
 
     QJsonObject response;
     response["action"] = action;
-    response["message"] = encryptMessage(message, nonce);
+    response["message"] = encryptMessage(message, newNonce);
     response["nonce"] = newNonce;
 
     return response;
@@ -364,7 +368,7 @@ QJsonObject BrowserAction::handleSetLogin(const QJsonObject& json, const QString
 
     QJsonObject response;
     response["action"] = action;
-    response["message"] = encryptMessage(message, nonce);
+    response["message"] = encryptMessage(message, newNonce);
     response["nonce"] = newNonce;
 
     return response;
@@ -399,7 +403,7 @@ QJsonObject BrowserAction::handleLockDatabase(const QJsonObject& json, const QSt
 
         QJsonObject response;
         response["action"] = action;
-        response["message"] = encryptMessage(message, nonce);
+        response["message"] = encryptMessage(message, newNonce);
         response["nonce"] = newNonce;
 
         return response;
@@ -567,7 +571,6 @@ QByteArray BrowserAction::base64Decode(const QString str)
 
 QString BrowserAction::incrementNonce(const QString& nonce)
 {
-    return nonce; // Fix this later
     const QByteArray nonceArray = base64Decode(nonce);
     std::vector<unsigned char> n(nonceArray.cbegin(), nonceArray.cend());
 

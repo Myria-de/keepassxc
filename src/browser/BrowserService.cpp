@@ -503,22 +503,21 @@ QList<Entry*> BrowserService::sortEntries(QList<Entry*>& pwEntries, const QStrin
     const QString submitUrl = url.toString(QUrl::StripTrailingSlash);
     const QString baseSubmitUrl = url.toString(QUrl::StripTrailingSlash | QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment);
 
-    QMultiMap<int, Entry*> priorities;
-    for (Entry* entry : pwEntries) {
+    QMultiMap<int, const Entry*> priorities;
+    for (const Entry* entry : pwEntries) {
         priorities.insert(sortPriority(entry, host, submitUrl, baseSubmitUrl), entry);
     }
 
-    QList<Entry*> newEntries;
-    newEntries.reserve(pwEntries.count());
+    QString field = BrowserSettings::sortByTitle() ? "Title" : "UserName";
+    std::sort(pwEntries.begin(), pwEntries.end(), [&priorities, &field](const Entry* left, const Entry* right) {
+        int res = priorities.key(left) - priorities.key(right);
+        if (res == 0) {
+            return QString::localeAwareCompare(left->attributes()->value(field), right->attributes()->value(field)) < 0;
+        }
+        return res < 0;
+    });
 
-    QMapIterator<int, Entry*> sortedMap(priorities);
-    sortedMap.toBack();
-    while (sortedMap.hasPrevious()) {
-        sortedMap.previous();
-        newEntries.append(sortedMap.value());
-    }
-
-    return newEntries;
+    return pwEntries;
 }
 
 bool BrowserService::confirmEntries(QList<Entry*>& pwEntriesToConfirm, const QString& url, const QString& host, const QString& submitHost, const QString& realm)
@@ -693,9 +692,11 @@ bool BrowserService::removeFirstDomain(QString& hostname)
     // Don't remove the second-level domain if it's the only one
     if (hostname.count(".") > 1) {
         hostname = hostname.mid(pos + 1);
+        return !hostname.isEmpty();
     }
 
-    return !hostname.isEmpty();
+    // Nothing removed
+    return false;
 }
 
 Database* BrowserService::getDatabase()

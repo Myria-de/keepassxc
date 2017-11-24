@@ -19,13 +19,11 @@
 #include "NativeMessagingBase.h"
 #include <QStandardPaths>
 
-#ifndef Q_OS_LINUX
-#if defined(Q_OS_MAC) || defined(Q_OS_UNIX)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
 #include <unistd.h>
-#endif
 #endif
 
 #ifdef Q_OS_LINUX
@@ -40,14 +38,12 @@
 
 NativeMessagingBase::NativeMessagingBase()
 {
-#ifndef Q_OS_WIN
-    m_notifier.reset(new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this));
-    connect(m_notifier.data(), SIGNAL(activated(int)), this, SLOT(newNativeMessage()));
-#endif
-
 #ifdef Q_OS_WIN
     _setmode(_fileno(stdin), _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
+#else
+    m_notifier.reset(new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this));
+    connect(m_notifier.data(), SIGNAL(activated(int)), this, SLOT(newNativeMessage()));
 #endif
 }
 
@@ -55,23 +51,23 @@ void NativeMessagingBase::newNativeMessage()
 {
 #if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
     struct kevent ev[1];
-	struct timespec ts = { 5, 0 };
+    struct timespec ts = { 5, 0 };
 
-	int fd = kqueue();
-	if (fd == -1) {
-		m_notifier->setEnabled(false);
-		return;
-	}
+    int fd = kqueue();
+    if (fd == -1) {
+        m_notifier->setEnabled(false);
+        return;
+    }
 
-	EV_SET(ev, fileno(stdin), EVFILT_READ, EV_ADD, 0, 0, NULL);
-    if (kevent(fd, ev, 1, NULL, 0, &ts) == -1) {
-    	m_notifier->setEnabled(false);
-    	return;
+    EV_SET(ev, fileno(stdin), EVFILT_READ, EV_ADD, 0, 0, nullptr);
+    if (kevent(fd, ev, 1, nullptr, 0, &ts) == -1) {
+        m_notifier->setEnabled(false);
+        return;
     }
 
     int ret = kevent(fd, NULL, 0, ev, 1, &ts);
     if (ret < 1) {
-    	m_notifier->setEnabled(false);
+        m_notifier->setEnabled(false);
         ::close(fd);
         return;
     }
@@ -86,14 +82,12 @@ void NativeMessagingBase::newNativeMessage()
     }
 
     if (epoll_wait(fd, &event, 1, 5000) < 1) {
-    	m_notifier->setEnabled(false);
+        m_notifier->setEnabled(false);
         ::close(fd);
         return;
     }
 #endif
-
     readLength();
-
 #ifndef Q_OS_WIN
     ::close(fd);
 #endif
@@ -127,7 +121,7 @@ void NativeMessagingBase::sendReply(const QJsonObject& json)
 void NativeMessagingBase::sendReply(const QString& reply)
 {
     if (!reply.isEmpty()) {
-        uint len = reply.length();
+    uint len = reply.length();
         std::cout << char(((len>>0) & 0xFF)) << char(((len>>8) & 0xFF)) << char(((len>>16) & 0xFF)) << char(((len>>24) & 0xFF));
         std::cout << reply.toStdString() << std::flush;
     }
@@ -136,11 +130,12 @@ void NativeMessagingBase::sendReply(const QString& reply)
 QString NativeMessagingBase::getLocalServerPath() const
 {
 #if defined(Q_OS_WIN)
-    return "kpxc_server";
-#elif !defined(Q_OS_MAC) && (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
+    return QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/kpxc_server";
+#elif defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
     // Use XDG_RUNTIME_DIR instead of /tmp/ if it's available
     QString path = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/kpxc_server";
     return path.isEmpty() ? "/tmp/kpxc_server" : path;
-#endif
+#else   // Q_OS_MAC and others
     return "/tmp/kpxc_server";
+#endif
 }

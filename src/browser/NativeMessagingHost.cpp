@@ -93,8 +93,7 @@ void NativeMessagingHost::readLength()
 {
     quint32 length = 0;
     std::cin.read(reinterpret_cast<char*>(&length), 4);
-
-    if (!std::cin.eof() &&length > 0)
+    if (!std::cin.eof() && length > 0)
     {
         readStdIn(length);
     }
