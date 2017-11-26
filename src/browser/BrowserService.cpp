@@ -21,7 +21,6 @@
 #include <QInputDialog>
 #include <QProgressDialog>
 #include <QMessageBox>
-#include <QRegularExpression>
 #include "BrowserService.h"
 #include "BrowserSettings.h"
 #include "BrowserEntryConfig.h"
@@ -677,9 +676,8 @@ int BrowserService::sortPriority(const Entry* entry, const QString& host, const 
 
 bool BrowserService::matchUrlScheme(const QString& url)
 {
-    QRegularExpression re("^(http|https|ftp|ftps)://");
-    QRegularExpressionMatch match = re.match(url);
-    return match.hasMatch();
+    QUrl address(url);
+    return !address.scheme().isEmpty();
 }
 
 bool BrowserService::removeFirstDomain(QString& hostname)
