@@ -46,6 +46,7 @@ RUN set -x \
         libxtst-dev \
         mesa-common-dev \
         libyubikey-dev \
+        libsodium-dev \
         libykpers-1-dev
 
 ENV CMAKE_PREFIX_PATH=/opt/qt${QT5_VERSION}/lib/cmake
