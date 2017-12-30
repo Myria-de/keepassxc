@@ -111,6 +111,9 @@ DatabaseWidget::DatabaseWidget(Database* db, QWidget* parent)
                                     "border-radius: 5px;");
 
     m_detailsView = new DetailsWidget(this);
+    connect(m_detailsView, &DetailsWidget::errorOccurred, this, [this](const QString& error) {
+        showMessage(error, MessageWidget::MessageType::Error);
+    });
 
     QVBoxLayout* vLayout = new QVBoxLayout(rightHandSideWidget);
     vLayout->setMargin(0);
@@ -1247,7 +1250,7 @@ void DatabaseWidget::reloadDatabaseFile()
             if (m_databaseModified) {
                 // Ask if we want to merge changes into new database
                 QMessageBox::StandardButton mb = MessageBox::question(this, tr("Merge Request"),
-                                     tr("The database file has changed and you have unsaved changes."
+                                     tr("The database file has changed and you have unsaved changes.\n"
                                         "Do you want to merge your changes?"),
                                      QMessageBox::Yes | QMessageBox::No);
 

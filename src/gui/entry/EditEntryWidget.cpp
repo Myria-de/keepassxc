@@ -29,6 +29,8 @@
 #include <QMenu>
 #include <QSortFilterProxyModel>
 #include <QTemporaryFile>
+#include <QMimeData>
+#include <QEvent>
 
 #include "core/Config.h"
 #include "core/Database.h"
@@ -47,6 +49,7 @@
 #include "gui/FileDialog.h"
 #include "gui/MessageBox.h"
 #include "gui/Clipboard.h"
+#include "gui/Font.h"
 #include "gui/entry/AutoTypeAssociationsModel.h"
 #include "gui/entry/EntryAttachmentsModel.h"
 #include "gui/entry/EntryAttributesModel.h"
@@ -67,8 +70,6 @@ EditEntryWidget::EditEntryWidget(QWidget* parent)
     , m_sshAgentWidget(new QWidget())
     , m_editWidgetProperties(new EditWidgetProperties())
     , m_historyWidget(new QWidget())
-    , m_entryAttachments(new EntryAttachments(this))
-    , m_attachmentsModel(new EntryAttachmentsModel(m_advancedWidget))
     , m_entryAttributes(new EntryAttributes(this))
     , m_attributesModel(new EntryAttributesModel(m_advancedWidget))
     , m_historyModel(new EntryHistoryModel(this))
@@ -137,16 +138,12 @@ void EditEntryWidget::setupAdvanced()
     m_advancedUi->setupUi(m_advancedWidget);
     addPage(tr("Advanced"), FilePath::instance()->icon("categories", "preferences-other"), m_advancedWidget);
 
-    m_attachmentsModel->setEntryAttachments(m_entryAttachments);
-    m_advancedUi->attachmentsView->setModel(m_attachmentsModel);
-    m_advancedUi->attachmentsView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    connect(m_advancedUi->attachmentsView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
-            SLOT(updateAttachmentButtonsEnabled(QModelIndex)));
-    connect(m_advancedUi->attachmentsView, SIGNAL(doubleClicked(QModelIndex)), SLOT(openAttachment(QModelIndex)));
-    connect(m_advancedUi->saveAttachmentButton, SIGNAL(clicked()), SLOT(saveSelectedAttachments()));
-    connect(m_advancedUi->openAttachmentButton, SIGNAL(clicked()), SLOT(openSelectedAttachments()));
-    connect(m_advancedUi->addAttachmentButton, SIGNAL(clicked()), SLOT(insertAttachments()));
-    connect(m_advancedUi->removeAttachmentButton, SIGNAL(clicked()), SLOT(removeSelectedAttachments()));
+    m_advancedUi->attachmentsWidget->setReadOnly(false);
+    m_advancedUi->attachmentsWidget->setButtonsVisible(true);
+
+    connect(m_advancedUi->attachmentsWidget, &EntryAttachmentsWidget::errorOccurred, this, [this](const QString &error) {
+        showMessage(error, MessageWidget::Error);
+    });
 
     m_attributesModel->setEntryAttributes(m_entryAttributes);
     m_advancedUi->attributesView->setModel(m_attributesModel);
@@ -267,7 +264,15 @@ void EditEntryWidget::setupSSHAgent()
 {
     m_sshAgentUi->setupUi(m_sshAgentWidget);
 
-    connect(m_sshAgentUi->privateKeyComboBox, SIGNAL(currentTextChanged(QString)), SLOT(updateSSHAgentKeyInfo()));
+    QFont fixedFont = Font::fixedFont();
+    m_sshAgentUi->fingerprintTextLabel->setFont(fixedFont);
+    m_sshAgentUi->commentTextLabel->setFont(fixedFont);
+    m_sshAgentUi->publicKeyEdit->setFont(fixedFont);
+
+    connect(m_sshAgentUi->attachmentRadioButton, SIGNAL(clicked(bool)), SLOT(updateSSHAgentKeyInfo()));
+    connect(m_sshAgentUi->attachmentComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateSSHAgentKeyInfo()));
+    connect(m_sshAgentUi->externalFileRadioButton, SIGNAL(clicked(bool)), SLOT(updateSSHAgentKeyInfo()));
+    connect(m_sshAgentUi->externalFileEdit, SIGNAL(textChanged(QString)), SLOT(updateSSHAgentKeyInfo()));
     connect(m_sshAgentUi->browseButton, SIGNAL(clicked()), SLOT(browsePrivateKey()));
     connect(m_sshAgentUi->addToAgentButton, SIGNAL(clicked()), SLOT(addKeyToAgent()));
     connect(m_sshAgentUi->removeFromAgentButton, SIGNAL(clicked()), SLOT(removeKeyFromAgent()));
@@ -279,39 +284,42 @@ void EditEntryWidget::setupSSHAgent()
 
 void EditEntryWidget::updateSSHAgent()
 {
-    // TODO: unsafe use of translations
-    QString prefix = tr("Attachment") + ": ";
     KeeAgentSettings settings;
-    settings.fromXml(m_entryAttachments->value("KeeAgent.settings"));
+    settings.fromXml(m_advancedUi->attachmentsWidget->getAttachment("KeeAgent.settings"));
 
     m_sshAgentUi->addKeyToAgentCheckBox->setChecked(settings.addAtDatabaseOpen());
     m_sshAgentUi->removeKeyFromAgentCheckBox->setChecked(settings.removeAtDatabaseClose());
     m_sshAgentUi->requireUserConfirmationCheckBox->setChecked(settings.useConfirmConstraintWhenAdding());
     m_sshAgentUi->lifetimeCheckBox->setChecked(settings.useLifetimeConstraintWhenAdding());
     m_sshAgentUi->lifetimeSpinBox->setValue(settings.lifetimeConstraintDuration());
-    m_sshAgentUi->privateKeyComboBox->clear();
+    m_sshAgentUi->attachmentComboBox->clear();
     m_sshAgentUi->addToAgentButton->setEnabled(false);
     m_sshAgentUi->removeFromAgentButton->setEnabled(false);
     m_sshAgentUi->copyToClipboardButton->setEnabled(false);
 
-    for (QString fileName : m_entryAttachments->keys()) {
+    m_sshAgentUi->attachmentComboBox->addItem("");
+
+    auto attachments = m_advancedUi->attachmentsWidget->entryAttachments();
+    for (const QString& fileName : attachments->keys()) {
         if (fileName == "KeeAgent.settings") {
             continue;
         }
 
-        m_sshAgentUi->privateKeyComboBox->addItem(prefix + fileName);
+        m_sshAgentUi->attachmentComboBox->addItem(fileName);
     }
 
+    m_sshAgentUi->attachmentComboBox->setCurrentText(settings.attachmentName());
+    m_sshAgentUi->externalFileEdit->setText(settings.fileName());
+
     if (settings.selectedType() == "attachment") {
-        m_sshAgentUi->privateKeyComboBox->setCurrentText(prefix + settings.attachmentName());
-    } else if (!settings.fileName().isEmpty()) {
-        m_sshAgentUi->privateKeyComboBox->addItem(settings.fileName());
-        m_sshAgentUi->privateKeyComboBox->setCurrentText(settings.fileName());
+        m_sshAgentUi->attachmentRadioButton->setChecked(true);
     } else {
-        m_sshAgentUi->privateKeyComboBox->setCurrentText("");
+        m_sshAgentUi->externalFileRadioButton->setChecked(true);
     }
 
     m_sshAgentSettings = settings;
+
+    updateSSHAgentKeyInfo();
 }
 
 void EditEntryWidget::updateSSHAgentKeyInfo()
@@ -319,14 +327,10 @@ void EditEntryWidget::updateSSHAgentKeyInfo()
     m_sshAgentUi->addToAgentButton->setEnabled(false);
     m_sshAgentUi->removeFromAgentButton->setEnabled(false);
     m_sshAgentUi->copyToClipboardButton->setEnabled(false);
-    m_sshAgentUi->fingerprintEdit->setText("");
-    m_sshAgentUi->commentEdit->setText("");
+    m_sshAgentUi->fingerprintTextLabel->setText(tr("n/a"));
+    m_sshAgentUi->commentTextLabel->setText(tr("n/a"));
     m_sshAgentUi->decryptButton->setEnabled(false);
     m_sshAgentUi->publicKeyEdit->document()->setPlainText("");
-
-    if (m_sshAgentUi->privateKeyComboBox->currentText().isEmpty()) {
-        return;
-    }
 
     OpenSSHKey key;
 
@@ -334,13 +338,13 @@ void EditEntryWidget::updateSSHAgentKeyInfo()
         return;
     }
 
-    m_sshAgentUi->fingerprintEdit->setText(key.fingerprint());
+    m_sshAgentUi->fingerprintTextLabel->setText(key.fingerprint());
 
     if (key.encrypted()) {
-        m_sshAgentUi->commentEdit->setText(tr("(encrypted)"));
+        m_sshAgentUi->commentTextLabel->setText(tr("(encrypted)"));
         m_sshAgentUi->decryptButton->setEnabled(true);
     } else {
-        m_sshAgentUi->commentEdit->setText(key.comment());
+        m_sshAgentUi->commentTextLabel->setText(key.comment());
     }
 
     m_sshAgentUi->publicKeyEdit->document()->setPlainText(key.publicKey());
@@ -357,7 +361,7 @@ void EditEntryWidget::updateSSHAgentKeyInfo()
 void EditEntryWidget::saveSSHAgentConfig()
 {
     KeeAgentSettings settings;
-    QString privateKeyPath = m_sshAgentUi->privateKeyComboBox->currentText();
+    QString privateKeyPath = m_sshAgentUi->attachmentComboBox->currentText();
 
     settings.setAddAtDatabaseOpen(m_sshAgentUi->addKeyToAgentCheckBox->isChecked());
     settings.setRemoveAtDatabaseClose(m_sshAgentUi->removeKeyFromAgentCheckBox->isChecked());
@@ -365,17 +369,13 @@ void EditEntryWidget::saveSSHAgentConfig()
     settings.setUseLifetimeConstraintWhenAdding(m_sshAgentUi->lifetimeCheckBox->isChecked());
     settings.setLifetimeConstraintDuration(m_sshAgentUi->lifetimeSpinBox->value());
 
-    // TODO: unsafe use of translations
-    QString prefix = tr("Attachment") + ": ";
-    if (privateKeyPath.startsWith(prefix)) {
+    if (m_sshAgentUi->attachmentRadioButton->isChecked()) {
         settings.setSelectedType("attachment");
-        settings.setAttachmentName(privateKeyPath.remove(0, prefix.length()));
-        settings.setFileName("");
     } else {
         settings.setSelectedType("file");
-        settings.setFileName(privateKeyPath);
-        settings.setAttachmentName("");
     }
+    settings.setAttachmentName(m_sshAgentUi->attachmentComboBox->currentText());
+    settings.setFileName(m_sshAgentUi->externalFileEdit->text());
 
     // we don't use this as we don't run an agent but for compatibility we set it if necessary
     settings.setAllowUseOfSshKey(settings.addAtDatabaseOpen() || settings.removeAtDatabaseClose());
@@ -383,10 +383,10 @@ void EditEntryWidget::saveSSHAgentConfig()
     // we don't use this either but we don't want it to dirty flag the config
     settings.setSaveAttachmentToTempFile(m_sshAgentSettings.saveAttachmentToTempFile());
 
-    if (settings.isDefault() && m_entryAttachments->hasKey("KeeAgent.settings")) {
-        m_entryAttachments->remove("KeeAgent.settings");
+    if (settings.isDefault()) {
+        m_advancedUi->attachmentsWidget->removeAttachment("KeeAgent.settings");
     } else if (settings != m_sshAgentSettings) {
-        m_entryAttachments->set("KeeAgent.settings", settings.toXml());
+        m_advancedUi->attachmentsWidget->setAttachment("KeeAgent.settings", settings.toXml());
     }
 
     m_sshAgentSettings = settings;
@@ -396,23 +396,22 @@ void EditEntryWidget::browsePrivateKey()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select private key"), "");
     if (!fileName.isEmpty()) {
-        m_sshAgentUi->privateKeyComboBox->addItem(fileName);
-        m_sshAgentUi->privateKeyComboBox->setCurrentText(fileName);
+        m_sshAgentUi->externalFileEdit->setText(fileName);
     }
 }
 
 bool EditEntryWidget::getOpenSSHKey(OpenSSHKey& key)
 {
-    QString privateKeyPath = m_sshAgentUi->privateKeyComboBox->currentText();
     QByteArray privateKeyData;
 
-    // TODO: unsafe use of translations
-    QString prefix = tr("Attachment") + ": ";
-    if (privateKeyPath.startsWith(prefix)) {
-        QString attachmentName = privateKeyPath.remove(0, prefix.length());
-        privateKeyData = m_entryAttachments->value(attachmentName);
+    if (m_sshAgentUi->attachmentRadioButton->isChecked()) {
+        privateKeyData = m_advancedUi->attachmentsWidget->getAttachment(m_sshAgentUi->attachmentComboBox->currentText());
     } else {
-        QFile localFile(privateKeyPath);
+        QFile localFile(m_sshAgentUi->externalFileEdit->text());
+
+        if (localFile.fileName().isEmpty()) {
+            return false;
+        }
 
         if (localFile.size() > 1024 * 1024) {
             showMessage(tr("File too large to be a private key"), MessageWidget::Error);
@@ -425,6 +424,10 @@ bool EditEntryWidget::getOpenSSHKey(OpenSSHKey& key)
         }
 
         privateKeyData = localFile.readAll();
+    }
+
+    if (privateKeyData.length() == 0) {
+        return false;
     }
 
     if (!key.parse(privateKeyData)) {
@@ -446,7 +449,7 @@ void EditEntryWidget::addKeyToAgent()
     if (!key.openPrivateKey(m_entry->password())) {
         showMessage(key.errorString(), MessageWidget::Error);
     } else {
-        m_sshAgentUi->commentEdit->setText(key.comment());
+        m_sshAgentUi->commentTextLabel->setText(key.comment());
         m_sshAgentUi->publicKeyEdit->document()->setPlainText(key.publicKey());
     }
 
@@ -484,7 +487,7 @@ void EditEntryWidget::decryptPrivateKey()
     if (!key.openPrivateKey(m_entry->password())) {
         showMessage(key.errorString(), MessageWidget::Error);
     } else {
-        m_sshAgentUi->commentEdit->setText(key.comment());
+        m_sshAgentUi->commentTextLabel->setText(key.comment());
         m_sshAgentUi->publicKeyEdit->document()->setPlainText(key.publicKey());
     }
 }
@@ -502,15 +505,6 @@ void EditEntryWidget::useExpiryPreset(QAction* action)
     QDateTime now = QDateTime::currentDateTime();
     QDateTime expiryDateTime = now + delta;
     m_mainUi->expireDatePicker->setDateTime(expiryDateTime);
-}
-
-void EditEntryWidget::updateAttachmentButtonsEnabled(const QModelIndex& current)
-{
-    bool enable = current.isValid();
-
-    m_advancedUi->saveAttachmentButton->setEnabled(enable);
-    m_advancedUi->openAttachmentButton->setEnabled(enable);
-    m_advancedUi->removeAttachmentButton->setEnabled(enable && !m_history);
 }
 
 void EditEntryWidget::toggleHideNotes(bool visible)
@@ -574,8 +568,8 @@ void EditEntryWidget::setForms(const Entry* entry, bool restore)
     m_mainUi->togglePasswordGeneratorButton->setChecked(false);
     m_mainUi->togglePasswordGeneratorButton->setDisabled(m_history);
     m_mainUi->passwordGenerator->reset();
-    m_advancedUi->addAttachmentButton->setEnabled(!m_history);
-    updateAttachmentButtonsEnabled(m_advancedUi->attachmentsView->currentIndex());
+
+    m_advancedUi->attachmentsWidget->setReadOnly(m_history);
     m_advancedUi->addAttributeButton->setEnabled(!m_history);
     m_advancedUi->editAttributeButton->setEnabled(false);
     m_advancedUi->removeAttributeButton->setEnabled(false);
@@ -606,7 +600,7 @@ void EditEntryWidget::setForms(const Entry* entry, bool restore)
 
     m_mainUi->notesEdit->setPlainText(entry->notes());
 
-    m_entryAttachments->copyDataFrom(entry->attachments());
+    m_advancedUi->attachmentsWidget->setEntryAttachments(entry->attachments());
     m_entryAttributes->copyCustomKeysFrom(entry->attributes());
 
     if (m_attributesModel->rowCount() != 0) {
@@ -742,8 +736,8 @@ void EditEntryWidget::acceptEntry()
 void EditEntryWidget::updateEntryData(Entry* entry) const
 {
     entry->attributes()->copyCustomKeysFrom(m_entryAttributes);
-    entry->attachments()->copyDataFrom(m_entryAttachments);
-    
+    entry->attachments()->copyDataFrom(m_advancedUi->attachmentsWidget->entryAttachments());
+
     entry->setTitle(m_mainUi->titleEdit->text());
     entry->setUsername(m_mainUi->usernameEdit->text());
     entry->setUrl(m_mainUi->urlEdit->text());
@@ -800,7 +794,7 @@ void EditEntryWidget::clear()
     m_entry = nullptr;
     m_database = nullptr;
     m_entryAttributes->clear();
-    m_entryAttachments->clear();
+    m_advancedUi->attachmentsWidget->clearAttachments();
     m_autoTypeAssoc->clear();
     m_historyModel->clear();
     m_iconsWidget->reset();
@@ -943,32 +937,6 @@ void EditEntryWidget::displayAttribute(QModelIndex index, bool showProtected)
     m_advancedUi->protectAttributeButton->blockSignals(false);
 }
 
-bool EditEntryWidget::openAttachment(const QModelIndex &index, QString *errorMessage)
-{
-    const QString filename = m_attachmentsModel->keyByIndex(index);
-    const QByteArray attachmentData = m_entryAttachments->value(filename);
-
-    // tmp file will be removed once the database (or the application) has been closed
-    const QString tmpFileTemplate = QDir::temp().absoluteFilePath(QString("XXXXXX.").append(filename));
-    QTemporaryFile* tmpFile = new QTemporaryFile(tmpFileTemplate, this);
-
-    const bool saveOk = tmpFile->open()
-                        && tmpFile->write(attachmentData) == attachmentData.size()
-                        && tmpFile->flush();
-    if (!saveOk) {
-        if (errorMessage) {
-            *errorMessage = tr("Unable to save the attachment:\n").append(tmpFile->errorString());
-        }
-        delete tmpFile;
-        return false;
-    }
-
-    tmpFile->close();
-    QDesktopServices::openUrl(QUrl::fromLocalFile(tmpFile->fileName()));
-
-    return true;
-}
-
 void EditEntryWidget::protectCurrentAttribute(bool state)
 {
     QModelIndex index = m_advancedUi->attributesView->currentIndex();
@@ -996,181 +964,6 @@ void EditEntryWidget::revealCurrentAttribute()
             m_advancedUi->attributesEdit->setPlainText(m_entryAttributes->value(key));
             m_advancedUi->attributesEdit->setEnabled(true);
         }
-    }
-}
-
-void EditEntryWidget::insertAttachments()
-{
-    Q_ASSERT(!m_history);
-
-    QString defaultDir = config()->get("LastAttachmentDir").toString();
-    if (defaultDir.isEmpty() || !QDir(defaultDir).exists()) {
-        defaultDir = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation).value(0);
-    }
-
-    const QStringList filenames = fileDialog()->getOpenFileNames(this, tr("Select files"), defaultDir);
-    if (filenames.isEmpty()) {
-        return;
-    }
-
-    config()->set("LastAttachmentDir", QFileInfo(filenames.first()).absolutePath());
-
-    QStringList errors;
-    for (const QString &filename: filenames) {
-        const QFileInfo fInfo(filename);
-        QFile file(filename);
-        QByteArray data;
-        const bool readOk = file.open(QIODevice::ReadOnly) && Tools::readAllFromDevice(&file, data);
-        if (!readOk) {
-            errors.append(QString("%1 - %2").arg(fInfo.fileName(), file.errorString()));
-            continue;
-        }
-
-        m_entryAttachments->set(fInfo.fileName(), data);
-    }
-
-    if (!errors.isEmpty()) {
-        showMessage(tr("Unable to open files:\n%1").arg(errors.join('\n')), MessageWidget::Error);
-    }
-}
-
-void EditEntryWidget::saveSelectedAttachment()
-{
-    const QModelIndex index = m_advancedUi->attachmentsView->currentIndex();
-    if (!index.isValid()) {
-        return;
-    }
-
-    const QString filename = m_attachmentsModel->keyByIndex(index);
-    QString defaultDirName = config()->get("LastAttachmentDir").toString();
-    if (defaultDirName.isEmpty() || !QDir(defaultDirName).exists()) {
-        defaultDirName = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    }
-
-    const QString savePath = fileDialog()->getSaveFileName(this, tr("Save attachment"),
-                                                           QDir(defaultDirName).filePath(filename));
-    if (!savePath.isEmpty()) {
-        config()->set("LastAttachmentDir", QFileInfo(savePath).absolutePath());
-
-        QFile file(savePath);
-        const QByteArray attachmentData = m_entryAttachments->value(filename);
-        const bool saveOk = file.open(QIODevice::WriteOnly) && file.write(attachmentData) == attachmentData.size();
-        if (!saveOk) {
-            showMessage(tr("Unable to save the attachment:\n").append(file.errorString()), MessageWidget::Error);
-        }
-    }
-}
-
-void EditEntryWidget::saveSelectedAttachments()
-{
-    const QModelIndexList indexes = m_advancedUi->attachmentsView->selectionModel()->selectedIndexes();
-    if (indexes.isEmpty()) {
-        return;
-    } else if (indexes.count() == 1) {
-        saveSelectedAttachment();
-        return;
-    }
-
-    QString defaultDirName = config()->get("LastAttachmentDir").toString();
-    if (defaultDirName.isEmpty() || !QDir(defaultDirName).exists()) {
-        defaultDirName = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    }
-
-    const QString savePath = fileDialog()->getExistingDirectory(this, tr("Save attachments"), defaultDirName);
-    if (savePath.isEmpty()) {
-        return;
-    }
-
-    QDir saveDir(savePath);
-    if (!saveDir.exists()) {
-        if (saveDir.mkpath(saveDir.absolutePath())) {
-            showMessage(tr("Unable to create the directory:\n").append(saveDir.absolutePath()), MessageWidget::Error);
-            return;
-        }
-    }
-    config()->set("LastAttachmentDir", QFileInfo(saveDir.absolutePath()).absolutePath());
-
-    QStringList errors;
-    for (const QModelIndex &index: indexes) {
-        const QString filename = m_attachmentsModel->keyByIndex(index);
-        const QString attachmentPath = saveDir.absoluteFilePath(filename);
-
-        if (QFileInfo::exists(attachmentPath)) {
-            const QString question(tr("Are you sure you want to overwrite existing file \"%1\" with the attachment?"));
-            auto ans = MessageBox::question(this, tr("Confirm overwrite"), question.arg(filename),
-                                            QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-            if (ans == QMessageBox::No) {
-                continue;
-            } else if (ans == QMessageBox::Cancel) {
-                return;
-            }
-        }
-
-        QFile file(attachmentPath);
-        const QByteArray attachmentData = m_entryAttachments->value(filename);
-        const bool saveOk = file.open(QIODevice::WriteOnly) && file.write(attachmentData) == attachmentData.size();
-        if (!saveOk) {
-            errors.append(QString("%1 - %2").arg(filename, file.errorString()));
-        }
-    }
-
-    if (!errors.isEmpty()) {
-        showMessage(tr("Unable to save the attachments:\n").append(errors.join('\n')), MessageWidget::Error);
-    }
-}
-
-void EditEntryWidget::openAttachment(const QModelIndex& index)
-{
-    if (!index.isValid()) {
-        Q_ASSERT(false);
-        return;
-    }
-
-    QString errorMessage;
-    if (!openAttachment(index, &errorMessage)) {
-        showMessage(errorMessage, MessageWidget::Error);
-    }
-}
-
-void EditEntryWidget::openSelectedAttachments()
-{
-    const QModelIndexList indexes = m_advancedUi->attachmentsView->selectionModel()->selectedIndexes();
-    if (indexes.isEmpty()) {
-        return;
-    }
-
-    QStringList errors;
-    for (const QModelIndex &index: indexes) {
-        QString errorMessage;
-        if (!openAttachment(index, &errorMessage)) {
-            const QString filename = m_attachmentsModel->keyByIndex(index);
-            errors.append(QString("%1 - %2").arg(filename, errorMessage));
-        };
-    }
-
-    if (!errors.isEmpty()) {
-        showMessage(tr("Unable to open the attachments:\n").append(errors.join('\n')), MessageWidget::Error);
-    }
-}
-
-void EditEntryWidget::removeSelectedAttachments()
-{
-    Q_ASSERT(!m_history);
-
-    const QModelIndexList indexes = m_advancedUi->attachmentsView->selectionModel()->selectedIndexes();
-    if (indexes.isEmpty()) {
-        return;
-    }
-
-    const QString question = tr("Are you sure you want to remove %n attachments?", "", indexes.count());
-    QMessageBox::StandardButton ans = MessageBox::question(this, tr("Confirm Remove"),
-                                                           question, QMessageBox::Yes | QMessageBox::No);
-    if (ans == QMessageBox::Yes) {
-        QStringList keys;
-        for (const QModelIndex &index: indexes) {
-            keys.append(m_attachmentsModel->keyByIndex(index));
-        }
-        m_entryAttachments->remove(keys);
     }
 }
 

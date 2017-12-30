@@ -1,5 +1,4 @@
 /*
- *  Copyright (C) 2011 Felix Geyer <debfx@fobos.de>
  *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -16,25 +15,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSX_TESTKEYS_H
-#define KEEPASSX_TESTKEYS_H
+#include "Font.h"
 
-#include <QObject>
+#include <QFontDatabase>
 
-class TestKeys : public QObject
+QFont Font::fixedFont()
 {
-    Q_OBJECT
+    QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 
-private slots:
-    void initTestCase();
-    void testComposite();
-    void testFileKey();
-    void testFileKey_data();
-    void testCreateFileKey();
-    void testCreateAndOpenFileKey();
-    void testFileKeyHash();
-    void testFileKeyError();
-    void benchmarkTransformKey();
-};
+#ifdef Q_OS_WIN
+    // try to use Consolas on Windows, because the default Courier New has too many similar characters
+    QFont consolasFont = QFontDatabase().font("Consolas", fixedFont.styleName(), fixedFont.pointSize());
+    const QFont defaultFont;
+    if (fixedFont != defaultFont) {
+        fixedFont = consolasFont;
+    }
+#endif
 
-#endif // KEEPASSX_TESTKEYS_H
+    return fixedFont;
+}

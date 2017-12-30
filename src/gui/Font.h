@@ -1,5 +1,4 @@
 /*
- *  Copyright (C) 2011 Felix Geyer <debfx@fobos.de>
  *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -16,25 +15,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSX_TESTKEYS_H
-#define KEEPASSX_TESTKEYS_H
+#ifndef KEEPASSX_FONT_H
+#define KEEPASSX_FONT_H
 
-#include <QObject>
+#include <QFont>
 
-class TestKeys : public QObject
+class Font
 {
-    Q_OBJECT
-
-private slots:
-    void initTestCase();
-    void testComposite();
-    void testFileKey();
-    void testFileKey_data();
-    void testCreateFileKey();
-    void testCreateAndOpenFileKey();
-    void testFileKeyHash();
-    void testFileKeyError();
-    void benchmarkTransformKey();
+public:
+    static QFont fixedFont();
+private:
+    Font() {}
 };
 
-#endif // KEEPASSX_TESTKEYS_H
+#endif // KEEPASSX_FONT_H

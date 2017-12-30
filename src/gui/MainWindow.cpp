@@ -23,7 +23,7 @@
 #include <QShortcut>
 #include <QTimer>
 
-#if defined(Q_OS_LINUX) && ! defined(QT_NO_DBUS)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(QT_NO_DBUS)
 #include <QList>
 #include <QtDBus/QtDBus>
 #endif
@@ -193,7 +193,6 @@ MainWindow::MainWindow()
     m_ui->actionChangeMasterKey->setIcon(filePath()->icon("actions", "database-change-key", false));
     m_ui->actionLockDatabases->setIcon(filePath()->icon("actions", "document-encrypt", false));
     m_ui->actionQuit->setIcon(filePath()->icon("actions", "application-exit"));
-    m_ui->actionQuit->setMenuRole(QAction::QuitRole);
 
     m_ui->actionEntryNew->setIcon(filePath()->icon("actions", "entry-new", false));
     m_ui->actionEntryClone->setIcon(filePath()->icon("actions", "entry-clone", false));
@@ -210,11 +209,9 @@ MainWindow::MainWindow()
     m_ui->actionGroupEmptyRecycleBin->setIcon(filePath()->icon("actions", "group-empty-trash", false));
 
     m_ui->actionSettings->setIcon(filePath()->icon("actions", "configure"));
-    m_ui->actionSettings->setMenuRole(QAction::PreferencesRole);
     m_ui->actionPasswordGenerator->setIcon(filePath()->icon("actions", "password-generator", false));
 
     m_ui->actionAbout->setIcon(filePath()->icon("actions", "help-about"));
-    m_ui->actionAbout->setMenuRole(QAction::AboutRole);
 
     m_actionMultiplexer.connect(SIGNAL(currentModeChanged(DatabaseWidget::Mode)),
                                 this, SLOT(setMenuActionState(DatabaseWidget::Mode)));
@@ -775,7 +772,6 @@ void MainWindow::updateTrayIcon()
     if (isTrayIconEnabled()) {
         if (!m_trayIcon) {
             m_trayIcon = new QSystemTrayIcon(this);
-
             QMenu* menu = new QMenu(this);
 
             QAction* actionToggle = new QAction(tr("Toggle window"), menu);
@@ -795,6 +791,7 @@ void MainWindow::updateTrayIcon()
             connect(actionToggle, SIGNAL(triggered()), SLOT(toggleWindow()));
 
             m_trayIcon->setContextMenu(menu);
+            
             m_trayIcon->setIcon(filePath()->applicationIcon());
             m_trayIcon->show();
         }
@@ -888,7 +885,7 @@ void MainWindow::toggleWindow()
         raise();
         activateWindow();
 
-#if defined(Q_OS_LINUX) && ! defined(QT_NO_DBUS) && (QT_VERSION < QT_VERSION_CHECK(5, 9, 0))
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(QT_NO_DBUS) && (QT_VERSION < QT_VERSION_CHECK(5, 9, 0))
         // re-register global D-Bus menu (needed on Ubuntu with Unity)
         // see https://github.com/keepassxreboot/keepassxc/issues/271
         // and https://bugreports.qt.io/browse/QTBUG-58723
