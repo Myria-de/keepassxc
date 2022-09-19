@@ -17,10 +17,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BROWSERSERVICE_H
-#define BROWSERSERVICE_H
+#ifndef KEEPASSXC_BROWSERSERVICE_H
+#define KEEPASSXC_BROWSERSERVICE_H
 
 #include "BrowserAccessControlDialog.h"
+#include "config-keepassx.h"
 #include "core/Entry.h"
 #include "gui/PasswordGeneratorWidget.h"
 
@@ -45,6 +46,7 @@ struct KeyPairMessage
 struct EntryParameters
 {
     QString dbid;
+    QString title;
     QString login;
     QString password;
     QString realm;
@@ -82,11 +84,19 @@ public:
     QString getCurrentTotp(const QString& uuid);
     void showPasswordGenerator(const KeyPairMessage& keyPairMessage);
     bool isPasswordGeneratorRequested() const;
-
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+    QJsonObject
+    showWebAuthnRegisterPrompt(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
+    QJsonObject showWebAuthnAuthenticationPrompt(const QJsonObject& publicKey,
+                                                 const QString& origin,
+                                                 const StringPairList& keyList);
+#endif
     void addEntry(const EntryParameters& entryParameters,
                   const QString& group,
                   const QString& groupUuid,
                   const bool downloadFavicon,
+                  const QString& attachmentFilename = {},
+                  const QByteArray& attachmentFileData = {},
                   const QSharedPointer<Database>& selectedDb = {});
     bool updateEntry(const EntryParameters& entryParameters, const QString& uuid);
     bool deleteEntry(const QString& uuid);
@@ -101,6 +111,10 @@ public:
     static const QString OPTION_NOT_HTTP_AUTH;
     static const QString OPTION_OMIT_WWW;
     static const QString ADDITIONAL_URL;
+    static const QString WEBAUTHN_ATTESTATION_DIRECT;
+    static const QString WEBAUTHN_ATTESTATION_NONE;
+    static const QString WEBAUTHN_KEY_FILENAME;
+    static const QString WEBAUTHN_SIGNATURE_COUNT;
 
 signals:
     void requestUnlock();
@@ -149,6 +163,15 @@ private:
     bool removeFirstDomain(QString& hostname);
     bool
     shouldIncludeEntry(Entry* entry, const QString& url, const QString& submitUrl, const bool omitWwwSubdomain = false);
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+    QList<Entry*> getWebAuthnEntries(const QString& origin, const StringPairList& keyList);
+    QList<Entry*>
+    getWebAuthnAllowedEntries(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
+    bool isWebAuthnCredentialExcluded(const QJsonArray& excludeCredentials,
+                                      const QString& origin,
+                                      const StringPairList& keyList);
+    QJsonObject getWebAuthnError(int errorCode) const;
+#endif
     bool handleURL(const QString& entryUrl,
                    const QString& siteUrl,
                    const QString& formUrl,
@@ -179,6 +202,9 @@ private:
     Q_DISABLE_COPY(BrowserService);
 
     friend class TestBrowser;
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+    friend class TestWebAuthn;
+#endif
 };
 
 static inline BrowserService* browserService()
@@ -186,4 +212,4 @@ static inline BrowserService* browserService()
     return BrowserService::instance();
 }
 
-#endif // BROWSERSERVICE_H
+#endif // KEEPASSXC_BROWSERSERVICE_H
