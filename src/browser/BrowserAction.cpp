@@ -16,9 +16,10 @@
  */
 
 #include "BrowserAction.h"
-#include "BrowserService.h"
 #include "BrowserSettings.h"
 #include "core/Global.h"
+#include "BrowserMessageBuilder.h"
+#include "BrowserWebAuthn.h"
 #include "core/Tools.h"
 
 #include <QJsonDocument>
@@ -39,6 +40,8 @@ static const QString BROWSER_REQUEST_LOCK_DATABASE = QStringLiteral("lock-databa
 static const QString BROWSER_REQUEST_REQUEST_AUTOTYPE = QStringLiteral("request-autotype");
 static const QString BROWSER_REQUEST_SET_LOGIN = QStringLiteral("set-login");
 static const QString BROWSER_REQUEST_TEST_ASSOCIATE = QStringLiteral("test-associate");
+static const QString BROWSER_REQUEST_WEBAUTHN_GET = QStringLiteral("webauthn-get");
+static const QString BROWSER_REQUEST_WEBAUTHN_REGISTER = QStringLiteral("webauthn-register");
 
 QJsonObject BrowserAction::processClientMessage(QLocalSocket* socket, const QJsonObject& json)
 {
@@ -104,6 +107,12 @@ QJsonObject BrowserAction::handleAction(QLocalSocket* socket, const QJsonObject&
         return handleGlobalAutoType(json, action);
     } else if (action.compare("get-database-entries", Qt::CaseSensitive) == 0) {
         return handleGetDatabaseEntries(json, action);
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+    } else if (action.compare(BROWSER_REQUEST_WEBAUTHN_GET) == 0) {
+        return handleWebAuthnGet(json, action);
+    } else if (action.compare(BROWSER_REQUEST_WEBAUTHN_REGISTER) == 0) {
+        return handleWebAuthnRegister(json, action);
+#endif
     }
 
     // Action was not recognized
@@ -226,18 +235,12 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
         return getErrorReply(action, ERROR_KEEPASS_NO_URL_PROVIDED);
     }
 
-    const auto keys = browserRequest.getArray("keys");
-
-    StringPairList keyList;
-    for (const auto val : keys) {
-        const auto keyObject = val.toObject();
-        keyList.push_back(qMakePair(keyObject.value("id").toString(), keyObject.value("key").toString()));
-    }
-
+    const auto keys = getConnectionKeys(browserRequest);
     const auto id = browserRequest.getString("id");
     const auto formUrl = browserRequest.getString("submitUrl");
     const auto auth = browserRequest.getString("httpAuth");
     const bool httpAuth = auth.compare(TRUE_STR) == 0;
+    const auto keyList = getConnectionKeys(browserRequest);
 
     EntryParameters entryParameters;
     entryParameters.dbid = id;
@@ -384,10 +387,6 @@ QJsonObject BrowserAction::handleGetDatabaseGroups(const QJsonObject& json, cons
 
 QJsonObject BrowserAction::handleGetDatabaseEntries(const QJsonObject& json, const QString& action)
 {
-    const QString hash = browserService()->getDatabaseHash();
-    const QString nonce = json.value("nonce").toString();
-    const QString encrypted = json.value("message").toString();
-
     if (!m_associated) {
         return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
     }
@@ -516,6 +515,83 @@ QJsonObject BrowserAction::handleGlobalAutoType(const QJsonObject& json, const Q
     return buildResponse(action, browserRequest.incrementedNonce);
 }
 
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+QJsonObject BrowserAction::handleWebAuthnGet(const QJsonObject& json, const QString& action)
+{
+    if (!m_associated) {
+        return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+    }
+
+    const auto browserRequest = decodeRequest(json);
+    if (browserRequest.isEmpty()) {
+        return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+    }
+
+    const auto command = browserRequest.getString("action");
+    if (command.isEmpty() || command.compare(BROWSER_REQUEST_WEBAUTHN_GET) != 0) {
+        return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
+    }
+
+    const auto publicKey = browserRequest.getObject("publicKey");
+    if (publicKey.isEmpty()) {
+        return getErrorReply(action, ERROR_WEBAUTHN_EMPTY_PUBLIC_KEY);
+    }
+
+    const auto origin = browserRequest.getString("origin");
+    if (!origin.startsWith("https://")) {
+        return getErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
+    }
+
+    const auto keyList = getConnectionKeys(browserRequest);
+    const auto response = browserService()->showWebAuthnAuthenticationPrompt(publicKey, origin, keyList);
+
+    /*auto message = browserMessageBuilder()->buildMessage(browserRequest.incrementedNonce);
+    message["response"] = response;
+
+    return buildResponse(action, message, browserRequest.incrementedNonce);*/
+    const Parameters params{{"response", response}};
+    return buildResponse(action, browserRequest.incrementedNonce, params);
+}
+
+QJsonObject BrowserAction::handleWebAuthnRegister(const QJsonObject& json, const QString& action)
+{
+    if (!m_associated) {
+        return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+    }
+
+    const auto browserRequest = decodeRequest(json);
+    if (browserRequest.isEmpty()) {
+        return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+    }
+
+    const auto command = browserRequest.getString("action");
+    if (command.isEmpty() || command.compare(BROWSER_REQUEST_WEBAUTHN_REGISTER) != 0) {
+        return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
+    }
+
+    const auto publicKey = browserRequest.getObject("publicKey");
+    if (publicKey.isEmpty()) {
+        return getErrorReply(action, ERROR_WEBAUTHN_EMPTY_PUBLIC_KEY);
+    }
+
+    const auto origin = browserRequest.getString("origin");
+    if (!origin.startsWith("https://")) {
+        return getErrorReply(action, ERROR_KEEPASS_ACTION_CANCELLED_OR_DENIED);
+    }
+
+    const auto keyList = getConnectionKeys(browserRequest);
+    const auto response = browserService()->showWebAuthnRegisterPrompt(publicKey, origin, keyList);
+
+    // Send response
+    /*auto message = browserMessageBuilder()->buildMessage(browserRequest.incrementedNonce);
+    message["response"] = response;
+
+    return buildResponse(action, message, browserRequest.incrementedNonce);*/
+    const Parameters params{{"response", response}};
+    return buildResponse(action, browserRequest.incrementedNonce, params);
+}
+#endif
+
 QJsonObject BrowserAction::decryptMessage(const QString& message, const QString& nonce)
 {
     return browserMessageBuilder()->decryptMessage(message, nonce, m_clientPublicKey, m_secretKey);
@@ -540,4 +616,17 @@ BrowserRequest BrowserAction::decodeRequest(const QJsonObject& json)
             nonce,
             browserMessageBuilder()->incrementNonce(nonce),
             decryptMessage(encrypted, nonce)};
+}
+
+StringPairList BrowserAction::getConnectionKeys(const BrowserRequest& browserRequest)
+{
+    const auto keys = browserRequest.getArray("keys");
+
+    StringPairList keyList;
+    for (const auto val : keys) {
+        const auto keyObject = val.toObject();
+        keyList.push_back(qMakePair(keyObject.value("id").toString(), keyObject.value("key").toString()));
+    }
+
+    return keyList;
 }

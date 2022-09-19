@@ -900,6 +900,10 @@ Do you want to delete the entry?
 </source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>WebAuthn</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>BrowserSettingsWidget</name>
@@ -1144,6 +1148,41 @@ Do you want to delete the entry?
     </message>
     <message>
         <source>&lt;b&gt;Error:&lt;/b&gt; The installed proxy executable is missing from the expected location: %1&lt;br/&gt;Please set a custom proxy location in the advanced settings or reinstall the application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BrowserWebAuthnConfirmationDialog</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authenticate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to register WebAuthn credentials for:
+%1 (%2)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Register</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Timeout in &lt;b&gt;%n&lt;/b&gt; seconds...</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>KeePassXC: WebAuthn credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authenticate WebAuthn credentials for:%1?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7980,7 +8019,7 @@ Kernel: %3 %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>allow screenshots and app recording (Windows/macOS)</source>
+        <source>WebAuthn</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

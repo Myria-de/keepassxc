@@ -1,4 +1,4 @@
-#  Copyright (C) 2018 KeePassXC Team <team@keepassxc.org>
+#  Copyright (C) 2022 KeePassXC Team <team@keepassxc.org>
 #  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -231,6 +231,11 @@ endif()
 if(WITH_XC_BROWSER)
     add_unit_test(NAME testbrowser SOURCES TestBrowser.cpp
         LIBS ${TEST_LIBRARIES})
+
+    if(WITH_XC_BROWSER_WEBAUTHN)
+    add_unit_test(NAME testwebauthn SOURCES TestWebAuthn.cpp
+        LIBS ${TEST_LIBRARIES})
+    endif()
 endif()
 
 add_unit_test(NAME testcli SOURCES TestCli.cpp

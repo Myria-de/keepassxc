@@ -94,6 +94,9 @@ namespace Tools
 #ifdef WITH_XC_BROWSER
         extensions += "\n- " + QObject::tr("Browser Integration");
 #endif
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+        extensions += "\n- " + QObject::tr("WebAuthn");
+#endif
 #ifdef WITH_XC_SSHAGENT
         extensions += "\n- " + QObject::tr("SSH Agent");
 #endif
