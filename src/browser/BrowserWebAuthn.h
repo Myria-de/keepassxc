@@ -29,6 +29,8 @@
 #define HASH_BYTES 32
 #define DEFAULT_TIMEOUT 300000
 #define DEFAULT_DISCOURAGED_TIMEOUT 120000
+#define RSA_BITS 2048
+#define RSA_EXPONENT 65537
 
 enum AuthDataOffsets : int
 {
@@ -67,8 +69,8 @@ struct PrivateKey
 struct PredefinedVariables
 {
     QString credentialId;
-    QString x;
-    QString y;
+    QString first;
+    QString second;
 };
 
 class BrowserWebAuthn : public QObject
@@ -103,15 +105,16 @@ private:
                                       const QString& id,
                                       const PredefinedVariables& predefinedVariables = {});
     QByteArray buildGetAttestationObject(const QJsonObject& publicKey);
-    PrivateKey
-    buildCredentialPrivateKey(int alg, const QString& predefinedX = QString(), const QString& predefinedY = QString());
+    PrivateKey buildCredentialPrivateKey(int alg,
+                                         const QString& predefinedFirst = QString(),
+                                         const QString& predefinedSecond = QString());
     QByteArray
     buildSignature(const QByteArray& authenticatorData, const QByteArray& clientData, const QString& privateKeyPem);
     QByteArray buildExtensionData(QJsonObject& extensionObject) const;
     QJsonObject parseAuthData(const QByteArray& authData) const;
     QJsonObject parseFlags(const QByteArray& flags) const;
     char setFlagsFromJson(const QJsonObject& flags) const;
-    Botan::AlgorithmIdentifier getAlgorithmIdentifier() const;
+    WebAuthnAlgorithms getAlgorithmFromPublicKey(const QJsonObject& publicKey) const;
     QByteArray bigIntToQByteArray(Botan::BigInt& bigInt) const;
 
     Q_DISABLE_COPY(BrowserWebAuthn);

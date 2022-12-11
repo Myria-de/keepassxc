@@ -33,8 +33,10 @@ private slots:
     void testBase64WithHexStrings();
     void testDecodeResponseData();
 
-    void testLoadingPrivateKeyFromPem();
-    void testCreatingAttestationObject();
+    void testLoadingECPrivateKeyFromPem();
+    void testLoadingRSAPrivateKeyFromPem();
+    void testCreatingAttestationObjectWithEC();
+    void testCreatingAttestationObjectWithRSA();
     void testRegister();
 
     void testParseGetAuthData();
@@ -43,8 +45,5 @@ private slots:
     void testExtensions();
     void testParseFlags();
     void testSetFlags();
-
-private:
-    // QPointer<BrowserWebAuthn> m_browserWebAuthn;
 };
 #endif // KEEPASSXC_TESTWEBAUTHN_H

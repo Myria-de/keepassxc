@@ -29,6 +29,7 @@
 #include <botan/ecdsa.h>
 #include <botan/pkcs8.h>
 #include <botan/pubkey.h>
+#include <botan/rsa.h>
 #include <botan/sodium.h>
 
 #include <bitset>
@@ -181,8 +182,9 @@ PrivateKey BrowserWebAuthn::buildAttestationObject(const QJsonObject& publicKey,
         QByteArray::Base64UrlEncoding));
 
     // Credential private key
+    const auto alg = getAlgorithmFromPublicKey(publicKey);
     const auto credentialPublicKey =
-        buildCredentialPrivateKey(WebAuthnAlgorithms::ES256, predefinedVariables.x, predefinedVariables.y);
+        buildCredentialPrivateKey(alg, predefinedVariables.first, predefinedVariables.second);
     result.append(credentialPublicKey.cborEncoded);
 
     // Add extension data if available
@@ -219,38 +221,55 @@ QByteArray BrowserWebAuthn::buildGetAttestationObject(const QJsonObject& publicK
 }
 
 // See: https://w3c.github.io/webauthn/#sctn-encoded-credPubKey-examples
-PrivateKey BrowserWebAuthn::buildCredentialPrivateKey(int alg, const QString& predefinedX, const QString& predefinedY)
+PrivateKey
+BrowserWebAuthn::buildCredentialPrivateKey(int alg, const QString& predefinedFirst, const QString& predefinedSecond)
 {
-    // Only support -7, P256 (EC) for now
-    if (alg != WebAuthnAlgorithms::ES256) {
+    // Only support -7, P256 (EC) and -257 (RSA) for now
+    if (alg != WebAuthnAlgorithms::ES256 && alg != WebAuthnAlgorithms::RS256) {
         return {};
     }
 
-    QByteArray xPart;
-    QByteArray yPart;
+    QByteArray firstPart;
+    QByteArray secondPart;
     QByteArray pem;
 
-    if (!predefinedX.isEmpty() && !predefinedY.isEmpty()) {
-        xPart = browserMessageBuilder()->getArrayFromBase64(predefinedX);
-        yPart = browserMessageBuilder()->getArrayFromBase64(predefinedY);
+    if (!predefinedFirst.isEmpty() && !predefinedSecond.isEmpty()) {
+        firstPart = browserMessageBuilder()->getArrayFromBase64(predefinedFirst);
+        secondPart = browserMessageBuilder()->getArrayFromBase64(predefinedSecond);
     } else {
-        try {
-            Botan::ECDSA_PrivateKey privateKey(*randomGen()->getRng(), Botan::EC_Group("secp256r1"));
-            const auto& publicPoint = privateKey.public_point();
-            auto x = publicPoint.get_affine_x();
-            auto y = publicPoint.get_affine_y();
-            xPart = bigIntToQByteArray(x);
-            yPart = bigIntToQByteArray(y);
+        if (alg == WebAuthnAlgorithms::ES256) {
+            try {
+                Botan::ECDSA_PrivateKey privateKey(*randomGen()->getRng(), Botan::EC_Group("secp256r1"));
+                const auto& publicPoint = privateKey.public_point();
+                auto x = publicPoint.get_affine_x();
+                auto y = publicPoint.get_affine_y();
+                firstPart = bigIntToQByteArray(x);
+                secondPart = bigIntToQByteArray(y);
 
-            auto privateKeyPem = Botan::PKCS8::PEM_encode(privateKey);
-            pem = QByteArray::fromStdString(privateKeyPem);
-        } catch (std::exception& e) {
-            qWarning("BrowserWebAuthn::buildCredentialPrivateKey: Could not create private key: %s", e.what());
-            return {};
+                auto privateKeyPem = Botan::PKCS8::PEM_encode(privateKey);
+                pem = QByteArray::fromStdString(privateKeyPem);
+            } catch (std::exception& e) {
+                qWarning("BrowserWebAuthn::buildCredentialPrivateKey: Could not create EC2 private key: %s", e.what());
+                return {};
+            }
+        } else if (alg == WebAuthnAlgorithms::RS256) {
+            try {
+                Botan::RSA_PrivateKey privateKey(*randomGen()->getRng(), RSA_BITS, RSA_EXPONENT);
+                auto modulus = privateKey.get_n();
+                auto exponent = privateKey.get_e();
+                firstPart = bigIntToQByteArray(modulus);
+                secondPart = bigIntToQByteArray(exponent);
+
+                auto privateKeyPem = Botan::PKCS8::PEM_encode(privateKey);
+                pem = QByteArray::fromStdString(privateKeyPem);
+            } catch (std::exception& e) {
+                qWarning("BrowserWebAuthn::buildCredentialPrivateKey: Could not create RSA private key: %s", e.what());
+                return {};
+            }
         }
     }
 
-    auto result = m_browserCbor.cborEncodePublicKey(alg, xPart, yPart);
+    auto result = m_browserCbor.cborEncodePublicKey(alg, firstPart, secondPart);
     return {result, pem};
 }
 
@@ -268,16 +287,27 @@ QByteArray BrowserWebAuthn::buildSignature(const QByteArray& authenticatorData,
 
         const auto key = Botan::PKCS8::load_key(dataSource).release();
         const auto privateKeyBytes = key->private_key_bits();
-        const auto algId = getAlgorithmIdentifier();
-        if (algId.parameters_are_empty() || algId.parameters_are_null()) {
+        const auto algName = key->algo_name();
+        const auto algId = key->algorithm_identifier();
+
+        std::vector<uint8_t> rawSignature;
+        if (algName == "ECDSA") {
+            Botan::ECDSA_PrivateKey privateKey(algId, privateKeyBytes);
+            Botan::PK_Signer signer(privateKey, *randomGen()->getRng(), "EMSA1(SHA-256)", Botan::DER_SEQUENCE);
+
+            signer.update(reinterpret_cast<const uint8_t*>(attToBeSigned.constData()), attToBeSigned.size());
+            rawSignature = signer.signature(*randomGen()->getRng());
+        } else if (algName == "RSA") {
+            Botan::RSA_PrivateKey privateKey(algId, privateKeyBytes);
+            Botan::PK_Signer signer(privateKey, *randomGen()->getRng(), "EMSA3(SHA-256)");
+
+            signer.update(reinterpret_cast<const uint8_t*>(attToBeSigned.constData()), attToBeSigned.size());
+            rawSignature = signer.signature(*randomGen()->getRng());
+        } else {
+            qWarning("BrowserWebAuthn::buildSignature: Algorithm not supported");
             return {};
         }
 
-        // Sign
-        Botan::ECDSA_PrivateKey privateKey(algId, privateKeyBytes);
-        Botan::PK_Signer signer(privateKey, *randomGen()->getRng(), "EMSA1(SHA-256)", Botan::DER_SEQUENCE);
-        signer.update(reinterpret_cast<const uint8_t*>(attToBeSigned.constData()), attToBeSigned.size());
-        auto rawSignature = signer.signature(*randomGen()->getRng());
         auto signature = QByteArray(reinterpret_cast<char*>(rawSignature.data()), rawSignature.size());
         return signature;
     } catch (std::exception& e) {
@@ -372,26 +402,21 @@ char BrowserWebAuthn::setFlagsFromJson(const QJsonObject& flags) const
     return flagBits;
 }
 
-Botan::AlgorithmIdentifier BrowserWebAuthn::getAlgorithmIdentifier() const
+// Returns the first supported algorithm from the pubKeyCredParams list (only support ES256 and RS256 for now)
+WebAuthnAlgorithms BrowserWebAuthn::getAlgorithmFromPublicKey(const QJsonObject& publicKey) const
 {
-    try {
-        const auto oidStr = QStringLiteral("1.2.840.10045.2.1"); // Elliptic curve public key cryptography
-        const auto parameters = QVector<uint8_t>({6, 8, 42, 134, 72, 206, 61, 3, 1, 7}).toStdVector();
-        const auto oid = Botan::OID(oidStr.toStdString());
-        Botan::AlgorithmIdentifier algId(oid, parameters);
-
-        return algId;
-    } catch (std::exception& e) {
-        qWarning("BrowserWebAuthn::getAlgorithmIdentifier: Could not create AlgorithmIdentifier: %s", e.what());
-        return {};
+    const auto pubKeyCredParams = publicKey["pubKeyCredParams"].toArray();
+    if (!pubKeyCredParams.isEmpty()) {
+        const auto alg = pubKeyCredParams.first()["alg"].toInt();
+        if (alg == WebAuthnAlgorithms::ES256 || alg == WebAuthnAlgorithms::RS256) {
+            return static_cast<WebAuthnAlgorithms>(alg);
+        }
     }
+
+    return WebAuthnAlgorithms::ES256;
 }
 
 QByteArray BrowserWebAuthn::bigIntToQByteArray(Botan::BigInt& bigInt) const
 {
-    if (bigInt.bytes() < HASH_BYTES) {
-        return {};
-    }
-
     return browserMessageBuilder()->getArrayFromHexString(bigInt.to_hex_string().c_str());
 }

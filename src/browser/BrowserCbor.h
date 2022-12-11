@@ -45,17 +45,19 @@ enum WebAuthnCurveKey : int
 };
 
 // https://www.rfc-editor.org/rfc/rfc8152
+// For RSA: https://www.rfc-editor.org/rfc/rfc8230#section-4
 enum WebAuthnCoseKeyType : int
 {
     OKP = 1, // Octet Keypair
-    EC2 = 2 // Elliptic Curve
+    EC2 = 2, // Elliptic Curve
+    RSA = 3 // RSA
 };
 
 class BrowserCbor
 {
 public:
     QByteArray cborEncodeAttestation(const QByteArray& authData) const;
-    QByteArray cborEncodePublicKey(int alg, const QByteArray& xPart, const QByteArray& yPart) const;
+    QByteArray cborEncodePublicKey(int alg, const QByteArray& first, const QByteArray& second) const;
     QByteArray cborEncodeExtensionData(const QJsonObject& extensions) const;
     QJsonObject getJsonFromCborData(const QByteArray& byteArray) const;
     QVariant handleCborArray(const QCborArray& array) const;

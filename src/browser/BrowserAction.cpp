@@ -16,10 +16,10 @@
  */
 
 #include "BrowserAction.h"
-#include "BrowserSettings.h"
-#include "core/Global.h"
 #include "BrowserMessageBuilder.h"
+#include "BrowserSettings.h"
 #include "BrowserWebAuthn.h"
+#include "core/Global.h"
 #include "core/Tools.h"
 
 #include <QJsonDocument>
@@ -545,10 +545,6 @@ QJsonObject BrowserAction::handleWebAuthnGet(const QJsonObject& json, const QStr
     const auto keyList = getConnectionKeys(browserRequest);
     const auto response = browserService()->showWebAuthnAuthenticationPrompt(publicKey, origin, keyList);
 
-    /*auto message = browserMessageBuilder()->buildMessage(browserRequest.incrementedNonce);
-    message["response"] = response;
-
-    return buildResponse(action, message, browserRequest.incrementedNonce);*/
     const Parameters params{{"response", response}};
     return buildResponse(action, browserRequest.incrementedNonce, params);
 }
@@ -582,11 +578,6 @@ QJsonObject BrowserAction::handleWebAuthnRegister(const QJsonObject& json, const
     const auto keyList = getConnectionKeys(browserRequest);
     const auto response = browserService()->showWebAuthnRegisterPrompt(publicKey, origin, keyList);
 
-    // Send response
-    /*auto message = browserMessageBuilder()->buildMessage(browserRequest.incrementedNonce);
-    message["response"] = response;
-
-    return buildResponse(action, message, browserRequest.incrementedNonce);*/
     const Parameters params{{"response", response}};
     return buildResponse(action, browserRequest.incrementedNonce, params);
 }

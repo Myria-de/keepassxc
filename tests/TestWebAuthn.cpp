@@ -116,7 +116,7 @@ const QString PublicKeyCredentialForGet =
                 "},"
                 "\"type\": \"public-key\""
             "}");
-// clang-format off
+// clang-format on
 
 void TestWebAuthn::initTestCase()
 {
@@ -193,7 +193,7 @@ void TestWebAuthn::testDecodeResponseData()
     QCOMPARE(publicKey["-3"], QString("4u5_6Q8O6R0Hg0oDCdtCJLEL0yX_GDLhU5m3HUIE54M"));
 }
 
-void TestWebAuthn::testLoadingPrivateKeyFromPem()
+void TestWebAuthn::testLoadingECPrivateKeyFromPem()
 {
     const auto publicKeyCredentialRequestOptions =
         browserMessageBuilder()->getJsonObject(PublicKeyCredentialRequestOptions.toUtf8());
@@ -212,24 +212,66 @@ void TestWebAuthn::testLoadingPrivateKeyFromPem()
 
     const auto signature = browserWebAuthn()->buildSignature(authenticatorData, clientData, privateKeyPem);
     QCOMPARE(
-        browserMessageBuilder()->getBase64FromArray(signature.constData(), signature.size()),
+        browserMessageBuilder()->getBase64FromArray(signature),
         QString("MEYCIQCpbDaYJ4b2ofqWBxfRNbH3XCpsyao7Iui5lVuJRU9HIQIhAPl5moNZgJu5zmurkKK_P900Ct6wd3ahVIqCEqTeeRdE"));
 }
 
-void TestWebAuthn::testCreatingAttestationObject()
+void TestWebAuthn::testLoadingRSAPrivateKeyFromPem()
+{
+    const auto privateKeyPem = QString("-----BEGIN PRIVATE KEY-----"
+                                       "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC5OHjBHQaRfxxX\n4WHRmqq7e7JgT"
+                                       "FRs1bd4dIOFAOZnhNE3vAg2IF5VurmeB+9ye9xh7frw8ubrL0cv\nsBWiJfN5CY3SYGRLbGTtBC0fZ6"
+                                       "OhhhjwvVM1GW6nVeRU66atzuo4NBfYXJWIYECd\npRBU4+xsDL4vJnn1mj05+v/Tqp6Uo1HrEPx9+Dc"
+                                       "oYJD+cw7+OQ83XeGmjD+Dtm5z\nNIyYdweaafVR4PEUlB3CYZuOq9xcpxay3ps2MuYT1zGoiQqk6fla"
+                                       "d+0tBWGY8Lwp\nCVulXCv7ljNJ4gxgQtOqWX8j2hC0hBxeqNYDYbrkECid3TsMTEMcV5uaVJXULg4t"
+                                       "\nn6UItA11AgMBAAECggEAC3B0WBxHuieIfllOOOC4H9/7S7fDH2f7+W2cFtQ6pqo9\nCq0WBmkYMmw"
+                                       "Xx9hpHoq4TnhhHyL9WzPzuKYD0Vx4gvacV/ckkppFScnQKJ2hF+99\nLax1DbU+UImSknfDDFPYbYld"
+                                       "b1CD2rpJG1i6X2fRQ6NuK+F7jE05mqcIyE+ZajK+\nIpx8XFmE+tI1EEWsn3CzxMLiTQfXyFt/drM9i"
+                                       "GYfcDjYY+q5vzGU3Kxj68gjc96A\nOra79DGOmwX+4zIwo5sSzI3noHnhWPLsaRtE5jWu21Qkb+1BvB"
+                                       "jPmbQfN274OQfy\n8/BNNR/NZM1mJm/8x4Mt+h5d946XlIo0AkyYZXY/UQKBgQDYI3G3BCwaYk6MDMe"
+                                       "T\nIamRZo25phPtr3if47dhT2xFWJplIt35sW+6KjD6c1Qpb2aGOUh7JPmb57H54OgJ\nmojkS5tv9Y"
+                                       "EQZFfgCCZoeuqBx+ArqtJdkXOiNEFS0dpt44I+eO3Do5pnwKRemH+Y\ncqJ/eMH96UMzYDO7WNsyOyo"
+                                       "5UQKBgQDbYU0KbGbTrMEV4T9Q41rZ2TnWzs5moqn2\nCRtB8LOdKAZUG7FRsw5KgC1CvFn3Xuk+qphY"
+                                       "GUQeJvv7FjxMRUv4BktNpXju6eUj\n3tWHzI2QOkHaeq/XibwbNomfkdyTjtLX2+v8DBHcZnCSlukxc"
+                                       "JISyPqZ6CnTjXGE\nEGB+itBI5QKBgQCA+gWttOusguVkZWvivL+3aH9CPXy+5WsR3o1boE13xDu+Bm"
+                                       "R3\n0A5gBTVc/t1GLJf9mMlL0vCwvD5UYoWU1YbC1OtYkCQIaBiYM8TXrCGseF2pMTJ/\na4CZVp10k"
+                                       "o3J7W2XYgpgKIzHRQnQ+SeLDT0y3BjHMB9N1SaJsah7/RphQQKBgQCr\nL+4yKAzFOJUjQbVqpT8Lp5"
+                                       "qeqJofNOdzef+vIOjHxafKkiF4I0UPlZ276cY6ZfGU\nWQKwHGcvMDSI5fz/d0OksySn3mvT4uhPaV8"
+                                       "urMv6s7sXhY0Zn/0NLy2NOwDolBar\nIo2vDKwTVEyb1u75CWKzDemfl66ryj++Uhk6JZAKkQKBgQCc"
+                                       "NYVe7m648DzD0nu9\n3lgetBTaAS1zZmMs8Cinj44v0ksfqxrRBzBZcO9kCQqiJZ7uCAaVYcQ+PwkY+"
+                                       "05C\n+w1+KvdGcKM+8TQYTQM3s2B9IyKExRS/dbQf9F7stJL+k5vbt6OUerwfmbNI9R3t\ngDZ4DEfo"
+                                       "pPivs9dnequ9wfaPOw=="
+                                       "-----END PRIVATE KEY-----");
+
+    const auto authenticatorData =
+        browserMessageBuilder()->getArrayFromBase64("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAFAAAAAA");
+    const auto clientData = browserMessageBuilder()->getArrayFromBase64(
+        "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiOXozNnZUZlFUTDk1TGY3V25aZ3l0ZTdvaEdlRi1YUmlMeGtMLUx1R1Uxem9wUm"
+        "1NSVVBMUxWd3pHcHlJbTFmT0JuMVFuUmEwUUgyN0FEQWFKR0h5c1EiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmln"
+        "aW4iOmZhbHNlfQ");
+
+    const auto signature = browserWebAuthn()->buildSignature(authenticatorData, clientData, privateKeyPem);
+    QCOMPARE(
+        browserMessageBuilder()->getBase64FromArray(signature),
+        QString("MOGw6KrerCgPf2mPig7FOTFIUDXYAU1v2uZj89_NgQTg2UddWnAB3JId3pa4zXghj8CkjjadVOI_LvweJGCEpmPQnRby71yFXnja6j"
+                "Y3woX2b2klG2fB2alGZHHrVg6yVEmnAii4kYSdmoWxI7SmzLftoZfCJNFPFHujx2Pbr-6dIB02sZhtncetT0cpyWobtj9r7C5dIGfm"
+                "J5n-LccP-F9gXGqtbN605VrIkC2WNztjdk3dAt5FGM_dlIwSe-vP1dKfIuNqAEbgr2IVZAUFn_ZfzUo-XbXTysksuz9JZfEopJBiUi"
+                "9tjQDNvrYQFqB6wDPqkZAomkbRCohUb3TzCg"));
+}
+
+void TestWebAuthn::testCreatingAttestationObjectWithEC()
 {
     // Predefined values for a desired outcome
     const auto id = QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8");
-    const auto predefinedX = QString("BuyvNFtikWFtGVkDplAqyjHElahp5fCH5dS4Ms0Ihd0");
-    const auto predefinedY = QString("4u5_6Q8O6R0Hg0oDCdtCJLEL0yX_GDLhU5m3HUIE54M");
+    const auto predefinedFirst = QString("BuyvNFtikWFtGVkDplAqyjHElahp5fCH5dS4Ms0Ihd0");
+    const auto predefinedSecond = QString("4u5_6Q8O6R0Hg0oDCdtCJLEL0yX_GDLhU5m3HUIE54M");
 
     const auto publicKeyCredentialOptions = browserMessageBuilder()->getJsonObject(PublicKeyCredentialOptions.toUtf8());
 
     auto rpIdHash = browserMessageBuilder()->getSha256HashAsBase64(QString("webauthn.io"));
     QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
 
-    PredefinedVariables predefinedVariables = {id, predefinedX, predefinedY};
-
+    PredefinedVariables predefinedVariables = {id, predefinedFirst, predefinedSecond};
     auto result = browserWebAuthn()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
     QCOMPARE(
         QString(result.cborEncoded),
@@ -262,11 +304,60 @@ void TestWebAuthn::testCreatingAttestationObject()
     QCOMPARE(authData["rpIdHash"].toString(), QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
     QCOMPARE(flags["AT"], true);
     QCOMPARE(flags["UP"], true);
-    QCOMPARE(publicKey["1"], 2);
-    QCOMPARE(publicKey["3"], -7);
+    QCOMPARE(publicKey["1"], WebAuthnCoseKeyType::EC2);
+    QCOMPARE(publicKey["3"], WebAuthnAlgorithms::ES256);
     QCOMPARE(publicKey["-1"], 1);
-    QCOMPARE(publicKey["-2"], predefinedX);
-    QCOMPARE(publicKey["-3"], predefinedY);
+    QCOMPARE(publicKey["-2"], predefinedFirst);
+    QCOMPARE(publicKey["-3"], predefinedSecond);
+}
+
+void TestWebAuthn::testCreatingAttestationObjectWithRSA()
+{
+    // Predefined values for a desired outcome
+    const auto id = QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8");
+    const auto predefinedModulus = QString("vUhOZnyn8yn7U-nuHlsXZ6WDWLuYvevWWnwtoHxDEQq27vlp7yAfeVvAPkcvhxRcwoCEUespoa5"
+                                           "5IDbkpp2Ypd6b15KbB4C-_4gM4r2FK9gfXghLPAXsMhstYv4keNFb4ghdlY5oUU3JCqUSMyOpmd"
+                                           "HeX-RikLL0wgGv_tLT2DaDiWeyQCAtiDblr6COuTAU2kTpLc3Bn35geV9Iqw4iT8DwBQ-f8vjnI"
+                                           "EDANXKUiRPojfy1q7WwEl-zMv6Ke2jFHxf68u82BSy3u9DOQaa24FAHoCm8Yd0n5IazMyoxyttl"
+                                           "tRt8un8myVOGxcXMiR9_kQb9pu1RRLQMQLd-icE1Qw");
+    const auto predefinedExponent = QString("AQAB");
+
+    // Force algorithm to RSA
+    QJsonArray pubKeyCredParams;
+    pubKeyCredParams.append(QJsonObject({{"type", "public-key"}, {"alg", -257}}));
+
+    auto publicKeyCredentialOptions = browserMessageBuilder()->getJsonObject(PublicKeyCredentialOptions.toUtf8());
+    publicKeyCredentialOptions["pubKeyCredParams"] = pubKeyCredParams;
+
+    auto rpIdHash = browserMessageBuilder()->getSha256HashAsBase64(QString("webauthn.io"));
+    QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
+
+    PredefinedVariables predefinedVariables = {id, predefinedModulus, predefinedExponent};
+    auto result = browserWebAuthn()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
+
+    // Double check that the result can be decoded
+    BrowserCbor browserCbor;
+    auto attestationJsonObject = browserCbor.getJsonFromCborData(result.cborEncoded);
+
+    // Parse authData
+    auto authDataJsonObject = attestationJsonObject["authData"].toString();
+    auto authDataArray = browserMessageBuilder()->getArrayFromBase64(authDataJsonObject);
+    QVERIFY(authDataArray.size() >= 37);
+
+    auto authData = browserWebAuthn()->parseAuthData(authDataArray);
+    auto credentialData = authData["credentialData"].toObject();
+    auto flags = authData["flags"].toObject();
+    auto publicKey = credentialData["publicKey"].toObject();
+
+    // The attestationObject should include the same ID after decoding with the response root
+    QCOMPARE(credentialData["credentialId"].toString(), QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8"));
+    QCOMPARE(authData["rpIdHash"].toString(), QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
+    QCOMPARE(flags["AT"], true);
+    QCOMPARE(flags["UP"], true);
+    QCOMPARE(publicKey["1"], WebAuthnCoseKeyType::RSA);
+    QCOMPARE(publicKey["3"], WebAuthnAlgorithms::RS256);
+    QCOMPARE(publicKey["-1"], predefinedModulus);
+    QCOMPARE(publicKey["-2"], predefinedExponent);
 }
 
 void TestWebAuthn::testRegister()
