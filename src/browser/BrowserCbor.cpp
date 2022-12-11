@@ -44,34 +44,56 @@ QByteArray BrowserCbor::cborEncodeAttestation(const QByteArray& authData) const
     return result;
 }
 
-QByteArray BrowserCbor::cborEncodePublicKey(int alg, const QByteArray& xPart, const QByteArray& yPart) const
+QByteArray BrowserCbor::cborEncodePublicKey(int alg, const QByteArray& first, const QByteArray& second) const
 {
     QByteArray result;
     QCborStreamWriter writer(&result);
 
-    writer.startMap(5);
+    if (alg == WebAuthnAlgorithms::ES256) {
+        writer.startMap(5);
 
-    // Key type
-    writer.append(1);
-    writer.append(getCoseKeyType(alg));
+        // Key type
+        writer.append(1);
+        writer.append(getCoseKeyType(alg));
 
-    // Signature algorithm
-    writer.append(3);
-    writer.append(alg);
+        // Signature algorithm
+        writer.append(3);
+        writer.append(alg);
 
-    // Curve parameter
-    writer.append(-1);
-    writer.append(getCurveParameter(alg));
+        // Curve parameter
+        writer.append(-1);
+        writer.append(getCurveParameter(alg));
 
-    // Key x-coordinate
-    writer.append(-2);
-    writer.append(xPart);
+        // Key x-coordinate
+        writer.append(-2);
+        writer.append(first);
 
-    // Key y-coordinate
-    writer.append(-3);
-    writer.append(yPart);
+        // Key y-coordinate
+        writer.append(-3);
+        writer.append(second);
 
-    writer.endMap();
+        writer.endMap();
+    } else if (alg == WebAuthnAlgorithms::RS256) {
+        writer.startMap(4);
+
+        // Key type
+        writer.append(1);
+        writer.append(getCoseKeyType(alg));
+
+        // Signature algorithm
+        writer.append(3);
+        writer.append(alg);
+
+        // Key modulus
+        writer.append(-1);
+        writer.append(first);
+
+        // Key exponent
+        writer.append(-2);
+        writer.append(second);
+
+        writer.endMap();
+    }
 
     return result;
 }
@@ -203,6 +225,8 @@ unsigned int BrowserCbor::getCoseKeyType(int alg) const
         return WebAuthnCoseKeyType::EC2;
     case WebAuthnAlgorithms::EDDSA:
         return WebAuthnCoseKeyType::OKP;
+    case WebAuthnAlgorithms::RS256:
+        return WebAuthnCoseKeyType::RSA;
     default:
         return WebAuthnCoseKeyType::EC2;
     }
