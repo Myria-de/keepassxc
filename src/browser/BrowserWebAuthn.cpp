@@ -293,7 +293,12 @@ QByteArray BrowserWebAuthn::buildSignature(const QByteArray& authenticatorData,
         std::vector<uint8_t> rawSignature;
         if (algName == "ECDSA") {
             Botan::ECDSA_PrivateKey privateKey(algId, privateKeyBytes);
+#ifdef WITH_XC_BOTAN3
+            Botan::PK_Signer signer(
+                privateKey, *randomGen()->getRng(), "EMSA1(SHA-256)", Botan::Signature_Format::DerSequence);
+#else
             Botan::PK_Signer signer(privateKey, *randomGen()->getRng(), "EMSA1(SHA-256)", Botan::DER_SEQUENCE);
+#endif
 
             signer.update(reinterpret_cast<const uint8_t*>(attToBeSigned.constData()), attToBeSigned.size());
             rawSignature = signer.signature(*randomGen()->getRng());
