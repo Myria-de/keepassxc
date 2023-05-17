@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2023 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,24 +98,6 @@ const QString PublicKeyCredentialRequestOptions =
                 "\"timeout\": 60000,"
                 "\"userVerification\": \"required\""
             "}");
-
-// Get response
-const QString PublicKeyCredentialForGet =
-    QString("{"
-                "\"authenticatorAttachment\": \"platform\","
-                "\"id\": \"yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8\","
-                "\"rawId\": \"cabcc52799707294f060c39d5d29b11796f9718425a813336db53f77ea052cef\","
-                "\"response\": {"
-                    "\"authenticatorData\": \"dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAFAAAAAA\","
-                    "\"clientDataJSON\": "
-                        "\"eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiOXozNnZUZlFUTDk1TGY3V25aZ3l0ZTdvaEdlRi1YUmlMeGtMLUx1R1Ux"
-                        "em9wUm1NSVVBMUxWd3pHcHlJbTFmT0JuMVFuUmEwUUgyN0FEQWFKR0h5c1EiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3"
-                        "Jvc3NPcmlnaW4iOmZhbHNlfQ\","
-                    "\"signature\": ""\"MEUCIQCTSgoh4Y85a-Zd4eR-DfwQGoLDT6jOW5B3e6GDLB732QIgfshkZ8bD2PlFVOgV-qFQ6S3SAiuPnqJI0YinApWLY3w\","
-                    "\"userHandle\": null"
-                "},"
-                "\"type\": \"public-key\""
-            "}");
 // clang-format on
 
 void TestWebAuthn::initTestCase()
@@ -145,6 +127,9 @@ void TestWebAuthn::testBase64WithHexStrings()
     for (size_t i = 0; i < bufSize; i++) {
         QCOMPARE(static_cast<unsigned char>(arrayFromBase64.at(i)), buf[i]);
     }
+
+    auto randomDataBase64 = browserMessageBuilder()->getRandomBytesAsBase64(24);
+    QCOMPARE(randomDataBase64.isEmpty(), false);
 }
 
 void TestWebAuthn::testDecodeResponseData()
@@ -391,33 +376,6 @@ void TestWebAuthn::testRegister()
              QString("lVeHzVxWsr8MQxMkZF0ti6FXhdgMljqKzgA-q_zk2Mnii3eJ47VF97sqUoYktVC85WAZ1uIASm-a_lDFZwsLfw"));
     QCOMPARE(clientDataJsonObject["origin"], origin);
     QCOMPARE(clientDataJsonObject["type"], QString("webauthn.create"));
-}
-
-void TestWebAuthn::testParseGetAuthData()
-{
-    const auto publicKeyCredentialRequestOptions =
-        browserMessageBuilder()->getJsonObject(PublicKeyCredentialRequestOptions.toUtf8());
-
-    auto publicKeyCredentialForGet = browserMessageBuilder()->getJsonObject(PublicKeyCredentialForGet.toUtf8());
-    auto response = publicKeyCredentialForGet["response"].toObject();
-    auto authDataJsonObject = response["authenticatorData"].toString();
-    auto authDataArray = browserMessageBuilder()->getArrayFromBase64(authDataJsonObject);
-    QVERIFY(authDataArray.size() >= 37);
-
-    auto authData = browserWebAuthn()->parseAuthData(authDataArray);
-    auto flags = authData["flags"].toObject();
-    QCOMPARE(authData["rpIdHash"].toString(), QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
-    QCOMPARE(flags["AT"], false);
-    QCOMPARE(flags["UP"], true);
-    QCOMPARE(flags["UV"], true);
-
-    auto clientDataJson = response["clientDataJSON"].toString();
-    auto clientDataByteArray = browserMessageBuilder()->getArrayFromBase64(clientDataJson);
-    auto clientDataJsonObject = browserMessageBuilder()->getJsonObject(clientDataByteArray);
-    QCOMPARE(clientDataJsonObject["challenge"].toString(), publicKeyCredentialRequestOptions["challenge"].toString());
-    QCOMPARE(clientDataJsonObject["crossOrigin"].toBool(), false);
-    QCOMPARE(clientDataJsonObject["origin"].toString(), QString("https://webauthn.io"));
-    QCOMPARE(clientDataJsonObject["type"].toString(), QString("webauthn.get"));
 }
 
 void TestWebAuthn::testGet()

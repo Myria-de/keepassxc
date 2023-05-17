@@ -285,10 +285,10 @@ QString BrowserMessageBuilder::getRandomBytesAsBase64(int bytes) const
         return {};
     }
 
-    unsigned char buf[bytes];
-    Botan::Sodium::randombytes_buf(buf, bytes);
+    std::shared_ptr<unsigned char[]> buf(new unsigned char[bytes]);
+    Botan::Sodium::randombytes_buf(buf.get(), bytes);
 
-    return getBase64FromArray(reinterpret_cast<const char*>(buf), bytes);
+    return getBase64FromArray(reinterpret_cast<const char*>(buf.get()), bytes);
 }
 
 QString BrowserMessageBuilder::getBase64FromArray(const char* arr, int len) const

@@ -343,6 +343,7 @@ QByteArray BrowserWebAuthn::buildExtensionData(QJsonObject& extensionObject) con
 
 // Parse authentication data byte array to JSON
 // See: https://www.w3.org/TR/webauthn/images/fido-attestation-structures.svg
+// And: https://w3c.github.io/webauthn/#attested-credential-data
 QJsonObject BrowserWebAuthn::parseAuthData(const QByteArray& authData) const
 {
     auto rpIdHash = authData.mid(AuthDataOffsets::RPIDHASH, HASH_BYTES);
