@@ -1560,6 +1560,10 @@ If you do not have a key file, please leave the field empty.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>authenticate to access the database</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to authenticate with Windows Hello: %1</source>
         <translation type="unfinished"></translation>
     </message>
