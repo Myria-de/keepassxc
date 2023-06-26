@@ -212,6 +212,10 @@ public slots:
     void switchToDatabaseSecurity();
     void switchToDatabaseReports();
     void switchToDatabaseSettings();
+#ifdef WITH_XC_BROWSER_WEBAUTHN
+    void switchToPasskeys();
+    void switchToImportPasskey();
+#endif
     void switchToOpenDatabase();
     void switchToOpenDatabase(const QString& filePath);
     void switchToOpenDatabase(const QString& filePath, const QString& password, const QString& keyFile);

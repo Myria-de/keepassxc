@@ -85,7 +85,7 @@ public:
     void showPasswordGenerator(const KeyPairMessage& keyPairMessage);
     bool isPasswordGeneratorRequested() const;
     bool isUrlIdentical(const QString& first, const QString& second) const;
-    
+    QSharedPointer<Database> selectedDatabase();
 #ifdef WITH_XC_BROWSER_WEBAUTHN
     QJsonObject
     showWebAuthnRegisterPrompt(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
@@ -181,7 +181,6 @@ private:
     QString getTopLevelDomainFromUrl(const QString& url) const;
     QString baseDomain(const QString& hostname) const;
     QSharedPointer<Database> getDatabase();
-    QSharedPointer<Database> selectedDatabase();
     QString getDatabaseRootUuid();
     QString getDatabaseRecycleBinUuid();
     bool checkLegacySettings(QSharedPointer<Database> db);
