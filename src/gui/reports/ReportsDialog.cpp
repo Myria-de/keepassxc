@@ -25,7 +25,7 @@
 #include "ReportsPageBrowserStatistics.h"
 #include "ReportsWidgetBrowserStatistics.h"
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
 #include "ReportsPagePasskeys.h"
 #include "ReportsWidgetPasskeys.h"
 #endif
@@ -69,7 +69,7 @@ ReportsDialog::ReportsDialog(QWidget* parent)
 #ifdef WITH_XC_BROWSER
     , m_browserStatPage(new ReportsPageBrowserStatistics())
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     , m_passkeysPage(new ReportsPagePasskeys())
 #endif
     , m_editEntryWidget(new EditEntryWidget(this))
@@ -81,7 +81,7 @@ ReportsDialog::ReportsDialog(QWidget* parent)
 #ifdef WITH_XC_BROWSER
     addPage(m_browserStatPage);
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     addPage(m_passkeysPage);
 #endif
     addPage(m_healthPage);
@@ -102,7 +102,7 @@ ReportsDialog::ReportsDialog(QWidget* parent)
             SIGNAL(entryActivated(Entry*)),
             SLOT(entryActivationSignalReceived(Entry*)));
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     connect(
         m_passkeysPage->m_passkeysWidget, SIGNAL(entryActivated(Entry*)), SLOT(entryActivationSignalReceived(Entry*)));
 #endif
@@ -131,7 +131,7 @@ void ReportsDialog::addPage(QSharedPointer<IReportsPage> page)
     m_ui->categoryList->setCurrentCategory(category);
 }
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
 void ReportsDialog::activatePasskeysPage()
 {
     m_ui->stackedWidget->setCurrentWidget(m_passkeysPage->m_passkeysWidget);
@@ -175,7 +175,7 @@ void ReportsDialog::switchToMainView(bool previousDialogAccepted)
             m_browserStatPage->m_browserWidget->calculateBrowserStatistics();
         }
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
         if (m_sender == m_passkeysPage->m_passkeysWidget) {
             m_passkeysPage->m_passkeysWidget->updateEntries();
         }

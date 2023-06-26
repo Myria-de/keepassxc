@@ -64,8 +64,8 @@
 #include "sshagent/SSHAgent.h"
 #endif
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-#include "gui/webauthn/PasskeyImporter.h"
+#ifdef WITH_XC_BROWSER_PASSKEYS
+#include "gui/passkeys/PasskeyImporter.h"
 #endif
 
 DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
@@ -1400,7 +1400,7 @@ void DatabaseWidget::switchToDatabaseSecurity()
     m_databaseSettingDialog->showDatabaseKeySettings();
 }
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
 void DatabaseWidget::switchToPasskeys()
 {
     switchToDatabaseReports();

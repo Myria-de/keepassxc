@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2023 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "BrowserWebAuthnConfirmationDialog.h"
-#include "ui_BrowserWebAuthnConfirmationDialog.h"
+#include "BrowserPasskeysConfirmationDialog.h"
+#include "ui_BrowserPasskeysConfirmationDialog.h"
 
 #include "core/Entry.h"
 #include <QCloseEvent>
@@ -24,9 +24,9 @@
 
 #define STEP 1000
 
-BrowserWebAuthnConfirmationDialog::BrowserWebAuthnConfirmationDialog(QWidget* parent)
+BrowserPasskeysConfirmationDialog::BrowserPasskeysConfirmationDialog(QWidget* parent)
     : QDialog(parent)
-    , m_ui(new Ui::BrowserWebAuthnConfirmationDialog())
+    , m_ui(new Ui::BrowserPasskeysConfirmationDialog())
 {
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
@@ -40,26 +40,26 @@ BrowserWebAuthnConfirmationDialog::BrowserWebAuthnConfirmationDialog(QWidget* pa
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(updateSeconds()));
 }
 
-BrowserWebAuthnConfirmationDialog::~BrowserWebAuthnConfirmationDialog()
+BrowserPasskeysConfirmationDialog::~BrowserPasskeysConfirmationDialog()
 {
 }
 
-void BrowserWebAuthnConfirmationDialog::registerCredential(const QString& username, const QString& siteId, int timeout)
+void BrowserPasskeysConfirmationDialog::registerCredential(const QString& username, const QString& siteId, int timeout)
 {
     m_ui->confirmationLabel->setText(
-        tr("Do you want to register WebAuthn credentials for:\n%1 (%2)?").arg(username, siteId));
+        tr("Do you want to register Passkey credentials for:\n%1 (%2)?").arg(username, siteId));
     m_ui->authenticateButton->setText(tr("Register"));
     m_ui->credentialsTable->setVisible(false);
 
     startCounter(timeout);
 }
 
-void BrowserWebAuthnConfirmationDialog::authenticateCredential(const QList<Entry*>& entries,
+void BrowserPasskeysConfirmationDialog::authenticateCredential(const QList<Entry*>& entries,
                                                                const QString& origin,
                                                                int timeout)
 {
     m_entries = entries;
-    m_ui->confirmationLabel->setText(tr("Authenticate WebAuthn credentials for:%1?").arg(origin));
+    m_ui->confirmationLabel->setText(tr("Authenticate Passkey credentials for:%1?").arg(origin));
     m_ui->credentialsTable->setRowCount(entries.count());
     m_ui->credentialsTable->setColumnCount(1);
 
@@ -82,13 +82,13 @@ void BrowserWebAuthnConfirmationDialog::authenticateCredential(const QList<Entry
     startCounter(timeout);
 }
 
-Entry* BrowserWebAuthnConfirmationDialog::getSelectedEntry() const
+Entry* BrowserPasskeysConfirmationDialog::getSelectedEntry() const
 {
     auto selectedItem = m_ui->credentialsTable->currentItem();
     return m_entries[selectedItem->row()];
 }
 
-void BrowserWebAuthnConfirmationDialog::updateProgressBar()
+void BrowserPasskeysConfirmationDialog::updateProgressBar()
 {
     if (m_counter < m_ui->progressBar->maximum()) {
         m_ui->progressBar->setValue(m_ui->progressBar->maximum() - m_counter);
@@ -98,13 +98,13 @@ void BrowserWebAuthnConfirmationDialog::updateProgressBar()
     }
 }
 
-void BrowserWebAuthnConfirmationDialog::updateSeconds()
+void BrowserPasskeysConfirmationDialog::updateSeconds()
 {
     ++m_counter;
     updateTimeoutLabel();
 }
 
-void BrowserWebAuthnConfirmationDialog::startCounter(int timeout)
+void BrowserPasskeysConfirmationDialog::startCounter(int timeout)
 {
     m_counter = 0;
     m_ui->progressBar->setMaximum(timeout / STEP);
@@ -113,7 +113,7 @@ void BrowserWebAuthnConfirmationDialog::startCounter(int timeout)
     m_timer.start(STEP);
 }
 
-void BrowserWebAuthnConfirmationDialog::updateTimeoutLabel()
+void BrowserPasskeysConfirmationDialog::updateTimeoutLabel()
 {
     m_ui->timeoutLabel->setText(tr("Timeout in <b>%n</b> seconds...", "", m_ui->progressBar->maximum() - m_counter));
 }

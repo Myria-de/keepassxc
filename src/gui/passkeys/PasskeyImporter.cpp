@@ -130,7 +130,7 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
     entry->setUrl(url);
     entry->setUsername(username);
     entry->setPassword(password);
-    entry->setTitle(QFileInfo(file.fileName()).baseName() + " (Passkey)");
-    entry->attachments()->set(BrowserService::WEBAUTHN_KEY_FILENAME, fileAttachment.toUtf8());
+    entry->setTitle(QString("%1 (%2)").arg(QFileInfo(file.fileName()).baseName(), tr("Passkey")));
+    entry->attachments()->set(BrowserService::PASSKEYS_KEY_FILENAME, fileAttachment.toUtf8());
     entry->endUpdate();
 }

@@ -24,9 +24,9 @@
 #include "core/Metadata.h"
 #include "gui/GuiTools.h"
 #include "gui/Icons.h"
+#include "gui/passkeys/PasskeyExporter.h"
+#include "gui/passkeys/PasskeyImporter.h"
 #include "gui/styles/StateColorPalette.h"
-#include "gui/webauthn/PasskeyExporter.h"
-#include "gui/webauthn/PasskeyImporter.h"
 
 #include <QMenu>
 #include <QShortcut>
@@ -75,7 +75,7 @@ PasskeyList::PasskeyList(const QSharedPointer<Database>& db)
         }
 
         for (auto entry : group->entries()) {
-            if (entry->isRecycled() || !entry->attachments()->hasKey(BrowserService::WEBAUTHN_KEY_FILENAME)) {
+            if (entry->isRecycled() || !entry->attachments()->hasKey(BrowserService::PASSKEYS_KEY_FILENAME)) {
                 continue;
             }
 

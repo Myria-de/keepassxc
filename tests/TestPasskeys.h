@@ -15,14 +15,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSXC_TESTWEBAUTHN_H
-#define KEEPASSXC_TESTWEBAUTHN_H
+#ifndef KEEPASSXC_TESTPASSKEYS_H
+#define KEEPASSXC_TESTPASSKEYS_H
 
 #include <QObject>
 
-#include "browser/BrowserWebAuthn.h"
+#include "browser/BrowserPasskeys.h"
 
-class TestWebAuthn : public QObject
+class TestPasskeys : public QObject
 {
     Q_OBJECT
 
@@ -44,4 +44,4 @@ private slots:
     void testParseFlags();
     void testSetFlags();
 };
-#endif // KEEPASSXC_TESTWEBAUTHN_H
+#endif // KEEPASSXC_TESTPASSKEYS_H

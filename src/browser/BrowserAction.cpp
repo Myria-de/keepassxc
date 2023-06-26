@@ -17,8 +17,8 @@
 
 #include "BrowserAction.h"
 #include "BrowserMessageBuilder.h"
+#include "BrowserPasskeys.h"
 #include "BrowserSettings.h"
-#include "BrowserWebAuthn.h"
 #include "core/Global.h"
 #include "core/Tools.h"
 
@@ -37,11 +37,11 @@ static const QString BROWSER_REQUEST_GET_DATABASE_GROUPS = QStringLiteral("get-d
 static const QString BROWSER_REQUEST_GET_LOGINS = QStringLiteral("get-logins");
 static const QString BROWSER_REQUEST_GET_TOTP = QStringLiteral("get-totp");
 static const QString BROWSER_REQUEST_LOCK_DATABASE = QStringLiteral("lock-database");
+static const QString BROWSER_REQUEST_PASSKEYS_GET = QStringLiteral("passkeys-get");
+static const QString BROWSER_REQUEST_PASSKEYS_REGISTER = QStringLiteral("passkeys-register");
 static const QString BROWSER_REQUEST_REQUEST_AUTOTYPE = QStringLiteral("request-autotype");
 static const QString BROWSER_REQUEST_SET_LOGIN = QStringLiteral("set-login");
 static const QString BROWSER_REQUEST_TEST_ASSOCIATE = QStringLiteral("test-associate");
-static const QString BROWSER_REQUEST_WEBAUTHN_GET = QStringLiteral("webauthn-get");
-static const QString BROWSER_REQUEST_WEBAUTHN_REGISTER = QStringLiteral("webauthn-register");
 
 QJsonObject BrowserAction::processClientMessage(QLocalSocket* socket, const QJsonObject& json)
 {
@@ -107,11 +107,11 @@ QJsonObject BrowserAction::handleAction(QLocalSocket* socket, const QJsonObject&
         return handleGlobalAutoType(json, action);
     } else if (action.compare("get-database-entries", Qt::CaseSensitive) == 0) {
         return handleGetDatabaseEntries(json, action);
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-    } else if (action.compare(BROWSER_REQUEST_WEBAUTHN_GET) == 0) {
-        return handleWebAuthnGet(json, action);
-    } else if (action.compare(BROWSER_REQUEST_WEBAUTHN_REGISTER) == 0) {
-        return handleWebAuthnRegister(json, action);
+#ifdef WITH_XC_BROWSER_PASSKEYS
+    } else if (action.compare(BROWSER_REQUEST_PASSKEYS_GET) == 0) {
+        return handlePasskeysGet(json, action);
+    } else if (action.compare(BROWSER_REQUEST_PASSKEYS_REGISTER) == 0) {
+        return handlePasskeysRegister(json, action);
 #endif
     }
 
@@ -515,8 +515,8 @@ QJsonObject BrowserAction::handleGlobalAutoType(const QJsonObject& json, const Q
     return buildResponse(action, browserRequest.incrementedNonce);
 }
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-QJsonObject BrowserAction::handleWebAuthnGet(const QJsonObject& json, const QString& action)
+#ifdef WITH_XC_BROWSER_PASSKEYS
+QJsonObject BrowserAction::handlePasskeysGet(const QJsonObject& json, const QString& action)
 {
     if (!m_associated) {
         return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
@@ -528,13 +528,13 @@ QJsonObject BrowserAction::handleWebAuthnGet(const QJsonObject& json, const QStr
     }
 
     const auto command = browserRequest.getString("action");
-    if (command.isEmpty() || command.compare(BROWSER_REQUEST_WEBAUTHN_GET) != 0) {
+    if (command.isEmpty() || command.compare(BROWSER_REQUEST_PASSKEYS_GET) != 0) {
         return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
     }
 
     const auto publicKey = browserRequest.getObject("publicKey");
     if (publicKey.isEmpty()) {
-        return getErrorReply(action, ERROR_WEBAUTHN_EMPTY_PUBLIC_KEY);
+        return getErrorReply(action, ERROR_PASSKEYS_EMPTY_PUBLIC_KEY);
     }
 
     const auto origin = browserRequest.getString("origin");
@@ -543,13 +543,13 @@ QJsonObject BrowserAction::handleWebAuthnGet(const QJsonObject& json, const QStr
     }
 
     const auto keyList = getConnectionKeys(browserRequest);
-    const auto response = browserService()->showWebAuthnAuthenticationPrompt(publicKey, origin, keyList);
+    const auto response = browserService()->showPasskeysAuthenticationPrompt(publicKey, origin, keyList);
 
     const Parameters params{{"response", response}};
     return buildResponse(action, browserRequest.incrementedNonce, params);
 }
 
-QJsonObject BrowserAction::handleWebAuthnRegister(const QJsonObject& json, const QString& action)
+QJsonObject BrowserAction::handlePasskeysRegister(const QJsonObject& json, const QString& action)
 {
     if (!m_associated) {
         return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
@@ -561,13 +561,13 @@ QJsonObject BrowserAction::handleWebAuthnRegister(const QJsonObject& json, const
     }
 
     const auto command = browserRequest.getString("action");
-    if (command.isEmpty() || command.compare(BROWSER_REQUEST_WEBAUTHN_REGISTER) != 0) {
+    if (command.isEmpty() || command.compare(BROWSER_REQUEST_PASSKEYS_REGISTER) != 0) {
         return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
     }
 
     const auto publicKey = browserRequest.getObject("publicKey");
     if (publicKey.isEmpty()) {
-        return getErrorReply(action, ERROR_WEBAUTHN_EMPTY_PUBLIC_KEY);
+        return getErrorReply(action, ERROR_PASSKEYS_EMPTY_PUBLIC_KEY);
     }
 
     const auto origin = browserRequest.getString("origin");
@@ -576,7 +576,7 @@ QJsonObject BrowserAction::handleWebAuthnRegister(const QJsonObject& json, const
     }
 
     const auto keyList = getConnectionKeys(browserRequest);
-    const auto response = browserService()->showWebAuthnRegisterPrompt(publicKey, origin, keyList);
+    const auto response = browserService()->showPasskeysRegisterPrompt(publicKey, origin, keyList);
 
     const Parameters params{{"response", response}};
     return buildResponse(action, browserRequest.incrementedNonce, params);

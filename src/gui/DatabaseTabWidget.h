@@ -85,7 +85,7 @@ public slots:
     void showDatabaseSecurity();
     void showDatabaseReports();
     void showDatabaseSettings();
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     void showPasskeys();
     void importPasskey();
 #endif

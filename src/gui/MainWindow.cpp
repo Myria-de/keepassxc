@@ -438,7 +438,7 @@ MainWindow::MainWindow()
     m_ui->actionKeyboardShortcuts->setIcon(icons()->icon("keyboard-shortcuts"));
     m_ui->actionCheckForUpdates->setIcon(icons()->icon("system-software-update"));
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     m_ui->actionPasskeys->setIcon(icons()->icon("database-lock"));
     m_ui->actionImportPasskey->setIcon(icons()->icon("document-import"));
 #endif
@@ -488,7 +488,7 @@ MainWindow::MainWindow()
     connect(m_ui->actionDatabaseSecurity, SIGNAL(triggered()), m_ui->tabWidget, SLOT(showDatabaseSecurity()));
     connect(m_ui->actionReports, SIGNAL(triggered()), m_ui->tabWidget, SLOT(showDatabaseReports()));
     connect(m_ui->actionDatabaseSettings, SIGNAL(triggered()), m_ui->tabWidget, SLOT(showDatabaseSettings()));
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     connect(m_ui->actionPasskeys, SIGNAL(triggered()), m_ui->tabWidget, SLOT(showPasskeys()));
     connect(m_ui->actionImportPasskey, SIGNAL(triggered()), m_ui->tabWidget, SLOT(importPasskey()));
 #endif
@@ -986,7 +986,7 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
             m_ui->actionExportHtml->setEnabled(true);
             m_ui->actionExportXML->setEnabled(true);
             m_ui->actionDatabaseMerge->setEnabled(m_ui->tabWidget->currentIndex() != -1);
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
             m_ui->actionPasskeys->setEnabled(true);
             m_ui->actionImportPasskey->setEnabled(true);
 #endif
@@ -1057,7 +1057,7 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
             m_ui->actionEntryRemoveFromAgent->setVisible(false);
             m_ui->actionGroupEmptyRecycleBin->setVisible(false);
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
             m_ui->actionPasskeys->setEnabled(false);
             m_ui->actionImportPasskey->setEnabled(false);
 #else

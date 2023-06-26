@@ -28,9 +28,9 @@
 #include "gui/MainWindow.h"
 #include "gui/MessageBox.h"
 #include "gui/osutils/OSUtils.h"
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-#include "BrowserWebAuthn.h"
-#include "BrowserWebAuthnConfirmationDialog.h"
+#ifdef WITH_XC_BROWSER_PASSKEYS
+#include "BrowserPasskeys.h"
+#include "BrowserPasskeysConfirmationDialog.h"
 #endif
 #ifdef Q_OS_MACOS
 #include "gui/osutils/macutils/MacUtils.h"
@@ -63,11 +63,11 @@ const QString BrowserService::OPTION_OMIT_WWW = QStringLiteral("BrowserOmitWww")
 // Multiple URL's
 const QString BrowserService::ADDITIONAL_URL = QStringLiteral("KP2A_URL");
 
-// WebAuthn
-const QString BrowserService::WEBAUTHN_ATTESTATION_DIRECT = QStringLiteral("direct");
-const QString BrowserService::WEBAUTHN_ATTESTATION_NONE = QStringLiteral("none");
-const QString BrowserService::WEBAUTHN_KEY_FILENAME = QStringLiteral("webauthn.pem");
-const QString BrowserService::WEBAUTHN_SIGNATURE_COUNT = QStringLiteral("WEBAUTHN_SIGNATURE_COUNT");
+// Passkeys
+const QString BrowserService::PASSKEYS_ATTESTATION_DIRECT = QStringLiteral("direct");
+const QString BrowserService::PASSKEYS_ATTESTATION_NONE = QStringLiteral("none");
+const QString BrowserService::PASSKEYS_KEY_FILENAME = QStringLiteral("passkey.pem");
+const QString BrowserService::PASSKEYS_SIGNATURE_COUNT = QStringLiteral("PASSKEYS_SIGNATURE_COUNT");
 
 Q_GLOBAL_STATIC(BrowserService, s_browserService);
 
@@ -643,15 +643,15 @@ QString BrowserService::getKey(const QString& id)
     return db->metadata()->customData()->value(CustomData::BrowserKeyPrefix + id);
 }
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-// WebAuthn registration
-QJsonObject BrowserService::showWebAuthnRegisterPrompt(const QJsonObject& publicKey,
+#ifdef WITH_XC_BROWSER_PASSKEYS
+// Passkey registration
+QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& publicKey,
                                                        const QString& origin,
                                                        const StringPairList& keyList)
 {
     auto db = selectedDatabase();
     if (!db) {
-        return getWebAuthnError(ERROR_KEEPASS_DATABASE_NOT_OPENED);
+        return getPasskeyError(ERROR_KEEPASS_DATABASE_NOT_OPENED);
     }
 
     const auto userJson = publicKey["user"].toObject();
@@ -663,88 +663,88 @@ QJsonObject BrowserService::showWebAuthnRegisterPrompt(const QJsonObject& public
     const auto attestation = publicKey["attestation"].toString();
 
     // Only support these two for now
-    if (attestation != WEBAUTHN_ATTESTATION_NONE && attestation != WEBAUTHN_ATTESTATION_DIRECT) {
-        return getWebAuthnError(ERROR_WEBAUTHN_ATTESTATION_NOT_SUPPORTED);
+    if (attestation != PASSKEYS_ATTESTATION_NONE && attestation != PASSKEYS_ATTESTATION_DIRECT) {
+        return getPasskeyError(ERROR_PASSKEYS_ATTESTATION_NOT_SUPPORTED);
     }
 
     const auto authenticatorSelection = publicKey["authenticatorSelection"].toObject();
     const auto userVerification = authenticatorSelection["userVerification"].toString();
-    if (!browserWebAuthn()->isUserVerificationValid(userVerification)) {
-        return getWebAuthnError(ERROR_WEBAUTHN_INVALID_USER_VERIFICATION);
+    if (!browserPasskeys()->isUserVerificationValid(userVerification)) {
+        return getPasskeyError(ERROR_PASSKEYS_INVALID_USER_VERIFICATION);
     }
 
-    if (!excludeCredentials.isEmpty() && isWebAuthnCredentialExcluded(excludeCredentials, origin, keyList)) {
-        return getWebAuthnError(ERROR_WEBAUTHN_CREDENTIAL_IS_EXCLUDED);
+    if (!excludeCredentials.isEmpty() && isPasskeyCredentialExcluded(excludeCredentials, origin, keyList)) {
+        return getPasskeyError(ERROR_PASSKEYS_CREDENTIAL_IS_EXCLUDED);
     }
 
-    const auto timeout = browserWebAuthn()->getTimeout(userVerification, timeoutValue);
+    const auto timeout = browserPasskeys()->getTimeout(userVerification, timeoutValue);
 
     raiseWindow();
-    BrowserWebAuthnConfirmationDialog confirmDialog;
+    BrowserPasskeysConfirmationDialog confirmDialog;
     confirmDialog.registerCredential(username, siteId, timeout);
     auto dialogResult = confirmDialog.exec();
     if (dialogResult == QDialog::Accepted) {
-        const auto publicKeyCredentials = browserWebAuthn()->buildRegisterPublicKeyCredential(publicKey, origin);
+        const auto publicKeyCredentials = browserPasskeys()->buildRegisterPublicKeyCredential(publicKey, origin);
 
         EntryParameters entryParameters;
-        entryParameters.title = QString("%1 (%2)").arg(siteName, tr("WebAuthn"));
+        entryParameters.title = QString("%1 (%2)").arg(siteName, tr("Passkey"));
         entryParameters.login = username;
         entryParameters.password = publicKeyCredentials.id;
         entryParameters.siteUrl = origin;
 
-        browserService()->addEntry(entryParameters, "", "", false, WEBAUTHN_KEY_FILENAME, publicKeyCredentials.key);
+        browserService()->addEntry(entryParameters, "", "", false, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
         hideWindow();
         return publicKeyCredentials.response;
     }
 
     hideWindow();
-    return getWebAuthnError(ERROR_WEBAUTHN_REQUEST_CANCELED);
+    return getPasskeyError(ERROR_PASSKEYS_REQUEST_CANCELED);
 }
 
-// WebAuthn authentication
-QJsonObject BrowserService::showWebAuthnAuthenticationPrompt(const QJsonObject& publicKey,
+// Passkey authentication
+QJsonObject BrowserService::showPasskeysAuthenticationPrompt(const QJsonObject& publicKey,
                                                              const QString& origin,
                                                              const StringPairList& keyList)
 {
     auto db = selectedDatabase();
     if (!db) {
-        return getWebAuthnError(ERROR_KEEPASS_DATABASE_NOT_OPENED);
+        return getPasskeyError(ERROR_KEEPASS_DATABASE_NOT_OPENED);
     }
 
     const auto userVerification = publicKey["userVerification"].toString();
-    if (!browserWebAuthn()->isUserVerificationValid(userVerification)) {
-        return getWebAuthnError(ERROR_WEBAUTHN_INVALID_USER_VERIFICATION);
+    if (!browserPasskeys()->isUserVerificationValid(userVerification)) {
+        return getPasskeyError(ERROR_PASSKEYS_INVALID_USER_VERIFICATION);
     }
 
     // Parse "allowCredentials"
-    const auto entries = getWebAuthnAllowedEntries(publicKey, origin, keyList);
+    const auto entries = getPasskeyAllowedEntries(publicKey, origin, keyList);
     if (entries.isEmpty()) {
-        return getWebAuthnError(ERROR_KEEPASS_NO_LOGINS_FOUND);
+        return getPasskeyError(ERROR_KEEPASS_NO_LOGINS_FOUND);
     }
 
     // With single entry, if no verification is needed, return directly
-    if (entries.count() == 1 && userVerification == BrowserWebAuthn::REQUIREMENT_DISCOURAGED) {
-        const auto privateKeyPem = entries.first()->attachments()->value(WEBAUTHN_KEY_FILENAME);
+    if (entries.count() == 1 && userVerification == BrowserPasskeys::REQUIREMENT_DISCOURAGED) {
+        const auto privateKeyPem = entries.first()->attachments()->value(PASSKEYS_KEY_FILENAME);
         const auto id = entries.first()->password();
-        return browserWebAuthn()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
+        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
     }
 
     const auto timeout = publicKey["timeout"].toInt();
 
     raiseWindow();
-    BrowserWebAuthnConfirmationDialog confirmDialog;
+    BrowserPasskeysConfirmationDialog confirmDialog;
     confirmDialog.authenticateCredential(entries, origin, timeout);
     auto dialogResult = confirmDialog.exec();
     if (dialogResult == QDialog::Accepted) {
         hideWindow();
         const auto selectedEntry = confirmDialog.getSelectedEntry();
-        const auto privateKeyPem = selectedEntry->attachments()->value(WEBAUTHN_KEY_FILENAME);
+        const auto privateKeyPem = selectedEntry->attachments()->value(PASSKEYS_KEY_FILENAME);
         const auto id = selectedEntry->password();
-        return browserWebAuthn()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
+        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
     }
 
     hideWindow();
-    return getWebAuthnError(ERROR_WEBAUTHN_REQUEST_CANCELED);
+    return getPasskeyError(ERROR_PASSKEYS_REQUEST_CANCELED);
 }
 #endif
 
@@ -1254,13 +1254,13 @@ bool BrowserService::shouldIncludeEntry(Entry* entry,
     return false;
 }
 
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-// Returns all WebAuthn entries for the current site
-QList<Entry*> BrowserService::getWebAuthnEntries(const QString& origin, const StringPairList& keyList)
+#ifdef WITH_XC_BROWSER_PASSKEYS
+// Returns all Passkey entries for the current site
+QList<Entry*> BrowserService::getPasskeyEntries(const QString& origin, const StringPairList& keyList)
 {
     QList<Entry*> entries;
     for (const auto& entry : searchEntries(origin, "", keyList)) {
-        if (entry->attachments()->hasKey(WEBAUTHN_KEY_FILENAME) && entry->url() == origin) {
+        if (entry->attachments()->hasKey(PASSKEYS_KEY_FILENAME) && entry->url() == origin) {
             entries << entry;
         }
     }
@@ -1269,14 +1269,14 @@ QList<Entry*> BrowserService::getWebAuthnEntries(const QString& origin, const St
 }
 
 // Get all entries for the site that are allowed by the server
-QList<Entry*> BrowserService::getWebAuthnAllowedEntries(const QJsonObject& publicKey,
-                                                        const QString& origin,
-                                                        const StringPairList& keyList)
+QList<Entry*> BrowserService::getPasskeyAllowedEntries(const QJsonObject& publicKey,
+                                                       const QString& origin,
+                                                       const StringPairList& keyList)
 {
     QList<Entry*> entries;
-    const auto allowedCredentials = browserWebAuthn()->getAllowedCredentialsFromPublicKey(publicKey);
+    const auto allowedCredentials = browserPasskeys()->getAllowedCredentialsFromPublicKey(publicKey);
 
-    for (const auto& entry : getWebAuthnEntries(origin, keyList)) {
+    for (const auto& entry : getPasskeyEntries(origin, keyList)) {
         if (allowedCredentials.contains(entry->password())) {
             entries << entry;
         }
@@ -1286,22 +1286,22 @@ QList<Entry*> BrowserService::getWebAuthnAllowedEntries(const QJsonObject& publi
 }
 
 // Checks if the same user ID already exists for the current site
-bool BrowserService::isWebAuthnCredentialExcluded(const QJsonArray& excludeCredentials,
-                                                  const QString& origin,
-                                                  const StringPairList& keyList)
+bool BrowserService::isPasskeyCredentialExcluded(const QJsonArray& excludeCredentials,
+                                                 const QString& origin,
+                                                 const StringPairList& keyList)
 {
     QStringList allIds;
     for (const auto& cred : excludeCredentials) {
         allIds << cred["id"].toString();
     }
 
-    const auto webAuthnEntries = getWebAuthnEntries(origin, keyList);
-    return std::any_of(webAuthnEntries.begin(), webAuthnEntries.end(), [&](const auto& entry) {
+    const auto passkeyEntries = getPasskeyEntries(origin, keyList);
+    return std::any_of(passkeyEntries.begin(), passkeyEntries.end(), [&](const auto& entry) {
         return allIds.contains(entry->password());
     });
 }
 
-QJsonObject BrowserService::getWebAuthnError(int errorCode) const
+QJsonObject BrowserService::getPasskeyError(int errorCode) const
 {
     return QJsonObject({{"errorCode", errorCode}});
 }

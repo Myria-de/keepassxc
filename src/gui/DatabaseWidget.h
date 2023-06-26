@@ -212,7 +212,7 @@ public slots:
     void switchToDatabaseSecurity();
     void switchToDatabaseReports();
     void switchToDatabaseSettings();
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     void switchToPasskeys();
     void switchToImportPasskey();
 #endif

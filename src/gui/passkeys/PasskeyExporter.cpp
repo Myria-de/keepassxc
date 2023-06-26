@@ -85,7 +85,7 @@ void PasskeyExporter::exportSelectedEntry(const Entry* entry, const QString& fol
     fileStream << entry->url() << "\n";
     fileStream << entry->username() << "\n";
     fileStream << entry->password() << "\n";
-    fileStream << entry->attachments()->value(BrowserService::WEBAUTHN_KEY_FILENAME);
+    fileStream << entry->attachments()->value(BrowserService::PASSKEYS_KEY_FILENAME);
 
     passkeyFile.close();
 }

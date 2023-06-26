@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TestWebAuthn.h"
+#include "TestPasskeys.h"
 #include "browser/BrowserCbor.h"
 #include "browser/BrowserMessageBuilder.h"
 #include "browser/BrowserService.h"
@@ -28,7 +28,7 @@
 
 using namespace Botan::Sodium;
 
-QTEST_GUILESS_MAIN(TestWebAuthn)
+QTEST_GUILESS_MAIN(TestPasskeys)
 
 // Register request
 // clang-format off
@@ -100,16 +100,16 @@ const QString PublicKeyCredentialRequestOptions =
             "}");
 // clang-format on
 
-void TestWebAuthn::initTestCase()
+void TestPasskeys::initTestCase()
 {
     QVERIFY(Crypto::init());
 }
 
-void TestWebAuthn::init()
+void TestPasskeys::init()
 {
 }
 
-void TestWebAuthn::testBase64WithHexStrings()
+void TestPasskeys::testBase64WithHexStrings()
 {
     const size_t bufSize = 64;
     unsigned char buf[bufSize] = {31,  141, 30,  29,  142, 73,  5,   239, 242, 84,  187, 202, 40,  54,  15,  223,
@@ -132,7 +132,7 @@ void TestWebAuthn::testBase64WithHexStrings()
     QCOMPARE(randomDataBase64.isEmpty(), false);
 }
 
-void TestWebAuthn::testDecodeResponseData()
+void TestPasskeys::testDecodeResponseData()
 {
     const auto publicKeyCredential = browserMessageBuilder()->getJsonObject(PublicKeyCredential.toUtf8());
     auto response = publicKeyCredential["response"].toObject();
@@ -160,7 +160,7 @@ void TestWebAuthn::testDecodeResponseData()
     auto authDataArray = browserMessageBuilder()->getArrayFromBase64(authDataJsonObject);
     QVERIFY(authDataArray.size() >= 37);
 
-    auto authData = browserWebAuthn()->parseAuthData(authDataArray);
+    auto authData = browserPasskeys()->parseAuthData(authDataArray);
     auto credentialData = authData["credentialData"].toObject();
     auto flags = authData["flags"].toObject();
     auto publicKey = credentialData["publicKey"].toObject();
@@ -178,7 +178,7 @@ void TestWebAuthn::testDecodeResponseData()
     QCOMPARE(publicKey["-3"], QString("4u5_6Q8O6R0Hg0oDCdtCJLEL0yX_GDLhU5m3HUIE54M"));
 }
 
-void TestWebAuthn::testLoadingECPrivateKeyFromPem()
+void TestPasskeys::testLoadingECPrivateKeyFromPem()
 {
     const auto publicKeyCredentialRequestOptions =
         browserMessageBuilder()->getJsonObject(PublicKeyCredentialRequestOptions.toUtf8());
@@ -195,13 +195,13 @@ void TestWebAuthn::testLoadingECPrivateKeyFromPem()
         "1NSVVBMUxWd3pHcHlJbTFmT0JuMVFuUmEwUUgyN0FEQWFKR0h5c1EiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmln"
         "aW4iOmZhbHNlfQ");
 
-    const auto signature = browserWebAuthn()->buildSignature(authenticatorData, clientData, privateKeyPem);
+    const auto signature = browserPasskeys()->buildSignature(authenticatorData, clientData, privateKeyPem);
     QCOMPARE(
         browserMessageBuilder()->getBase64FromArray(signature),
         QString("MEYCIQCpbDaYJ4b2ofqWBxfRNbH3XCpsyao7Iui5lVuJRU9HIQIhAPl5moNZgJu5zmurkKK_P900Ct6wd3ahVIqCEqTeeRdE"));
 }
 
-void TestWebAuthn::testLoadingRSAPrivateKeyFromPem()
+void TestPasskeys::testLoadingRSAPrivateKeyFromPem()
 {
     const auto privateKeyPem = QString("-----BEGIN PRIVATE KEY-----"
                                        "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC5OHjBHQaRfxxX\n4WHRmqq7e7JgT"
@@ -235,7 +235,7 @@ void TestWebAuthn::testLoadingRSAPrivateKeyFromPem()
         "1NSVVBMUxWd3pHcHlJbTFmT0JuMVFuUmEwUUgyN0FEQWFKR0h5c1EiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmln"
         "aW4iOmZhbHNlfQ");
 
-    const auto signature = browserWebAuthn()->buildSignature(authenticatorData, clientData, privateKeyPem);
+    const auto signature = browserPasskeys()->buildSignature(authenticatorData, clientData, privateKeyPem);
     QCOMPARE(
         browserMessageBuilder()->getBase64FromArray(signature),
         QString("MOGw6KrerCgPf2mPig7FOTFIUDXYAU1v2uZj89_NgQTg2UddWnAB3JId3pa4zXghj8CkjjadVOI_LvweJGCEpmPQnRby71yFXnja6j"
@@ -244,7 +244,7 @@ void TestWebAuthn::testLoadingRSAPrivateKeyFromPem()
                 "9tjQDNvrYQFqB6wDPqkZAomkbRCohUb3TzCg"));
 }
 
-void TestWebAuthn::testCreatingAttestationObjectWithEC()
+void TestPasskeys::testCreatingAttestationObjectWithEC()
 {
     // Predefined values for a desired outcome
     const auto id = QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8");
@@ -257,7 +257,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithEC()
     QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
 
     PredefinedVariables predefinedVariables = {id, predefinedFirst, predefinedSecond};
-    auto result = browserWebAuthn()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
+    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
     QCOMPARE(
         QString(result.cborEncoded),
         QString("\xA3"
@@ -279,7 +279,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithEC()
     auto authDataArray = browserMessageBuilder()->getArrayFromBase64(authDataJsonObject);
     QVERIFY(authDataArray.size() >= 37);
 
-    auto authData = browserWebAuthn()->parseAuthData(authDataArray);
+    auto authData = browserPasskeys()->parseAuthData(authDataArray);
     auto credentialData = authData["credentialData"].toObject();
     auto flags = authData["flags"].toObject();
     auto publicKey = credentialData["publicKey"].toObject();
@@ -296,7 +296,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithEC()
     QCOMPARE(publicKey["-3"], predefinedSecond);
 }
 
-void TestWebAuthn::testCreatingAttestationObjectWithRSA()
+void TestPasskeys::testCreatingAttestationObjectWithRSA()
 {
     // Predefined values for a desired outcome
     const auto id = QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8");
@@ -318,7 +318,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithRSA()
     QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
 
     PredefinedVariables predefinedVariables = {id, predefinedModulus, predefinedExponent};
-    auto result = browserWebAuthn()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
+    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
 
     // Double check that the result can be decoded
     BrowserCbor browserCbor;
@@ -329,7 +329,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithRSA()
     auto authDataArray = browserMessageBuilder()->getArrayFromBase64(authDataJsonObject);
     QVERIFY(authDataArray.size() >= 37);
 
-    auto authData = browserWebAuthn()->parseAuthData(authDataArray);
+    auto authData = browserPasskeys()->parseAuthData(authDataArray);
     auto credentialData = authData["credentialData"].toObject();
     auto flags = authData["flags"].toObject();
     auto publicKey = credentialData["publicKey"].toObject();
@@ -345,7 +345,7 @@ void TestWebAuthn::testCreatingAttestationObjectWithRSA()
     QCOMPARE(publicKey["-2"], predefinedExponent);
 }
 
-void TestWebAuthn::testRegister()
+void TestPasskeys::testRegister()
 {
     // Predefined values for a desired outcome
     const auto predefinedId = QString("yrzFJ5lwcpTwYMOdXSmxF5b5cYQlqBMzbbU_d-oFLO8");
@@ -358,7 +358,7 @@ void TestWebAuthn::testRegister()
 
     PredefinedVariables predefinedVariables = {predefinedId, predefinedX, predefinedY};
     auto result =
-        browserWebAuthn()->buildRegisterPublicKeyCredential(publicKeyCredentialOptions, origin, predefinedVariables);
+        browserPasskeys()->buildRegisterPublicKeyCredential(publicKeyCredentialOptions, origin, predefinedVariables);
     auto publicKeyCredential = result.response;
     QCOMPARE(publicKeyCredential["type"], QString("public-key"));
     QCOMPARE(publicKeyCredential["authenticatorAttachment"], QString("platform"));
@@ -378,7 +378,7 @@ void TestWebAuthn::testRegister()
     QCOMPARE(clientDataJsonObject["type"], QString("webauthn.create"));
 }
 
-void TestWebAuthn::testGet()
+void TestPasskeys::testGet()
 {
     const auto privateKeyPem = QString("-----BEGIN PRIVATE KEY-----"
                                        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5DX2R6I37nMSZqCp"
@@ -391,7 +391,7 @@ void TestWebAuthn::testGet()
         browserMessageBuilder()->getJsonObject(PublicKeyCredentialRequestOptions.toUtf8());
 
     auto publicKeyCredential =
-        browserWebAuthn()->buildGetPublicKeyCredential(publicKeyCredentialRequestOptions, origin, id, privateKeyPem);
+        browserPasskeys()->buildGetPublicKeyCredential(publicKeyCredentialRequestOptions, origin, id, privateKeyPem);
     QVERIFY(!publicKeyCredential.isEmpty());
     QCOMPARE(publicKeyCredential["id"].toString(), id);
 
@@ -411,10 +411,10 @@ void TestWebAuthn::testGet()
     QCOMPARE(clientDataJsonObject["challenge"].toString(), publicKeyCredentialRequestOptions["challenge"].toString());
 }
 
-void TestWebAuthn::testExtensions()
+void TestPasskeys::testExtensions()
 {
     auto extensions = QJsonObject({{"credProps", true}, {"uvm", true}});
-    auto result = browserWebAuthn()->buildExtensionData(extensions);
+    auto result = browserPasskeys()->buildExtensionData(extensions);
 
     BrowserCbor cbor;
     auto extensionJson = cbor.getJsonFromCborData(result);
@@ -425,8 +425,8 @@ void TestWebAuthn::testExtensions()
 
     auto partial = QJsonObject({{"props", true}, {"uvm", true}});
     auto faulty = QJsonObject({{"uvx", true}});
-    auto partialData = browserWebAuthn()->buildExtensionData(partial);
-    auto faultyData = browserWebAuthn()->buildExtensionData(faulty);
+    auto partialData = browserPasskeys()->buildExtensionData(partial);
+    auto faultyData = browserPasskeys()->buildExtensionData(faulty);
 
     auto partialJson = cbor.getJsonFromCborData(partialData);
     QCOMPARE(partialJson["uvm"].toArray().size(), 1);
@@ -435,9 +435,9 @@ void TestWebAuthn::testExtensions()
     QCOMPARE(faultyJson.size(), 0);
 }
 
-void TestWebAuthn::testParseFlags()
+void TestPasskeys::testParseFlags()
 {
-    auto registerResult = browserWebAuthn()->parseFlags("\x45");
+    auto registerResult = browserPasskeys()->parseFlags("\x45");
     QCOMPARE(registerResult["ED"], false);
     QCOMPARE(registerResult["AT"], true);
     QCOMPARE(registerResult["BS"], false);
@@ -445,7 +445,7 @@ void TestWebAuthn::testParseFlags()
     QCOMPARE(registerResult["UV"], true);
     QCOMPARE(registerResult["UP"], true);
 
-    auto getResult = browserWebAuthn()->parseFlags("\x05"); // Only UP and UV
+    auto getResult = browserPasskeys()->parseFlags("\x05"); // Only UP and UV
     QCOMPARE(getResult["ED"], false);
     QCOMPARE(getResult["AT"], false);
     QCOMPARE(getResult["BS"], false);
@@ -454,21 +454,21 @@ void TestWebAuthn::testParseFlags()
     QCOMPARE(getResult["UP"], true);
 }
 
-void TestWebAuthn::testSetFlags()
+void TestPasskeys::testSetFlags()
 {
     auto registerJson =
         QJsonObject({{"ED", false}, {"AT", true}, {"BS", false}, {"BE", false}, {"UV", true}, {"UP", true}});
-    auto registerResult = browserWebAuthn()->setFlagsFromJson(registerJson);
+    auto registerResult = browserPasskeys()->setFlagsFromJson(registerJson);
     QCOMPARE(registerResult, 0x45);
 
     auto getJson =
         QJsonObject({{"ED", false}, {"AT", false}, {"BS", false}, {"BE", false}, {"UV", true}, {"UP", true}});
-    auto getResult = browserWebAuthn()->setFlagsFromJson(getJson);
+    auto getResult = browserPasskeys()->setFlagsFromJson(getJson);
     QCOMPARE(getResult, 0x05);
 
     // With "discouraged", so UV is false
     auto discouragedJson =
         QJsonObject({{"ED", false}, {"AT", false}, {"BS", false}, {"BE", false}, {"UV", false}, {"UP", true}});
-    auto discouragedResult = browserWebAuthn()->setFlagsFromJson(discouragedJson);
+    auto discouragedResult = browserPasskeys()->setFlagsFromJson(discouragedJson);
     QCOMPARE(discouragedResult, 0x01);
 }

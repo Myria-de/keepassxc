@@ -86,10 +86,10 @@ public:
     bool isPasswordGeneratorRequested() const;
     bool isUrlIdentical(const QString& first, const QString& second) const;
     QSharedPointer<Database> selectedDatabase();
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     QJsonObject
-    showWebAuthnRegisterPrompt(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
-    QJsonObject showWebAuthnAuthenticationPrompt(const QJsonObject& publicKey,
+    showPasskeysRegisterPrompt(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
+    QJsonObject showPasskeysAuthenticationPrompt(const QJsonObject& publicKey,
                                                  const QString& origin,
                                                  const StringPairList& keyList);
 #endif
@@ -113,10 +113,10 @@ public:
     static const QString OPTION_NOT_HTTP_AUTH;
     static const QString OPTION_OMIT_WWW;
     static const QString ADDITIONAL_URL;
-    static const QString WEBAUTHN_ATTESTATION_DIRECT;
-    static const QString WEBAUTHN_ATTESTATION_NONE;
-    static const QString WEBAUTHN_KEY_FILENAME;
-    static const QString WEBAUTHN_SIGNATURE_COUNT;
+    static const QString PASSKEYS_ATTESTATION_DIRECT;
+    static const QString PASSKEYS_ATTESTATION_NONE;
+    static const QString PASSKEYS_KEY_FILENAME;
+    static const QString PASSKEYS_SIGNATURE_COUNT;
 
 signals:
     void requestUnlock();
@@ -165,14 +165,14 @@ private:
     bool removeFirstDomain(QString& hostname);
     bool
     shouldIncludeEntry(Entry* entry, const QString& url, const QString& submitUrl, const bool omitWwwSubdomain = false);
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-    QList<Entry*> getWebAuthnEntries(const QString& origin, const StringPairList& keyList);
+#ifdef WITH_XC_BROWSER_PASSKEYS
+    QList<Entry*> getPasskeyEntries(const QString& origin, const StringPairList& keyList);
     QList<Entry*>
-    getWebAuthnAllowedEntries(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
-    bool isWebAuthnCredentialExcluded(const QJsonArray& excludeCredentials,
-                                      const QString& origin,
-                                      const StringPairList& keyList);
-    QJsonObject getWebAuthnError(int errorCode) const;
+    getPasskeyAllowedEntries(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
+    bool isPasskeyCredentialExcluded(const QJsonArray& excludeCredentials,
+                                     const QString& origin,
+                                     const StringPairList& keyList);
+    QJsonObject getPasskeyError(int errorCode) const;
 #endif
     bool handleURL(const QString& entryUrl,
                    const QString& siteUrl,
@@ -203,8 +203,8 @@ private:
     Q_DISABLE_COPY(BrowserService);
 
     friend class TestBrowser;
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-    friend class TestWebAuthn;
+#ifdef WITH_XC_BROWSER_PASSKEYS
+    friend class TestPasskeys;
 #endif
 };
 

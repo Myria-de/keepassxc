@@ -32,7 +32,7 @@ class ReportsPageStatistics;
 #ifdef WITH_XC_BROWSER
 class ReportsPageBrowserStatistics;
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
 class ReportsPagePasskeys;
 #endif
 
@@ -63,7 +63,7 @@ public:
 
     void load(const QSharedPointer<Database>& db);
     void addPage(QSharedPointer<IReportsPage> page);
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     void activatePasskeysPage();
 #endif
 
@@ -84,7 +84,7 @@ private:
 #ifdef WITH_XC_BROWSER
     const QSharedPointer<ReportsPageBrowserStatistics> m_browserStatPage;
 #endif
-#ifdef WITH_XC_BROWSER_WEBAUTHN
+#ifdef WITH_XC_BROWSER_PASSKEYS
     const QSharedPointer<ReportsPagePasskeys> m_passkeysPage;
 #endif
     QPointer<EditEntryWidget> m_editEntryWidget;

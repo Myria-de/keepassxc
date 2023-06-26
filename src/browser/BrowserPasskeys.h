@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2023 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BROWSERWEBAUTHN_H
-#define BROWSERWEBAUTHN_H
+#ifndef BROWSERPASSKEYS_H
+#define BROWSERPASSKEYS_H
 
 #include "BrowserCbor.h"
 #include <QJsonObject>
@@ -73,14 +73,14 @@ struct PredefinedVariables
     QString second;
 };
 
-class BrowserWebAuthn : public QObject
+class BrowserPasskeys : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit BrowserWebAuthn() = default;
-    ~BrowserWebAuthn() = default;
-    static BrowserWebAuthn* instance();
+    explicit BrowserPasskeys() = default;
+    ~BrowserPasskeys() = default;
+    static BrowserPasskeys* instance();
 
     PublicKeyCredential buildRegisterPublicKeyCredential(const QJsonObject& publicKeyCredentialOptions,
                                                          const QString& origin,
@@ -117,17 +117,17 @@ private:
     WebAuthnAlgorithms getAlgorithmFromPublicKey(const QJsonObject& publicKey) const;
     QByteArray bigIntToQByteArray(Botan::BigInt& bigInt) const;
 
-    Q_DISABLE_COPY(BrowserWebAuthn);
+    Q_DISABLE_COPY(BrowserPasskeys);
 
-    friend class TestWebAuthn;
+    friend class TestPasskeys;
 
 private:
     BrowserCbor m_browserCbor;
 };
 
-static inline BrowserWebAuthn* browserWebAuthn()
+static inline BrowserPasskeys* browserPasskeys()
 {
-    return BrowserWebAuthn::instance();
+    return BrowserPasskeys::instance();
 }
 
-#endif // BROWSERWEBAUTHN_H
+#endif // BROWSERPASSKEYS_H

@@ -232,8 +232,8 @@ if(WITH_XC_BROWSER)
     add_unit_test(NAME testbrowser SOURCES TestBrowser.cpp
         LIBS ${TEST_LIBRARIES})
 
-    if(WITH_XC_BROWSER_WEBAUTHN)
-    add_unit_test(NAME testwebauthn SOURCES TestWebAuthn.cpp
+    if(WITH_XC_BROWSER_PASSKEYS)
+    add_unit_test(NAME testpasskeys SOURCES TestPasskeys.cpp
         LIBS ${TEST_LIBRARIES})
     endif()
 endif()

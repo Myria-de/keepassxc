@@ -79,9 +79,9 @@ private:
     QJsonObject handleGetTotp(const QJsonObject& json, const QString& action);
     QJsonObject handleDeleteEntry(const QJsonObject& json, const QString& action);
     QJsonObject handleGlobalAutoType(const QJsonObject& json, const QString& action);
-#ifdef WITH_XC_BROWSER_WEBAUTHN
-    QJsonObject handleWebAuthnGet(const QJsonObject& json, const QString& action);
-    QJsonObject handleWebAuthnRegister(const QJsonObject& json, const QString& action);
+#ifdef WITH_XC_BROWSER_PASSKEYS
+    QJsonObject handlePasskeysGet(const QJsonObject& json, const QString& action);
+    QJsonObject handlePasskeysRegister(const QJsonObject& json, const QString& action);
 #endif
 
 private:

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2023 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "BrowserWebAuthn.h"
+#include "BrowserPasskeys.h"
 #include "BrowserMessageBuilder.h"
 #include "BrowserService.h"
 #include "crypto/Random.h"
@@ -34,19 +34,19 @@
 
 #include <bitset>
 
-Q_GLOBAL_STATIC(BrowserWebAuthn, s_browserWebAuthn);
+Q_GLOBAL_STATIC(BrowserPasskeys, s_browserPasskeys);
 
-const QString BrowserWebAuthn::PUBLIC_KEY = QStringLiteral("public-key");
-const QString BrowserWebAuthn::REQUIREMENT_DISCOURAGED = QStringLiteral("discouraged");
-const QString BrowserWebAuthn::REQUIREMENT_PREFERRED = QStringLiteral("preferred");
-const QString BrowserWebAuthn::REQUIREMENT_REQUIRED = QStringLiteral("required");
+const QString BrowserPasskeys::PUBLIC_KEY = QStringLiteral("public-key");
+const QString BrowserPasskeys::REQUIREMENT_DISCOURAGED = QStringLiteral("discouraged");
+const QString BrowserPasskeys::REQUIREMENT_PREFERRED = QStringLiteral("preferred");
+const QString BrowserPasskeys::REQUIREMENT_REQUIRED = QStringLiteral("required");
 
-BrowserWebAuthn* BrowserWebAuthn::instance()
+BrowserPasskeys* BrowserPasskeys::instance()
 {
-    return s_browserWebAuthn;
+    return s_browserPasskeys;
 }
 
-PublicKeyCredential BrowserWebAuthn::buildRegisterPublicKeyCredential(const QJsonObject& publicKeyCredentialOptions,
+PublicKeyCredential BrowserPasskeys::buildRegisterPublicKeyCredential(const QJsonObject& publicKeyCredentialOptions,
                                                                       const QString& origin,
                                                                       const PredefinedVariables& predefinedVariables)
 {
@@ -77,7 +77,7 @@ PublicKeyCredential BrowserWebAuthn::buildRegisterPublicKeyCredential(const QJso
     return {id, publicKeyCredential, attestationObject.pem};
 }
 
-QJsonObject BrowserWebAuthn::buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
+QJsonObject BrowserPasskeys::buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                                          const QString& origin,
                                                          const QString& id,
                                                          const QString& privateKeyPem)
@@ -101,14 +101,14 @@ QJsonObject BrowserWebAuthn::buildGetPublicKeyCredential(const QJsonObject& publ
     return publicKeyCredential;
 }
 
-bool BrowserWebAuthn::isUserVerificationValid(const QString& userVerification) const
+bool BrowserPasskeys::isUserVerificationValid(const QString& userVerification) const
 {
     return QStringList({REQUIREMENT_PREFERRED, REQUIREMENT_REQUIRED, REQUIREMENT_DISCOURAGED})
         .contains(userVerification);
 }
 
 // See https://w3c.github.io/webauthn/#sctn-createCredential for default timeout values when not set in the request
-int BrowserWebAuthn::getTimeout(const QString& userVerification, int timeout) const
+int BrowserPasskeys::getTimeout(const QString& userVerification, int timeout) const
 {
     if (timeout == 0) {
         return userVerification == REQUIREMENT_DISCOURAGED ? DEFAULT_DISCOURAGED_TIMEOUT : DEFAULT_TIMEOUT;
@@ -117,7 +117,7 @@ int BrowserWebAuthn::getTimeout(const QString& userVerification, int timeout) co
     return timeout;
 }
 
-QStringList BrowserWebAuthn::getAllowedCredentialsFromPublicKey(const QJsonObject& publicKey) const
+QStringList BrowserPasskeys::getAllowedCredentialsFromPublicKey(const QJsonObject& publicKey) const
 {
     QStringList allowedCredentials;
     for (const auto& cred : publicKey["allowCredentials"].toArray()) {
@@ -132,7 +132,7 @@ QStringList BrowserWebAuthn::getAllowedCredentialsFromPublicKey(const QJsonObjec
     return allowedCredentials;
 }
 
-QJsonObject BrowserWebAuthn::buildClientDataJson(const QJsonObject& publicKey, const QString& origin, bool get)
+QJsonObject BrowserPasskeys::buildClientDataJson(const QJsonObject& publicKey, const QString& origin, bool get)
 {
     QJsonObject clientData;
     clientData["challenge"] = publicKey["challenge"];
@@ -144,7 +144,7 @@ QJsonObject BrowserWebAuthn::buildClientDataJson(const QJsonObject& publicKey, c
 }
 
 // https://w3c.github.io/webauthn/#attestation-object
-PrivateKey BrowserWebAuthn::buildAttestationObject(const QJsonObject& publicKey,
+PrivateKey BrowserPasskeys::buildAttestationObject(const QJsonObject& publicKey,
                                                    const QString& extensions,
                                                    const QString& id,
                                                    const PredefinedVariables& predefinedVariables)
@@ -197,7 +197,7 @@ PrivateKey BrowserWebAuthn::buildAttestationObject(const QJsonObject& publicKey,
 }
 
 // Build a short version of the attestation object for webauthn.get
-QByteArray BrowserWebAuthn::buildGetAttestationObject(const QJsonObject& publicKey)
+QByteArray BrowserPasskeys::buildGetAttestationObject(const QJsonObject& publicKey)
 {
     QByteArray result;
 
@@ -222,7 +222,7 @@ QByteArray BrowserWebAuthn::buildGetAttestationObject(const QJsonObject& publicK
 
 // See: https://w3c.github.io/webauthn/#sctn-encoded-credPubKey-examples
 PrivateKey
-BrowserWebAuthn::buildCredentialPrivateKey(int alg, const QString& predefinedFirst, const QString& predefinedSecond)
+BrowserPasskeys::buildCredentialPrivateKey(int alg, const QString& predefinedFirst, const QString& predefinedSecond)
 {
     // Only support -7, P256 (EC) and -257 (RSA) for now
     if (alg != WebAuthnAlgorithms::ES256 && alg != WebAuthnAlgorithms::RS256) {
@@ -273,7 +273,7 @@ BrowserWebAuthn::buildCredentialPrivateKey(int alg, const QString& predefinedFir
     return {result, pem};
 }
 
-QByteArray BrowserWebAuthn::buildSignature(const QByteArray& authenticatorData,
+QByteArray BrowserPasskeys::buildSignature(const QByteArray& authenticatorData,
                                            const QByteArray& clientData,
                                            const QString& privateKeyPem)
 {
@@ -321,7 +321,7 @@ QByteArray BrowserWebAuthn::buildSignature(const QByteArray& authenticatorData,
     }
 }
 
-QByteArray BrowserWebAuthn::buildExtensionData(QJsonObject& extensionObject) const
+QByteArray BrowserPasskeys::buildExtensionData(QJsonObject& extensionObject) const
 {
     // Only supports "credProps" and "uvm" for now
     const QStringList allowedKeys = {"credProps", "uvm"};
@@ -344,7 +344,7 @@ QByteArray BrowserWebAuthn::buildExtensionData(QJsonObject& extensionObject) con
 // Parse authentication data byte array to JSON
 // See: https://www.w3.org/TR/webauthn/images/fido-attestation-structures.svg
 // And: https://w3c.github.io/webauthn/#attested-credential-data
-QJsonObject BrowserWebAuthn::parseAuthData(const QByteArray& authData) const
+QJsonObject BrowserPasskeys::parseAuthData(const QByteArray& authData) const
 {
     auto rpIdHash = authData.mid(AuthDataOffsets::RPIDHASH, HASH_BYTES);
     auto flags = authData.mid(AuthDataOffsets::FLAGS, 1);
@@ -368,7 +368,7 @@ QJsonObject BrowserWebAuthn::parseAuthData(const QByteArray& authData) const
 }
 
 // See: https://w3c.github.io/webauthn/#table-authData
-QJsonObject BrowserWebAuthn::parseFlags(const QByteArray& flags) const
+QJsonObject BrowserPasskeys::parseFlags(const QByteArray& flags) const
 {
     if (flags.isEmpty()) {
         return {};
@@ -385,7 +385,7 @@ QJsonObject BrowserWebAuthn::parseFlags(const QByteArray& flags) const
                         {"UP", flagBits.test(AuthenticatorFlags::UP)}});
 }
 
-char BrowserWebAuthn::setFlagsFromJson(const QJsonObject& flags) const
+char BrowserPasskeys::setFlagsFromJson(const QJsonObject& flags) const
 {
     if (flags.isEmpty()) {
         return 0;
@@ -409,7 +409,7 @@ char BrowserWebAuthn::setFlagsFromJson(const QJsonObject& flags) const
 }
 
 // Returns the first supported algorithm from the pubKeyCredParams list (only support ES256 and RS256 for now)
-WebAuthnAlgorithms BrowserWebAuthn::getAlgorithmFromPublicKey(const QJsonObject& publicKey) const
+WebAuthnAlgorithms BrowserPasskeys::getAlgorithmFromPublicKey(const QJsonObject& publicKey) const
 {
     const auto pubKeyCredParams = publicKey["pubKeyCredParams"].toArray();
     if (!pubKeyCredParams.isEmpty()) {
@@ -422,7 +422,7 @@ WebAuthnAlgorithms BrowserWebAuthn::getAlgorithmFromPublicKey(const QJsonObject&
     return WebAuthnAlgorithms::ES256;
 }
 
-QByteArray BrowserWebAuthn::bigIntToQByteArray(Botan::BigInt& bigInt) const
+QByteArray BrowserPasskeys::bigIntToQByteArray(Botan::BigInt& bigInt) const
 {
     return browserMessageBuilder()->getArrayFromHexString(bigInt.to_hex_string().c_str());
 }
