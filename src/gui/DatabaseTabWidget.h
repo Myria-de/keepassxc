@@ -18,8 +18,8 @@
 #ifndef KEEPASSX_DATABASETABWIDGET_H
 #define KEEPASSX_DATABASETABWIDGET_H
 
-#include "config-keepassx.h"
 #include "DatabaseOpenDialog.h"
+#include "config-keepassx.h"
 #include "gui/MessageWidget.h"
 
 #include <QTabWidget>
