@@ -168,7 +168,7 @@
 {
     if ([[notification name] isEqualToString:NSWorkspaceSessionDidResignActiveNotification] && m_appkit)
     {
-        emit m_appkit->lockDatabasesOnUserSwitch();
+        emit m_appkit->userSwitched();
     }
 }
 
