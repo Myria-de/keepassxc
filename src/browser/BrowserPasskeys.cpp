@@ -80,6 +80,7 @@ PublicKeyCredential BrowserPasskeys::buildRegisterPublicKeyCredential(const QJso
 QJsonObject BrowserPasskeys::buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                                          const QString& origin,
                                                          const QString& id,
+                                                         const QString& userId,
                                                          const QString& privateKeyPem)
 {
     const auto authenticatorData = buildGetAttestationObject(publicKeyCredentialRequestOptions);
@@ -91,6 +92,7 @@ QJsonObject BrowserPasskeys::buildGetPublicKeyCredential(const QJsonObject& publ
     responseObject["authenticatorData"] = browserMessageBuilder()->getBase64FromArray(authenticatorData);
     responseObject["clientDataJSON"] = browserMessageBuilder()->getBase64FromArray(clientDataArray);
     responseObject["signature"] = browserMessageBuilder()->getBase64FromArray(signature);
+    responseObject["userHandle"] = userId;
 
     QJsonObject publicKeyCredential;
     publicKeyCredential["authenticatorAttachment"] = QString("platform");
@@ -424,5 +426,12 @@ WebAuthnAlgorithms BrowserPasskeys::getAlgorithmFromPublicKey(const QJsonObject&
 
 QByteArray BrowserPasskeys::bigIntToQByteArray(Botan::BigInt& bigInt) const
 {
-    return browserMessageBuilder()->getArrayFromHexString(bigInt.to_hex_string().c_str());
+    auto hexString = bigInt.to_hex_string();
+
+    // Botan might add a leading "0x" to the hex string depending on the version. Remove it.
+    if (hexString.starts_with(("0x"))) {
+        hexString.erase(0, 2);
+    }
+
+    return browserMessageBuilder()->getArrayFromHexString(hexString.c_str());
 }

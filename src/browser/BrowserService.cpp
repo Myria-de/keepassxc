@@ -68,6 +68,7 @@ const QString BrowserService::PASSKEYS_ATTESTATION_DIRECT = QStringLiteral("dire
 const QString BrowserService::PASSKEYS_ATTESTATION_NONE = QStringLiteral("none");
 const QString BrowserService::PASSKEYS_KEY_FILENAME = QStringLiteral("passkey.pem");
 const QString BrowserService::PASSKEYS_SIGNATURE_COUNT = QStringLiteral("PASSKEYS_SIGNATURE_COUNT");
+const QString BrowserService::PASSKEYS_USER_ID = QStringLiteral("PASSKEYS_USER_ID");
 
 Q_GLOBAL_STATIC(BrowserService, s_browserService);
 
@@ -656,6 +657,7 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
 
     const auto userJson = publicKey["user"].toObject();
     const auto username = userJson["name"].toString();
+    const auto userId = userJson["id"].toString();
     const auto siteId = publicKey["rp"]["id"].toString();
     const auto siteName = publicKey["rp"]["name"].toString();
     const auto timeoutValue = publicKey["timeout"].toInt();
@@ -692,7 +694,7 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
         entryParameters.password = publicKeyCredentials.id;
         entryParameters.siteUrl = origin;
 
-        browserService()->addEntry(entryParameters, "", "", false, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
+        browserService()->addEntry(entryParameters, "", "", false, userId, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
         hideWindow();
         return publicKeyCredentials.response;
     }
@@ -726,7 +728,8 @@ QJsonObject BrowserService::showPasskeysAuthenticationPrompt(const QJsonObject& 
     if (entries.count() == 1 && userVerification == BrowserPasskeys::REQUIREMENT_DISCOURAGED) {
         const auto privateKeyPem = entries.first()->attachments()->value(PASSKEYS_KEY_FILENAME);
         const auto id = entries.first()->password();
-        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
+        const auto userId = entries.first()->attributes()->value(PASSKEYS_USER_ID);
+        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, userId, privateKeyPem);
     }
 
     const auto timeout = publicKey["timeout"].toInt();
@@ -740,7 +743,8 @@ QJsonObject BrowserService::showPasskeysAuthenticationPrompt(const QJsonObject& 
         const auto selectedEntry = confirmDialog.getSelectedEntry();
         const auto privateKeyPem = selectedEntry->attachments()->value(PASSKEYS_KEY_FILENAME);
         const auto id = selectedEntry->password();
-        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, privateKeyPem);
+        const auto userId = selectedEntry->attributes()->value(PASSKEYS_USER_ID);
+        return browserPasskeys()->buildGetPublicKeyCredential(publicKey, origin, id, userId, privateKeyPem);
     }
 
     hideWindow();
@@ -752,6 +756,7 @@ void BrowserService::addEntry(const EntryParameters& entryParameters,
                               const QString& group,
                               const QString& groupUuid,
                               const bool downloadFavicon,
+                              const QString& userId,
                               const QString& attachmentFilename,
                               const QByteArray& attachmentFileData,
                               const QSharedPointer<Database>& selectedDb)
@@ -772,6 +777,11 @@ void BrowserService::addEntry(const EntryParameters& entryParameters,
 
     if (!attachmentFilename.isEmpty() && !attachmentFileData.isEmpty()) {
         entry->attachments()->set(attachmentFilename, attachmentFileData);
+    }
+
+    // Only used with Passkeys
+    if (!userId.isEmpty()) {
+        entry->attributes()->set(PASSKEYS_USER_ID, userId);
     }
 
     // Select a group for the entry
@@ -817,7 +827,7 @@ bool BrowserService::updateEntry(const EntryParameters& entryParameters, const Q
     auto entry = db->rootGroup()->findEntryByUuid(Tools::hexToUuid(uuid));
     if (!entry) {
         // If entry is not found for update, add a new one to the selected database
-        addEntry(entryParameters, "", "", false, "", "", db);
+        addEntry(entryParameters, "", "", false, "", "", "", db);
         return true;
     }
 
@@ -1277,7 +1287,11 @@ QList<Entry*> BrowserService::getPasskeyAllowedEntries(const QJsonObject& public
     const auto allowedCredentials = browserPasskeys()->getAllowedCredentialsFromPublicKey(publicKey);
 
     for (const auto& entry : getPasskeyEntries(origin, keyList)) {
-        if (allowedCredentials.contains(entry->password())) {
+        // If allowedCredentials.isEmpty() check if entry contains an extra attribute for user handle.
+        // If that is found, the entry should be allowed.
+        // See: https://w3c.github.io/webauthn/#dom-authenticatorassertionresponse-userhandle
+        if (allowedCredentials.contains(entry->password())
+            || (allowedCredentials.isEmpty() && entry->attributes()->hasKey(PASSKEYS_USER_ID))) {
             entries << entry;
         }
     }

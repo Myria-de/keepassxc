@@ -97,6 +97,7 @@ public:
                   const QString& group,
                   const QString& groupUuid,
                   const bool downloadFavicon,
+                  const QString& userId = {},
                   const QString& attachmentFilename = {},
                   const QByteArray& attachmentFileData = {},
                   const QSharedPointer<Database>& selectedDb = {});
@@ -117,6 +118,7 @@ public:
     static const QString PASSKEYS_ATTESTATION_NONE;
     static const QString PASSKEYS_KEY_FILENAME;
     static const QString PASSKEYS_SIGNATURE_COUNT;
+    static const QString PASSKEYS_USER_ID;
 
 signals:
     void requestUnlock();

@@ -88,6 +88,7 @@ public:
     QJsonObject buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                             const QString& origin,
                                             const QString& id,
+                                            const QString& userId,
                                             const QString& privateKeyPem);
     bool isUserVerificationValid(const QString& userVerification) const;
     int getTimeout(const QString& userVerification, int timeout) const;

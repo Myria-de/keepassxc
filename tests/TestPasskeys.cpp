@@ -390,8 +390,8 @@ void TestPasskeys::testGet()
     const auto publicKeyCredentialRequestOptions =
         browserMessageBuilder()->getJsonObject(PublicKeyCredentialRequestOptions.toUtf8());
 
-    auto publicKeyCredential =
-        browserPasskeys()->buildGetPublicKeyCredential(publicKeyCredentialRequestOptions, origin, id, privateKeyPem);
+    auto publicKeyCredential = browserPasskeys()->buildGetPublicKeyCredential(
+        publicKeyCredentialRequestOptions, origin, id, {}, privateKeyPem);
     QVERIFY(!publicKeyCredential.isEmpty());
     QCOMPARE(publicKeyCredential["id"].toString(), id);
 
