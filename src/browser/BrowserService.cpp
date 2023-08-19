@@ -694,7 +694,8 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
         entryParameters.password = publicKeyCredentials.id;
         entryParameters.siteUrl = origin;
 
-        browserService()->addEntry(entryParameters, "", "", false, userId, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
+        browserService()->addEntry(
+            entryParameters, "", "", false, userId, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
         hideWindow();
         return publicKeyCredentials.response;
     }

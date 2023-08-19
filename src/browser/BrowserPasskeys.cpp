@@ -426,12 +426,12 @@ WebAuthnAlgorithms BrowserPasskeys::getAlgorithmFromPublicKey(const QJsonObject&
 
 QByteArray BrowserPasskeys::bigIntToQByteArray(Botan::BigInt& bigInt) const
 {
-    auto hexString = bigInt.to_hex_string();
+    auto hexString = QString(bigInt.to_hex_string().c_str());
 
     // Botan might add a leading "0x" to the hex string depending on the version. Remove it.
-    if (hexString.starts_with(("0x"))) {
-        hexString.erase(0, 2);
+    if (hexString.startsWith(("0x"))) {
+        hexString.remove(0, 2);
     }
 
-    return browserMessageBuilder()->getArrayFromHexString(hexString.c_str());
+    return browserMessageBuilder()->getArrayFromHexString(hexString);
 }
