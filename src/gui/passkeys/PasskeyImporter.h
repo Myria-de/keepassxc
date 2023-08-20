@@ -39,6 +39,7 @@ private:
                           const QString& url,
                           const QString& username,
                           const QString& password,
+                          const QString& userHandle,
                           const QString& fileAttachment,
                           QFile& file);
 };

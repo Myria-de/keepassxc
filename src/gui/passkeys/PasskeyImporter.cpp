@@ -56,13 +56,14 @@ void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& 
     const auto url = fileStream.readLine();
     const auto username = fileStream.readLine();
     const auto password = fileStream.readLine();
+    const auto userHandle = fileStream.readLine();
 
     QString fileAttachment;
     while (!fileStream.atEnd()) {
         fileAttachment.append(fileStream.readLine() + "\n");
     }
 
-    if (url.isEmpty() || username.isEmpty() || password.isEmpty() || fileAttachment.isEmpty()) {
+    if (url.isEmpty() || username.isEmpty() || password.isEmpty() || userHandle.isEmpty() || fileAttachment.isEmpty()) {
         MessageBox::information(nullptr,
                                 tr("Cannot import Passkey"),
                                 tr("Cannot import Passkey file \"%1\". Data is missing.").arg(file.fileName()));
@@ -76,13 +77,14 @@ void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& 
         return;
     }
 
-    showImportDialog(database, url, username, password, fileAttachment, file);
+    showImportDialog(database, url, username, password, userHandle, fileAttachment, file);
 }
 
 void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
                                        const QString& url,
                                        const QString& username,
                                        const QString& password,
+                                       const QString& userHandle,
                                        const QString& fileAttachment,
                                        QFile& file)
 {
@@ -130,6 +132,7 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
     entry->setUrl(url);
     entry->setUsername(username);
     entry->setPassword(password);
+    entry->attributes()->set(BrowserService::PASSKEYS_USER_ID, userHandle);
     entry->setTitle(QString("%1 (%2)").arg(QFileInfo(file.fileName()).baseName(), tr("Passkey")));
     entry->attachments()->set(BrowserService::PASSKEYS_KEY_FILENAME, fileAttachment.toUtf8());
     entry->endUpdate();
