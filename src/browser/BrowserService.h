@@ -168,9 +168,9 @@ private:
     bool
     shouldIncludeEntry(Entry* entry, const QString& url, const QString& submitUrl, const bool omitWwwSubdomain = false);
 #ifdef WITH_XC_BROWSER_PASSKEYS
-    QList<Entry*> getPasskeyEntries(const QString& origin, const StringPairList& keyList);
+    QList<Entry*> getPasskeyEntries(const QString& rpId, const StringPairList& keyList);
     QList<Entry*>
-    getPasskeyAllowedEntries(const QJsonObject& publicKey, const QString& origin, const StringPairList& keyList);
+    getPasskeyAllowedEntries(const QJsonObject& publicKey, const QString& rpId, const StringPairList& keyList);
     bool isPasskeyCredentialExcluded(const QJsonArray& excludeCredentials,
                                      const QString& origin,
                                      const StringPairList& keyList);

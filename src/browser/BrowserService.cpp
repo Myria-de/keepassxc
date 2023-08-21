@@ -692,7 +692,7 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
         entryParameters.title = QString("%1 (%2)").arg(siteName, tr("Passkey"));
         entryParameters.login = username;
         entryParameters.password = publicKeyCredentials.id;
-        entryParameters.siteUrl = origin;
+        entryParameters.siteUrl = QString("https://%1").arg(siteId);
 
         browserService()->addEntry(
             entryParameters, "", "", false, userId, PASSKEYS_KEY_FILENAME, publicKeyCredentials.key);
@@ -720,7 +720,8 @@ QJsonObject BrowserService::showPasskeysAuthenticationPrompt(const QJsonObject& 
     }
 
     // Parse "allowCredentials"
-    const auto entries = getPasskeyAllowedEntries(publicKey, origin, keyList);
+    const auto rpId = publicKey["rpId"].toString();
+    const auto entries = getPasskeyAllowedEntries(publicKey, rpId, keyList);
     if (entries.isEmpty()) {
         return getPasskeyError(ERROR_KEEPASS_NO_LOGINS_FOUND);
     }
@@ -1267,11 +1268,11 @@ bool BrowserService::shouldIncludeEntry(Entry* entry,
 
 #ifdef WITH_XC_BROWSER_PASSKEYS
 // Returns all Passkey entries for the current site
-QList<Entry*> BrowserService::getPasskeyEntries(const QString& origin, const StringPairList& keyList)
+QList<Entry*> BrowserService::getPasskeyEntries(const QString& rpId, const StringPairList& keyList)
 {
     QList<Entry*> entries;
-    for (const auto& entry : searchEntries(origin, "", keyList)) {
-        if (entry->attachments()->hasKey(PASSKEYS_KEY_FILENAME) && entry->url() == origin) {
+    for (const auto& entry : searchEntries(rpId, "", keyList)) {
+        if (entry->attachments()->hasKey(PASSKEYS_KEY_FILENAME) && entry->url() == rpId) {
             entries << entry;
         }
     }
@@ -1281,13 +1282,13 @@ QList<Entry*> BrowserService::getPasskeyEntries(const QString& origin, const Str
 
 // Get all entries for the site that are allowed by the server
 QList<Entry*> BrowserService::getPasskeyAllowedEntries(const QJsonObject& publicKey,
-                                                       const QString& origin,
+                                                       const QString& rpId,
                                                        const StringPairList& keyList)
 {
     QList<Entry*> entries;
     const auto allowedCredentials = browserPasskeys()->getAllowedCredentialsFromPublicKey(publicKey);
 
-    for (const auto& entry : getPasskeyEntries(origin, keyList)) {
+    for (const auto& entry : getPasskeyEntries(QString("https://%1").arg(rpId), keyList)) {
         // If allowedCredentials.isEmpty() check if entry contains an extra attribute for user handle.
         // If that is found, the entry should be allowed.
         // See: https://w3c.github.io/webauthn/#dom-authenticatorassertionresponse-userhandle
