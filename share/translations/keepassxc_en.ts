@@ -846,6 +846,56 @@ Please select the correct database for saving credentials.</source>
     </message>
 </context>
 <context>
+    <name>BrowserPasskeysConfirmationDialog</name>
+    <message>
+        <source>KeePassXC: Passkey credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authenticate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to register Passkey credentials for:
+%1 (%2)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Existing Passkey found.
+Do you want to register a new Passkey for:
+%1 (%2)?
+Select the existing Passkey and press Update to replace it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Register new</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Register</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authenticate Passkey credentials for:%1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Timeout in &lt;b&gt;%n&lt;/b&gt; seconds...</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>BrowserService</name>
     <message>
         <source>KeePassXC: Create a new group</source>
@@ -901,7 +951,7 @@ Do you want to delete the entry?
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>WebAuthn</source>
+        <source>Passkey</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1148,41 +1198,6 @@ Do you want to delete the entry?
     </message>
     <message>
         <source>&lt;b&gt;Error:&lt;/b&gt; The installed proxy executable is missing from the expected location: %1&lt;br/&gt;Please set a custom proxy location in the advanced settings or reinstall the application.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>BrowserWebAuthnConfirmationDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Authenticate</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Do you want to register WebAuthn credentials for:
-%1 (%2)?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Register</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>Timeout in &lt;b&gt;%n&lt;/b&gt; seconds...</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>KeePassXC: WebAuthn credentials</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Authenticate WebAuthn credentials for:%1?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6055,6 +6070,10 @@ Do you want to overwrite it?
         <source>Cannot import Passkey file &quot;%1&quot;. Private key is missing or malformed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Passkey</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PasswordEditWidget</name>
@@ -8166,10 +8185,6 @@ Kernel: %3 %4</source>
     </message>
     <message>
         <source>Access to all entries is denied</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WebAuthn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

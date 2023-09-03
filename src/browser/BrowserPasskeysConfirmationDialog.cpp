@@ -27,14 +27,17 @@
 BrowserPasskeysConfirmationDialog::BrowserPasskeysConfirmationDialog(QWidget* parent)
     : QDialog(parent)
     , m_ui(new Ui::BrowserPasskeysConfirmationDialog())
+    , m_passkeyUpdated(false)
 {
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
     m_ui->setupUi(this);
+    m_ui->updateButton->setVisible(false);
 
     connect(m_ui->credentialsTable, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(accept()));
-    connect(m_ui->authenticateButton, SIGNAL(clicked()), SLOT(accept()));
+    connect(m_ui->confirmButton, SIGNAL(clicked()), SLOT(accept()));
     connect(m_ui->cancelButton, SIGNAL(clicked()), SLOT(reject()));
+    connect(m_ui->updateButton, SIGNAL(clicked()), SLOT(updatePasskey()));
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(updateProgressBar()));
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(updateSeconds()));
@@ -44,12 +47,25 @@ BrowserPasskeysConfirmationDialog::~BrowserPasskeysConfirmationDialog()
 {
 }
 
-void BrowserPasskeysConfirmationDialog::registerCredential(const QString& username, const QString& siteId, int timeout)
+void BrowserPasskeysConfirmationDialog::registerCredential(const QString& username,
+                                                           const QString& siteId,
+                                                           const QList<Entry*>& existingEntries,
+                                                           int timeout)
 {
     m_ui->confirmationLabel->setText(
         tr("Do you want to register Passkey credentials for:\n%1 (%2)?").arg(username, siteId));
-    m_ui->authenticateButton->setText(tr("Register"));
-    m_ui->credentialsTable->setVisible(false);
+
+    if (!existingEntries.isEmpty()) {
+        m_ui->confirmationLabel->setText(tr("Existing Passkey found.\nDo you want to register a new Passkey for:\n%1 "
+                                            "(%2)?\nSelect the existing Passkey and press Update to replace it.")
+                                             .arg(username, siteId));
+        m_ui->updateButton->setVisible(true);
+        m_ui->confirmButton->setText(tr("Register new"));
+        updateEntriesToTable(existingEntries);
+    } else {
+        m_ui->confirmButton->setText(tr("Register"));
+        m_ui->credentialsTable->setVisible(false);
+    }
 
     startCounter(timeout);
 }
@@ -58,34 +74,26 @@ void BrowserPasskeysConfirmationDialog::authenticateCredential(const QList<Entry
                                                                const QString& origin,
                                                                int timeout)
 {
-    m_entries = entries;
     m_ui->confirmationLabel->setText(tr("Authenticate Passkey credentials for:%1?").arg(origin));
-    m_ui->credentialsTable->setRowCount(entries.count());
-    m_ui->credentialsTable->setColumnCount(1);
-
-    int row = 0;
-    for (const auto& entry : entries) {
-        auto item = new QTableWidgetItem();
-        item->setText(entry->title() + " - " + entry->username());
-        m_ui->credentialsTable->setItem(row, 0, item);
-
-        if (row == 0) {
-            item->setSelected(true);
-        }
-
-        ++row;
-    }
-
-    m_ui->credentialsTable->resizeColumnsToContents();
-    m_ui->credentialsTable->horizontalHeader()->setStretchLastSection(true);
-
+    updateEntriesToTable(entries);
     startCounter(timeout);
 }
 
 Entry* BrowserPasskeysConfirmationDialog::getSelectedEntry() const
 {
     auto selectedItem = m_ui->credentialsTable->currentItem();
-    return m_entries[selectedItem->row()];
+    return selectedItem ? m_entries[selectedItem->row()] : nullptr;
+}
+
+bool BrowserPasskeysConfirmationDialog::isPasskeyUpdated() const
+{
+    return m_passkeyUpdated;
+}
+
+void BrowserPasskeysConfirmationDialog::updatePasskey()
+{
+    m_passkeyUpdated = true;
+    emit accept();
 }
 
 void BrowserPasskeysConfirmationDialog::updateProgressBar()
@@ -116,4 +124,27 @@ void BrowserPasskeysConfirmationDialog::startCounter(int timeout)
 void BrowserPasskeysConfirmationDialog::updateTimeoutLabel()
 {
     m_ui->timeoutLabel->setText(tr("Timeout in <b>%n</b> seconds...", "", m_ui->progressBar->maximum() - m_counter));
+}
+
+void BrowserPasskeysConfirmationDialog::updateEntriesToTable(const QList<Entry*>& entries)
+{
+    m_entries = entries;
+    m_ui->credentialsTable->setRowCount(entries.count());
+    m_ui->credentialsTable->setColumnCount(1);
+
+    int row = 0;
+    for (const auto& entry : entries) {
+        auto item = new QTableWidgetItem();
+        item->setText(entry->title() + " - " + entry->username());
+        m_ui->credentialsTable->setItem(row, 0, item);
+
+        if (row == 0) {
+            item->setSelected(true);
+        }
+
+        ++row;
+    }
+
+    m_ui->credentialsTable->resizeColumnsToContents();
+    m_ui->credentialsTable->horizontalHeader()->setStretchLastSection(true);
 }

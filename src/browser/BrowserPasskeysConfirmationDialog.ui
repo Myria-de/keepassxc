@@ -93,7 +93,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="authenticateButton">
+      <widget class="QPushButton" name="updateButton">
+       <property name="text">
+        <string>Update</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="confirmButton">
        <property name="text">
         <string>Authenticate</string>
        </property>

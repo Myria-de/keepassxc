@@ -37,23 +37,30 @@ public:
     explicit BrowserPasskeysConfirmationDialog(QWidget* parent = nullptr);
     ~BrowserPasskeysConfirmationDialog() override;
 
-    void registerCredential(const QString& username, const QString& siteId, int timeout);
+    void registerCredential(const QString& username,
+                            const QString& siteId,
+                            const QList<Entry*>& existingEntries,
+                            int timeout);
     void authenticateCredential(const QList<Entry*>& entries, const QString& origin, int timeout);
     Entry* getSelectedEntry() const;
+    bool isPasskeyUpdated() const;
 
 private slots:
+    void updatePasskey();
     void updateProgressBar();
     void updateSeconds();
 
 private:
     void startCounter(int timeout);
     void updateTimeoutLabel();
+    void updateEntriesToTable(const QList<Entry*>& entries);
 
 private:
     QScopedPointer<Ui::BrowserPasskeysConfirmationDialog> m_ui;
     QList<Entry*> m_entries;
     QTimer m_timer;
     int m_counter;
+    bool m_passkeyUpdated;
 };
 
 #endif // KEEPASSXC_BROWSERPASSKEYSCONFIRMATIONDIALOG_H

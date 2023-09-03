@@ -97,7 +97,8 @@ public:
                          const QString& username,
                          const QString& userId,
                          const QString& userHandle,
-                         const QString& privateKey);
+                         const QString& privateKey,
+                         Entry* existingEntry = nullptr);
 #endif
     void addEntry(const EntryParameters& entryParameters,
                   const QString& group,
