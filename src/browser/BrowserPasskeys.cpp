@@ -41,6 +41,14 @@ const QString BrowserPasskeys::REQUIREMENT_DISCOURAGED = QStringLiteral("discour
 const QString BrowserPasskeys::REQUIREMENT_PREFERRED = QStringLiteral("preferred");
 const QString BrowserPasskeys::REQUIREMENT_REQUIRED = QStringLiteral("required");
 
+const QString BrowserPasskeys::PASSKEYS_ATTESTATION_DIRECT = QStringLiteral("direct");
+const QString BrowserPasskeys::PASSKEYS_ATTESTATION_NONE = QStringLiteral("none");
+
+const QString BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID = QStringLiteral("KPEX_PASSKEY_GENERATED_USER_ID");
+const QString BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM = QStringLiteral("KPEX_PASSKEY_PRIVATE_KEY_PEM");
+const QString BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY = QStringLiteral("KPEX_PASSKEY_RELYING_PARTY");
+const QString BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE = QStringLiteral("KPEX_PASSKEY_USER_HANDLE");
+
 BrowserPasskeys* BrowserPasskeys::instance()
 {
     return s_browserPasskeys;
@@ -79,8 +87,8 @@ PublicKeyCredential BrowserPasskeys::buildRegisterPublicKeyCredential(const QJso
 
 QJsonObject BrowserPasskeys::buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                                          const QString& origin,
-                                                         const QString& id,
                                                          const QString& userId,
+                                                         const QString& userHandle,
                                                          const QString& privateKeyPem)
 {
     const auto authenticatorData = buildGetAttestationObject(publicKeyCredentialRequestOptions);
@@ -92,11 +100,11 @@ QJsonObject BrowserPasskeys::buildGetPublicKeyCredential(const QJsonObject& publ
     responseObject["authenticatorData"] = browserMessageBuilder()->getBase64FromArray(authenticatorData);
     responseObject["clientDataJSON"] = browserMessageBuilder()->getBase64FromArray(clientDataArray);
     responseObject["signature"] = browserMessageBuilder()->getBase64FromArray(signature);
-    responseObject["userHandle"] = userId;
+    responseObject["userHandle"] = userHandle;
 
     QJsonObject publicKeyCredential;
     publicKeyCredential["authenticatorAttachment"] = QString("platform");
-    publicKeyCredential["id"] = id;
+    publicKeyCredential["id"] = userId;
     publicKeyCredential["response"] = responseObject;
     publicKeyCredential["type"] = PUBLIC_KEY;
 

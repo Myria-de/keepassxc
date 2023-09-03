@@ -17,7 +17,7 @@
 
 #include "PasskeyImporter.h"
 #include "PasskeyImportDialog.h"
-#include "browser/BrowserService.h"
+#include "browser/BrowserPasskeys.h"
 #include "core/Entry.h"
 #include "core/Group.h"
 #include "gui/FileDialog.h"
@@ -53,23 +53,24 @@ void PasskeyImporter::importPasskey(QSharedPointer<Database>& database)
 void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& database)
 {
     QTextStream fileStream(&file);
-    const auto url = fileStream.readLine();
+    const auto relyingParty = fileStream.readLine();
     const auto username = fileStream.readLine();
     const auto password = fileStream.readLine();
     const auto userHandle = fileStream.readLine();
 
-    QString fileAttachment;
+    QString privateKey;
     while (!fileStream.atEnd()) {
-        fileAttachment.append(fileStream.readLine() + "\n");
+        privateKey.append(fileStream.readLine() + "\n");
     }
 
-    if (url.isEmpty() || username.isEmpty() || password.isEmpty() || userHandle.isEmpty() || fileAttachment.isEmpty()) {
+    if (relyingParty.isEmpty() || username.isEmpty() || password.isEmpty() || userHandle.isEmpty()
+        || privateKey.isEmpty()) {
         MessageBox::information(nullptr,
                                 tr("Cannot import Passkey"),
                                 tr("Cannot import Passkey file \"%1\". Data is missing.").arg(file.fileName()));
         return;
-    } else if (!fileAttachment.startsWith("-----BEGIN PRIVATE KEY-----")
-               || !fileAttachment.endsWith("-----END PRIVATE KEY-----\n")) {
+    } else if (!privateKey.startsWith("-----BEGIN PRIVATE KEY-----")
+               || !privateKey.endsWith("-----END PRIVATE KEY-----\n")) {
         MessageBox::information(
             nullptr,
             tr("Cannot import Passkey"),
@@ -77,19 +78,21 @@ void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& 
         return;
     }
 
-    showImportDialog(database, url, username, password, userHandle, fileAttachment, file);
+    showImportDialog(
+        database, QFileInfo(file).completeBaseName(), relyingParty, username, password, userHandle, privateKey);
 }
 
 void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
-                                       const QString& url,
+                                       const QString& filename,
+                                       const QString& relyingParty,
                                        const QString& username,
                                        const QString& password,
                                        const QString& userHandle,
-                                       const QString& fileAttachment,
-                                       QFile& file)
+                                       const QString& privateKey)
 {
+    Q_UNUSED(filename)
     PasskeyImportDialog passkeyImportDialog;
-    passkeyImportDialog.setInfo(url, username, database);
+    passkeyImportDialog.setInfo(relyingParty, username, database);
 
     auto ret = passkeyImportDialog.exec();
     if (ret != QDialog::Accepted) {
@@ -126,14 +129,11 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
         entry->setGroup(group);
     }
 
-    // Update entry data
-    entry->beginUpdate();
     entry->setUuid(QUuid::createUuid());
-    entry->setUrl(url);
+    entry->setTitle(QString("%1 (%2)").arg(relyingParty, tr("Passkey")));
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, relyingParty);
     entry->setUsername(username);
-    entry->setPassword(password);
-    entry->attributes()->set(BrowserService::PASSKEYS_USER_ID, userHandle);
-    entry->setTitle(QString("%1 (%2)").arg(QFileInfo(file.fileName()).baseName(), tr("Passkey")));
-    entry->attachments()->set(BrowserService::PASSKEYS_KEY_FILENAME, fileAttachment.toUtf8());
-    entry->endUpdate();
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, password);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE, userHandle);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM, privateKey);
 }

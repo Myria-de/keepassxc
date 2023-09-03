@@ -87,8 +87,8 @@ public:
                                                          const PredefinedVariables& predefinedVariables = {});
     QJsonObject buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                             const QString& origin,
-                                            const QString& id,
                                             const QString& userId,
+                                            const QString& userHandle,
                                             const QString& privateKeyPem);
     bool isUserVerificationValid(const QString& userVerification) const;
     int getTimeout(const QString& userVerification, int timeout) const;
@@ -98,6 +98,14 @@ public:
     static const QString REQUIREMENT_DISCOURAGED;
     static const QString REQUIREMENT_PREFERRED;
     static const QString REQUIREMENT_REQUIRED;
+
+    static const QString PASSKEYS_ATTESTATION_DIRECT;
+    static const QString PASSKEYS_ATTESTATION_NONE;
+
+    static const QString KPEX_PASSKEY_GENERATED_USER_ID;
+    static const QString KPEX_PASSKEY_PRIVATE_KEY_PEM;
+    static const QString KPEX_PASSKEY_RELYING_PARTY;
+    static const QString KPEX_PASSKEY_USER_HANDLE;
 
 private:
     QJsonObject buildClientDataJson(const QJsonObject& publicKey, const QString& origin, bool get);

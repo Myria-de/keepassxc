@@ -36,12 +36,12 @@ public:
 private:
     void importSelectedFile(QFile& file, QSharedPointer<Database>& database);
     void showImportDialog(QSharedPointer<Database>& database,
-                          const QString& url,
+                          const QString& filename,
+                          const QString& relyingParty,
                           const QString& username,
                           const QString& password,
                           const QString& userHandle,
-                          const QString& fileAttachment,
-                          QFile& file);
+                          const QString& privateKey);
 };
 
 #endif // KEEPASSXC_PASSKEYIMPORTER_H

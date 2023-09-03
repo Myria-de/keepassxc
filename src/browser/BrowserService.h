@@ -92,14 +92,17 @@ public:
     QJsonObject showPasskeysAuthenticationPrompt(const QJsonObject& publicKey,
                                                  const QString& origin,
                                                  const StringPairList& keyList);
+    void addPasskeyEntry(const QString& rpId,
+                         const QString& rpName,
+                         const QString& username,
+                         const QString& userId,
+                         const QString& userHandle,
+                         const QString& privateKey);
 #endif
     void addEntry(const EntryParameters& entryParameters,
                   const QString& group,
                   const QString& groupUuid,
                   const bool downloadFavicon,
-                  const QString& userId = {},
-                  const QString& attachmentFilename = {},
-                  const QByteArray& attachmentFileData = {},
                   const QSharedPointer<Database>& selectedDb = {});
     bool updateEntry(const EntryParameters& entryParameters, const QString& uuid);
     bool deleteEntry(const QString& uuid);
@@ -114,11 +117,6 @@ public:
     static const QString OPTION_NOT_HTTP_AUTH;
     static const QString OPTION_OMIT_WWW;
     static const QString ADDITIONAL_URL;
-    static const QString PASSKEYS_ATTESTATION_DIRECT;
-    static const QString PASSKEYS_ATTESTATION_NONE;
-    static const QString PASSKEYS_KEY_FILENAME;
-    static const QString PASSKEYS_SIGNATURE_COUNT;
-    static const QString PASSKEYS_USER_ID;
 
 signals:
     void requestUnlock();
@@ -147,8 +145,12 @@ private:
         Hidden
     };
 
-    QList<Entry*> searchEntries(const QSharedPointer<Database>& db, const QString& siteUrl, const QString& formUrl);
-    QList<Entry*> searchEntries(const QString& siteUrl, const QString& formUrl, const StringPairList& keyList);
+    QList<Entry*> searchEntries(const QSharedPointer<Database>& db,
+                                const QString& siteUrl,
+                                const QString& formUrl,
+                                bool passkey = false);
+    QList<Entry*>
+    searchEntries(const QString& siteUrl, const QString& formUrl, const StringPairList& keyList, bool passkey = false);
     QList<Entry*> sortEntries(QList<Entry*>& entries, const QString& siteUrl, const QString& formUrl);
     QList<Entry*> confirmEntries(QList<Entry*>& entriesToConfirm,
                                  const EntryParameters& entryParameters,
@@ -171,6 +173,8 @@ private:
     QList<Entry*> getPasskeyEntries(const QString& rpId, const StringPairList& keyList);
     QList<Entry*>
     getPasskeyAllowedEntries(const QJsonObject& publicKey, const QString& rpId, const StringPairList& keyList);
+    QJsonObject
+    getPublicKeyCredentialFromEntry(const Entry* entry, const QJsonObject& publicKey, const QString& origin);
     bool isPasskeyCredentialExcluded(const QJsonArray& excludeCredentials,
                                      const QString& origin,
                                      const StringPairList& keyList);

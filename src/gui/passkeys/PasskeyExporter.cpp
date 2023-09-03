@@ -18,7 +18,7 @@
 #include "PasskeyExporter.h"
 #include "PasskeyExportDialog.h"
 
-#include "browser/BrowserService.h"
+#include "browser/BrowserPasskeys.h"
 #include "core/Entry.h"
 #include "gui/MessageBox.h"
 #include <QFile>
@@ -82,11 +82,11 @@ void PasskeyExporter::exportSelectedEntry(const Entry* entry, const QString& fol
     }
 
     QTextStream fileStream(&passkeyFile);
-    fileStream << entry->url() << "\n";
+    fileStream << entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY) << "\n";
     fileStream << entry->username() << "\n";
-    fileStream << entry->password() << "\n";
-    fileStream << entry->attributes()->value(BrowserService::PASSKEYS_USER_ID) << "\n";
-    fileStream << entry->attachments()->value(BrowserService::PASSKEYS_KEY_FILENAME);
+    fileStream << entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID) << "\n";
+    fileStream << entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE) << "\n";
+    fileStream << entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM);
 
     passkeyFile.close();
 }

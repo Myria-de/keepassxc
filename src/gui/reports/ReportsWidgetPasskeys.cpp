@@ -18,7 +18,7 @@
 #include "ReportsWidgetPasskeys.h"
 #include "ui_ReportsWidgetPasskeys.h"
 
-#include "browser/BrowserService.h"
+#include "browser/BrowserPasskeys.h"
 #include "core/AsyncTask.h"
 #include "core/Group.h"
 #include "core/Metadata.h"
@@ -75,7 +75,7 @@ PasskeyList::PasskeyList(const QSharedPointer<Database>& db)
         }
 
         for (auto entry : group->entries()) {
-            if (entry->isRecycled() || !entry->attachments()->hasKey(BrowserService::PASSKEYS_KEY_FILENAME)) {
+            if (entry->isRecycled() || !entry->attributes()->hasKey(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM)) {
                 continue;
             }
 
