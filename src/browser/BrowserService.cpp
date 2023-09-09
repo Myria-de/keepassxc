@@ -59,6 +59,8 @@ const QString BrowserService::OPTION_OMIT_WWW = QStringLiteral("BrowserOmitWww")
 // Multiple URL's
 const QString BrowserService::ADDITIONAL_URL = QStringLiteral("KP2A_URL");
 
+const QString BrowserService::URL_WILDCARD = "1kpxcwc1";
+
 Q_GLOBAL_STATIC(BrowserService, s_browserService);
 
 BrowserService::BrowserService()
@@ -1142,11 +1144,19 @@ bool BrowserService::handleURL(const QString& entryUrl,
         return false;
     }
 
+    const auto isWildcardUrl = entryUrl.contains("*");
+
+    // Replace wildcards
+    auto tempUrl = entryUrl;
+    if (isWildcardUrl) {
+        tempUrl = tempUrl.replace("*", BrowserService::URL_WILDCARD);
+    }
+
     QUrl entryQUrl;
     if (entryUrl.contains("://")) {
-        entryQUrl = entryUrl;
+        entryQUrl = tempUrl;
     } else {
-        entryQUrl = QUrl::fromUserInput(entryUrl);
+        entryQUrl = QUrl::fromUserInput(tempUrl);
 
         if (browserSettings()->matchUrlScheme()) {
             entryQUrl.setScheme("https");
@@ -1170,7 +1180,7 @@ bool BrowserService::handleURL(const QString& entryUrl,
 
     // Match port, if used
     QUrl siteQUrl(siteUrl);
-    if (entryQUrl.port() > 0 && entryQUrl.port() != siteQUrl.port()) {
+    if ((entryQUrl.port() > 0) && entryQUrl.port() != siteQUrl.port()) {
         return false;
     }
 
@@ -1186,6 +1196,11 @@ bool BrowserService::handleURL(const QString& entryUrl,
         return false;
     }
 
+    // Use wildcard matching instead
+    if (isWildcardUrl) {
+        return handleURLWithWildcards(entryQUrl, siteUrl);
+    }
+
     // Match the base domain
     if (getTopLevelDomainFromUrl(siteQUrl.host()) != getTopLevelDomainFromUrl(entryQUrl.host())) {
         return false;
@@ -1197,7 +1212,47 @@ bool BrowserService::handleURL(const QString& entryUrl,
     }
 
     return false;
-};
+}
+
+bool BrowserService::handleURLWithWildcards(const QUrl& entryQUrl, const QString& siteUrl)
+{
+    auto matchWithRegex = [&](QString firstPart, const QString& secondPart, bool hostnameUsed = false) {
+        if (firstPart == secondPart) {
+            return true;
+        }
+
+        // If there's no wildcard with hostname, just compare directly
+        if (hostnameUsed && !firstPart.contains(BrowserService::URL_WILDCARD) && firstPart != secondPart) {
+            return false;
+        }
+
+        // Escape illegal characters
+        auto re = firstPart.replace(QRegularExpression(R"(([!\^\$\+\-\(\)@<>]))"), "\\\\1");
+
+        if (hostnameUsed) {
+            // Replace all host parts with wildcards
+            re = re.replace(QString("%1.").arg(BrowserService::URL_WILDCARD), "(.*?)");
+        }
+
+        // Append a + to the end of regex to match all paths after the last asterisk
+        if (re.endsWith(BrowserService::URL_WILDCARD)) {
+            re.append("+");
+        }
+
+        // Replace any remaining wildcards for paths
+        re = re.replace(BrowserService::URL_WILDCARD, "(.*?)");
+        return QRegularExpression(re).match(secondPart).hasMatch();
+    };
+
+    // Match hostname and path
+    QUrl siteQUrl = siteUrl;
+    if (!matchWithRegex(entryQUrl.host(), siteQUrl.host(), true)
+        || !matchWithRegex(entryQUrl.path(), siteQUrl.path())) {
+        return false;
+    }
+
+    return true;
+}
 
 /**
  * Gets the base domain of URL.
