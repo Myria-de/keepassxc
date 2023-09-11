@@ -683,8 +683,8 @@ void TestBrowser::testValidURLs()
     QHash<QString, bool> urls;
     urls["https://github.com/login"] = true;
     urls["https:///github.com/"] = false;
-    urls["http://github.com/**//*"] = false;
-    urls["http://*.github.com/login"] = false;
+    urls["http://github.com/**//*"] = true;
+    urls["http://*.github.com/login"] = true;
     urls["//github.com"] = true;
     urls["github.com/{}<>"] = false;
     urls["http:/example.com"] = false;
