@@ -249,16 +249,19 @@ void TestBrowser::testSearchEntries()
     auto db = QSharedPointer<Database>::create();
     auto* root = db->rootGroup();
 
-    QStringList urls = {"https://github.com/login_page",
-                        "https://github.com/login",
-                        "https://github.com/",
-                        "github.com/login",
-                        "http://github.com",
-                        "http://github.com/login",
-                        "github.com",
-                        "github.com/login",
-                        "https://github", // Invalid URL
-                        "github.com"};
+    QStringList urls = {
+        "https://github.com/login_page",
+        "https://github.com/login",
+        "https://github.com/",
+        "github.com/login",
+        "http://github.com",
+        "http://github.com/login",
+        "github.com",
+        "github.com/login",
+        "https://github", // Invalid URL
+        "github.com",
+        "\"https://github.com\"" // Exact URL
+    };
 
     createEntries(urls, root);
 
@@ -266,7 +269,7 @@ void TestBrowser::testSearchEntries()
     auto result =
         m_browserService->searchEntries(db, "https://github.com", "https://github.com/session"); // db, url, submitUrl
 
-    QCOMPARE(result.length(), 9);
+    QCOMPARE(result.length(), 10);
     QCOMPARE(result[0]->url(), QString("https://github.com/login_page"));
     QCOMPARE(result[1]->url(), QString("https://github.com/login"));
     QCOMPARE(result[2]->url(), QString("https://github.com/"));
@@ -274,10 +277,10 @@ void TestBrowser::testSearchEntries()
     QCOMPARE(result[4]->url(), QString("http://github.com"));
     QCOMPARE(result[5]->url(), QString("http://github.com/login"));
 
-    // With matching there should be only 3 results + 4 without a scheme
+    // With matching there should be only 4 results + 4 without a scheme
     browserSettings()->setMatchUrlScheme(true);
     result = m_browserService->searchEntries(db, "https://github.com", "https://github.com/session");
-    QCOMPARE(result.length(), 7);
+    QCOMPARE(result.length(), 8);
     QCOMPARE(result[0]->url(), QString("https://github.com/login_page"));
     QCOMPARE(result[1]->url(), QString("https://github.com/login"));
     QCOMPARE(result[2]->url(), QString("https://github.com/"));

@@ -275,7 +275,8 @@ namespace Tools
     {
         if (urlField.isEmpty() || urlField.startsWith("cmd://", Qt::CaseInsensitive)
             || urlField.startsWith("kdbx://", Qt::CaseInsensitive)
-            || urlField.startsWith("{REF:A", Qt::CaseInsensitive)) {
+            || urlField.startsWith("{REF:A", Qt::CaseInsensitive)
+            || (urlField.startsWith("\"") && urlField.endsWith("\""))) {
             return true;
         }
 

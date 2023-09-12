@@ -564,8 +564,9 @@ bool BrowserService::isUrlIdentical(const QString& first, const QString& second)
         return false;
     }
 
-    const auto firstUrl = trimUrl(first);
-    const auto secondUrl = trimUrl(second);
+    // Replace URL wildcards for comparison if found
+    const auto firstUrl = trimUrl(QString(first).replace("*", BrowserService::URL_WILDCARD));
+    const auto secondUrl = trimUrl(QString(second).replace("*", BrowserService::URL_WILDCARD));
     if (firstUrl == secondUrl) {
         return true;
     }
@@ -1142,6 +1143,11 @@ bool BrowserService::handleURL(const QString& entryUrl,
 {
     if (entryUrl.isEmpty()) {
         return false;
+    }
+
+    // Exact match where URL is wrapped inside " characters
+    if (entryUrl.startsWith("\"") && entryUrl.endsWith("\"") && entryUrl.midRef(1, entryUrl.length() - 2) == siteUrl) {
+        return true;
     }
 
     const auto isWildcardUrl = entryUrl.contains("*");
