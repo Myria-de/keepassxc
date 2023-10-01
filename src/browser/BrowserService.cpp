@@ -686,10 +686,17 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
 
         if (confirmDialog.isPasskeyUpdated()) {
             auto updatedEntry = confirmDialog.getSelectedEntry();
-            addPasskeyEntry(
-                rpId, rpName, username, publicKeyCredentials.id, userHandle, publicKeyCredentials.key, updatedEntry);
+            addPasskeyEntry(origin,
+                            rpId,
+                            rpName,
+                            username,
+                            publicKeyCredentials.id,
+                            userHandle,
+                            publicKeyCredentials.key,
+                            updatedEntry);
         } else {
-            addPasskeyEntry(rpId, rpName, username, publicKeyCredentials.id, userHandle, publicKeyCredentials.key);
+            addPasskeyEntry(
+                origin, rpId, rpName, username, publicKeyCredentials.id, userHandle, publicKeyCredentials.key);
         }
 
         hideWindow();
@@ -743,7 +750,8 @@ QJsonObject BrowserService::showPasskeysAuthenticationPrompt(const QJsonObject& 
     return getPasskeyError(ERROR_PASSKEYS_REQUEST_CANCELED);
 }
 
-void BrowserService::addPasskeyEntry(const QString& rpId,
+void BrowserService::addPasskeyEntry(const QString& url,
+                                     const QString& rpId,
                                      const QString& rpName,
                                      const QString& username,
                                      const QString& userId,
@@ -765,6 +773,7 @@ void BrowserService::addPasskeyEntry(const QString& rpId,
     entry->setIcon(KEEPASSXCBROWSER_DEFAULT_ICON);
     entry->setGroup(getDefaultEntryGroup(db));
     entry->setTitle(QString("%1 (%2)").arg(rpName, tr("Passkey")));
+    entry->setUrl(url);
     entry->setUsername(username);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, userId, true);

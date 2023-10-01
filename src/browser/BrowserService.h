@@ -92,7 +92,8 @@ public:
     QJsonObject showPasskeysAuthenticationPrompt(const QJsonObject& publicKey,
                                                  const QString& origin,
                                                  const StringPairList& keyList);
-    void addPasskeyEntry(const QString& rpId,
+    void addPasskeyEntry(const QString& url,
+                         const QString& rpId,
                          const QString& rpName,
                          const QString& username,
                          const QString& userId,

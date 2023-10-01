@@ -198,7 +198,7 @@ void ReportsWidgetPasskeys::updateEntries()
         m_referencesModel->setHorizontalHeaderLabels(QStringList() << tr("No entries with Passkeys."));
     } else {
         m_referencesModel->setHorizontalHeaderLabels(QStringList()
-                                                     << tr("Title") << tr("Path") << tr("Username") << tr("URLs"));
+                                                     << tr("Title") << tr("Path") << tr("Username") << tr("URL"));
         m_ui->passkeysTableView->sortByColumn(0, Qt::AscendingOrder);
     }
 

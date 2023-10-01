@@ -37,6 +37,7 @@ private:
     void importSelectedFile(QFile& file, QSharedPointer<Database>& database);
     void showImportDialog(QSharedPointer<Database>& database,
                           const QString& filename,
+                          const QString& url,
                           const QString& relyingParty,
                           const QString& username,
                           const QString& password,

@@ -54,6 +54,7 @@ void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& 
 {
     QTextStream fileStream(&file);
     const auto relyingParty = fileStream.readLine();
+    const auto url = fileStream.readLine();
     const auto username = fileStream.readLine();
     const auto password = fileStream.readLine();
     const auto userHandle = fileStream.readLine();
@@ -79,11 +80,12 @@ void PasskeyImporter::importSelectedFile(QFile& file, QSharedPointer<Database>& 
     }
 
     showImportDialog(
-        database, QFileInfo(file).completeBaseName(), relyingParty, username, password, userHandle, privateKey);
+        database, QFileInfo(file).completeBaseName(), url, relyingParty, username, password, userHandle, privateKey);
 }
 
 void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
                                        const QString& filename,
+                                       const QString& url,
                                        const QString& relyingParty,
                                        const QString& username,
                                        const QString& password,
@@ -131,8 +133,9 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
 
     entry->setUuid(QUuid::createUuid());
     entry->setTitle(QString("%1 (%2)").arg(relyingParty, tr("Passkey")));
+    entry->setUrl(url);
     entry->setUsername(username);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username, true);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, relyingParty);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, password, true);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE, userHandle, true);
