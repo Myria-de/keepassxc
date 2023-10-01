@@ -134,6 +134,7 @@ void ReportsWidgetPasskeys::addPasskeyRow(Group* group, Entry* entry, bool exclu
     row << new QStandardItem(Icons::entryIconPixmap(entry), title);
     row << new QStandardItem(Icons::groupIconPixmap(group), group->hierarchy().join("/"));
     row << new QStandardItem(entry->username());
+    row << new QStandardItem(entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY));
     row << new QStandardItem(urlList.join('\n'));
 
     // Set tooltips
@@ -197,8 +198,8 @@ void ReportsWidgetPasskeys::updateEntries()
     if (m_referencesModel->rowCount() == 0) {
         m_referencesModel->setHorizontalHeaderLabels(QStringList() << tr("No entries with Passkeys."));
     } else {
-        m_referencesModel->setHorizontalHeaderLabels(QStringList()
-                                                     << tr("Title") << tr("Path") << tr("Username") << tr("URL"));
+        m_referencesModel->setHorizontalHeaderLabels(QStringList() << tr("Title") << tr("Path") << tr("Username")
+                                                                   << tr("Relying Party") << tr("URLs"));
         m_ui->passkeysTableView->sortByColumn(0, Qt::AscendingOrder);
     }
 
