@@ -8568,6 +8568,10 @@ Kernel: %3 %4</source>
         <source>Exclude from reports</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Relying Party</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ReportsWidgetStatistics</name>
