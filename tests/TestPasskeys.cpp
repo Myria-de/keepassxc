@@ -256,8 +256,8 @@ void TestPasskeys::testCreatingAttestationObjectWithEC()
     auto rpIdHash = browserMessageBuilder()->getSha256HashAsBase64(QString("webauthn.io"));
     QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
 
-    PredefinedVariables predefinedVariables = {id, predefinedFirst, predefinedSecond};
-    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
+    TestingVariables testingVariables = {id, predefinedFirst, predefinedSecond};
+    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, testingVariables);
     QCOMPARE(
         QString(result.cborEncoded),
         QString("\xA3"
@@ -317,8 +317,8 @@ void TestPasskeys::testCreatingAttestationObjectWithRSA()
     auto rpIdHash = browserMessageBuilder()->getSha256HashAsBase64(QString("webauthn.io"));
     QCOMPARE(rpIdHash, QString("dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvA"));
 
-    PredefinedVariables predefinedVariables = {id, predefinedModulus, predefinedExponent};
-    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, predefinedVariables);
+    TestingVariables testingVariables = {id, predefinedModulus, predefinedExponent};
+    auto result = browserPasskeys()->buildAttestationObject(publicKeyCredentialOptions, "", id, testingVariables);
 
     // Double check that the result can be decoded
     BrowserCbor browserCbor;
@@ -356,9 +356,9 @@ void TestPasskeys::testRegister()
     const auto testDataResponse = testDataPublicKey["response"];
     const auto publicKeyCredentialOptions = browserMessageBuilder()->getJsonObject(PublicKeyCredentialOptions.toUtf8());
 
-    PredefinedVariables predefinedVariables = {predefinedId, predefinedX, predefinedY};
+    TestingVariables testingVariables = {predefinedId, predefinedX, predefinedY};
     auto result =
-        browserPasskeys()->buildRegisterPublicKeyCredential(publicKeyCredentialOptions, origin, predefinedVariables);
+        browserPasskeys()->buildRegisterPublicKeyCredential(publicKeyCredentialOptions, origin, testingVariables);
     auto publicKeyCredential = result.response;
     QCOMPARE(publicKeyCredential["type"], QString("public-key"));
     QCOMPARE(publicKeyCredential["authenticatorAttachment"], QString("platform"));

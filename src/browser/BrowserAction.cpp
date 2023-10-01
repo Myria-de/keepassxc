@@ -235,7 +235,6 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
         return getErrorReply(action, ERROR_KEEPASS_NO_URL_PROVIDED);
     }
 
-    const auto keys = getConnectionKeys(browserRequest);
     const auto id = browserRequest.getString("id");
     const auto formUrl = browserRequest.getString("submitUrl");
     const auto auth = browserRequest.getString("httpAuth");

@@ -57,12 +57,11 @@ BrowserPasskeys* BrowserPasskeys::instance()
 
 PublicKeyCredential BrowserPasskeys::buildRegisterPublicKeyCredential(const QJsonObject& publicKeyCredentialOptions,
                                                                       const QString& origin,
-                                                                      const PredefinedVariables& predefinedVariables)
+                                                                      const TestingVariables& testingVariables)
 {
     QJsonObject publicKeyCredential;
-    const auto id = predefinedVariables.credentialId.isEmpty()
-                        ? browserMessageBuilder()->getRandomBytesAsBase64(ID_BYTES)
-                        : predefinedVariables.credentialId;
+    const auto id = testingVariables.credentialId.isEmpty() ? browserMessageBuilder()->getRandomBytesAsBase64(ID_BYTES)
+                                                            : testingVariables.credentialId;
 
     // Extensions
     auto extensionObject = publicKeyCredentialOptions["extensions"].toObject();
@@ -72,8 +71,7 @@ PublicKeyCredential BrowserPasskeys::buildRegisterPublicKeyCredential(const QJso
     // Response
     QJsonObject responseObject;
     const auto clientData = buildClientDataJson(publicKeyCredentialOptions, origin, false);
-    const auto attestationObject =
-        buildAttestationObject(publicKeyCredentialOptions, extensions, id, predefinedVariables);
+    const auto attestationObject = buildAttestationObject(publicKeyCredentialOptions, extensions, id, testingVariables);
     responseObject["clientDataJSON"] = browserMessageBuilder()->getBase64FromJson(clientData);
     responseObject["attestationObject"] = browserMessageBuilder()->getBase64FromArray(attestationObject.cborEncoded);
 
@@ -158,7 +156,7 @@ QJsonObject BrowserPasskeys::buildClientDataJson(const QJsonObject& publicKey, c
 PrivateKey BrowserPasskeys::buildAttestationObject(const QJsonObject& publicKey,
                                                    const QString& extensions,
                                                    const QString& id,
-                                                   const PredefinedVariables& predefinedVariables)
+                                                   const TestingVariables& testingVariables)
 {
     QByteArray result;
 
@@ -189,13 +187,12 @@ PrivateKey BrowserPasskeys::buildAttestationObject(const QJsonObject& publicKey,
 
     // Credential Id
     result.append(QByteArray::fromBase64(
-        predefinedVariables.credentialId.isEmpty() ? id.toUtf8() : predefinedVariables.credentialId.toUtf8(),
+        testingVariables.credentialId.isEmpty() ? id.toUtf8() : testingVariables.credentialId.toUtf8(),
         QByteArray::Base64UrlEncoding));
 
     // Credential private key
     const auto alg = getAlgorithmFromPublicKey(publicKey);
-    const auto credentialPublicKey =
-        buildCredentialPrivateKey(alg, predefinedVariables.first, predefinedVariables.second);
+    const auto credentialPublicKey = buildCredentialPrivateKey(alg, testingVariables.first, testingVariables.second);
     result.append(credentialPublicKey.cborEncoded);
 
     // Add extension data if available

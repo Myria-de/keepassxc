@@ -249,19 +249,21 @@ add_subdirectory(browser)
 add_subdirectory(proxy)
 if(WITH_XC_BROWSER)
     set(keepassxcbrowser_LIB keepassxcbrowser)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/dbsettings/DatabaseSettingsWidgetBrowser.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/entry/EntryURLModel.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/reports/ReportsWidgetBrowserStatistics.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/reports/ReportsPageBrowserStatistics.cpp)
+    set(keepassx_SOURCES ${keepassx_SOURCES}
+            gui/dbsettings/DatabaseSettingsWidgetBrowser.cpp
+            gui/entry/EntryURLModel.cpp
+            gui/reports/ReportsWidgetBrowserStatistics.cpp
+            gui/reports/ReportsPageBrowserStatistics.cpp)
 endif()
 
 if(WITH_XC_BROWSER_PASSKEYS)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/reports/ReportsWidgetPasskeys.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/reports/ReportsPagePasskeys.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/passkeys/PasskeyExporter.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/passkeys/PasskeyExportDialog.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/passkeys/PasskeyImporter.cpp)
-    set(keepassx_SOURCES ${keepassx_SOURCES} gui/passkeys/PasskeyImportDialog.cpp)
+    set(keepassx_SOURCES ${keepassx_SOURCES}
+            gui/reports/ReportsWidgetPasskeys.cpp
+            gui/reports/ReportsPagePasskeys.cpp
+            gui/passkeys/PasskeyExporter.cpp
+            gui/passkeys/PasskeyExportDialog.cpp
+            gui/passkeys/PasskeyImporter.cpp
+            gui/passkeys/PasskeyImportDialog.cpp)
 endif()
 
 add_subdirectory(autotype)
@@ -302,14 +304,14 @@ if(WIN32)
 endif()
 
 if(WITH_XC_YUBIKEY)
-    list(APPEND keepassx_SOURCES 
+    list(APPEND keepassx_SOURCES
         keys/drivers/YubiKey.h
-        keys/drivers/YubiKey.cpp 
-        keys/drivers/YubiKeyInterface.cpp 
-        keys/drivers/YubiKeyInterfaceUSB.cpp 
+        keys/drivers/YubiKey.cpp
+        keys/drivers/YubiKeyInterface.cpp
+        keys/drivers/YubiKeyInterfaceUSB.cpp
         keys/drivers/YubiKeyInterfacePCSC.cpp)
 else()
-    list(APPEND keepassx_SOURCES 
+    list(APPEND keepassx_SOURCES
         keys/drivers/YubiKey.h
         keys/drivers/YubiKeyStub.cpp)
 endif()

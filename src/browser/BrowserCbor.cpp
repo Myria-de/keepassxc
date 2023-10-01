@@ -21,9 +21,10 @@
 #include <QCborStreamWriter>
 #include <QJsonDocument>
 
+// https://w3c.github.io/webauthn/#sctn-none-attestation
+// https://w3c.github.io/webauthn/#sctn-generating-an-attestation-object
 QByteArray BrowserCbor::cborEncodeAttestation(const QByteArray& authData) const
 {
-    Q_UNUSED(authData);
     QByteArray result;
     QCborStreamWriter writer(&result);
 
@@ -44,6 +45,7 @@ QByteArray BrowserCbor::cborEncodeAttestation(const QByteArray& authData) const
     return result;
 }
 
+// https://w3c.github.io/webauthn/#authdata-attestedcredentialdata-credentialpublickey
 QByteArray BrowserCbor::cborEncodePublicKey(int alg, const QByteArray& first, const QByteArray& second) const
 {
     QByteArray result;
@@ -198,6 +200,7 @@ QVariant BrowserCbor::handleCborValue(const QCborValue& value) const
     return value.toVariant();
 }
 
+// https://www.rfc-editor.org/rfc/rfc8152#section-13.1
 unsigned int BrowserCbor::getCurveParameter(int alg) const
 {
     switch (alg) {

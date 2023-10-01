@@ -949,10 +949,12 @@ QList<Entry*> BrowserService::searchEntries(const QSharedPointer<Database>& db,
                 continue;
             }
 
+#ifdef WITH_XC_BROWSER_PASSKEYS
             // With Passkeys, check for the Relying Party instead of URL
             if (passkey && entry->attributes()->value(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY) != siteUrl) {
                 continue;
             }
+#endif
 
             // Additional URL check may have already inserted the entry to the list
             if (!entries.contains(entry)) {

@@ -32,11 +32,6 @@ if(WITH_XC_BROWSER)
             NativeMessageInstaller.cpp)
 
     if(WITH_XC_BROWSER_PASSKEYS)
-        # CBOR requires Qt 5.12
-        if(Qt5Core_VERSION VERSION_LESS "5.12.0")
-            message(FATAL_ERROR "Qt version 5.12.0 or higher is required for Passkeys support")
-        endif()
-
         list(APPEND keepassxcbrowser_SOURCES
                 BrowserCbor.cpp
                 BrowserPasskeys.cpp

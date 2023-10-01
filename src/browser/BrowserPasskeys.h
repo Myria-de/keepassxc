@@ -66,7 +66,7 @@ struct PrivateKey
 };
 
 // Predefined variables used for testing the class
-struct PredefinedVariables
+struct TestingVariables
 {
     QString credentialId;
     QString first;
@@ -84,7 +84,7 @@ public:
 
     PublicKeyCredential buildRegisterPublicKeyCredential(const QJsonObject& publicKeyCredentialOptions,
                                                          const QString& origin,
-                                                         const PredefinedVariables& predefinedVariables = {});
+                                                         const TestingVariables& predefinedVariables = {});
     QJsonObject buildGetPublicKeyCredential(const QJsonObject& publicKeyCredentialRequestOptions,
                                             const QString& origin,
                                             const QString& userId,
@@ -113,7 +113,7 @@ private:
     PrivateKey buildAttestationObject(const QJsonObject& publicKey,
                                       const QString& extensions,
                                       const QString& id,
-                                      const PredefinedVariables& predefinedVariables = {});
+                                      const TestingVariables& predefinedVariables = {});
     QByteArray buildGetAttestationObject(const QJsonObject& publicKey);
     PrivateKey buildCredentialPrivateKey(int alg,
                                          const QString& predefinedFirst = QString(),

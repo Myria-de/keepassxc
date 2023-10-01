@@ -8191,6 +8191,10 @@ Kernel: %3 %4</source>
         <source>Passkeys</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>allow screenshots and app recording (Windows/macOS)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QtIOCompressor</name>
