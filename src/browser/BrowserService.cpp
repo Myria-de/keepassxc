@@ -766,6 +766,7 @@ void BrowserService::addPasskeyEntry(const QString& rpId,
     entry->setGroup(getDefaultEntryGroup(db));
     entry->setTitle(QString("%1 (%2)").arg(rpName, tr("Passkey")));
     entry->setUsername(username);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, userId, true);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM, privateKey, true);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, rpId);

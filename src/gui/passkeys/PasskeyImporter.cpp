@@ -131,8 +131,9 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
 
     entry->setUuid(QUuid::createUuid());
     entry->setTitle(QString("%1 (%2)").arg(relyingParty, tr("Passkey")));
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, relyingParty);
     entry->setUsername(username);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username, true);
+    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, relyingParty);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, password, true);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE, userHandle, true);
     entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM, privateKey, true);
