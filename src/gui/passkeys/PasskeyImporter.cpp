@@ -18,6 +18,7 @@
 #include "PasskeyImporter.h"
 #include "PasskeyImportDialog.h"
 #include "browser/BrowserPasskeys.h"
+#include "browser/BrowserService.h"
 #include "core/Entry.h"
 #include "core/Group.h"
 #include "gui/FileDialog.h"
@@ -88,7 +89,7 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
                                        const QString& url,
                                        const QString& relyingParty,
                                        const QString& username,
-                                       const QString& password,
+                                       const QString& userId,
                                        const QString& userHandle,
                                        const QString& privateKey)
 {
@@ -106,9 +107,8 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
         db = database;
     }
 
-    auto entry = new Entry();
-
-    // Apply group settings
+    // Group settings. Use default group "Imported Passkeys" if user did not select a specific one.
+    Group* group;
     auto useDefaultGroup = passkeyImportDialog.useDefaultGroup();
     if (useDefaultGroup) {
         auto defaultGroup = db->rootGroup()->findGroupByPath(IMPORTED_PASSKEYS_GROUP);
@@ -117,27 +117,19 @@ void PasskeyImporter::showImportDialog(QSharedPointer<Database>& database,
             newGroup->setName(IMPORTED_PASSKEYS_GROUP);
             newGroup->setUuid(QUuid::createUuid());
             newGroup->setParent(db->rootGroup());
-            entry->setGroup(newGroup);
+            group = newGroup;
         } else {
-            entry->setGroup(defaultGroup);
+            group = defaultGroup;
         }
     } else {
         auto groupUuid = passkeyImportDialog.getSelectedGroupUuid();
-        auto group = db->rootGroup()->findGroupByUuid(groupUuid);
-        if (!group) {
+        auto foundGroup = db->rootGroup()->findGroupByUuid(groupUuid);
+        if (!foundGroup) {
             return;
         }
 
-        entry->setGroup(group);
+        group = foundGroup;
     }
 
-    entry->setUuid(QUuid::createUuid());
-    entry->setTitle(QString("%1 (%2)").arg(relyingParty, tr("Passkey")));
-    entry->setUrl(url);
-    entry->setUsername(username);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USERNAME, username);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_RELYING_PARTY, relyingParty);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_GENERATED_USER_ID, password, true);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_USER_HANDLE, userHandle, true);
-    entry->attributes()->set(BrowserPasskeys::KPEX_PASSKEY_PRIVATE_KEY_PEM, privateKey, true);
+    browserService()->addPasskeyEntry(url, relyingParty, relyingParty, username, userId, userHandle, privateKey, group);
 }

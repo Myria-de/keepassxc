@@ -99,6 +99,7 @@ public:
                          const QString& userId,
                          const QString& userHandle,
                          const QString& privateKey,
+                         Group* group = nullptr,
                          Entry* existingEntry = nullptr);
 #endif
     void addEntry(const EntryParameters& entryParameters,

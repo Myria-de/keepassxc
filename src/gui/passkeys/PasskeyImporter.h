@@ -40,7 +40,7 @@ private:
                           const QString& url,
                           const QString& relyingParty,
                           const QString& username,
-                          const QString& password,
+                          const QString& userId,
                           const QString& userHandle,
                           const QString& privateKey);
 };

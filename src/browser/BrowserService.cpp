@@ -693,6 +693,7 @@ QJsonObject BrowserService::showPasskeysRegisterPrompt(const QJsonObject& public
                             publicKeyCredentials.id,
                             userHandle,
                             publicKeyCredentials.key,
+                            getDefaultEntryGroup(db),
                             updatedEntry);
         } else {
             addPasskeyEntry(
@@ -757,6 +758,7 @@ void BrowserService::addPasskeyEntry(const QString& url,
                                      const QString& userId,
                                      const QString& userHandle,
                                      const QString& privateKey,
+                                     Group* group,
                                      Entry* existingEntry)
 {
     auto db = selectedDatabase();
@@ -771,7 +773,7 @@ void BrowserService::addPasskeyEntry(const QString& url,
 
     entry->setUuid(QUuid::createUuid());
     entry->setIcon(KEEPASSXCBROWSER_DEFAULT_ICON);
-    entry->setGroup(getDefaultEntryGroup(db));
+    entry->setGroup(group ? group : getDefaultEntryGroup(db));
     entry->setTitle(QString("%1 (%2)").arg(rpName, tr("Passkey")));
     entry->setUrl(url);
     entry->setUsername(username);
