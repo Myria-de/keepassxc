@@ -95,6 +95,23 @@ QByteArray BrowserCbor::cborEncodePublicKey(int alg, const QByteArray& first, co
         writer.append(second);
 
         writer.endMap();
+    } else if (alg == WebAuthnAlgorithms::EDDSA) {
+        // https://www.rfc-editor.org/rfc/rfc8152#section-13.2
+        writer.startMap(3);
+
+        // Curve parameter
+        writer.append(-1);
+        writer.append(getCurveParameter(alg));
+
+        // Public key
+        writer.append(-2);
+        writer.append(first);
+
+        // Private key
+        writer.append(-4);
+        writer.append(second);
+
+        writer.endMap();
     }
 
     return result;
