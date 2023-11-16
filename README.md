@@ -1,3 +1,6 @@
+News 2023/11: We just merged our PassKey support to our next release branch. You can grab a snapshot build and test it out now. We already released support in our browser extension. 
+https://snapshot.keepassxc.org/latest/
+
 # <img src="https://keepassxc.org/assets/img/keepassxc.svg" width="40" height="40"/> KeePassXC
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6326/badge)](https://bestpractices.coreinfrastructure.org/projects/6326)
 [![TeamCity Build Status](https://ci.keepassxc.org/app/rest/builds/buildType:\(project:KeepassXC\)/statusIcon)](https://ci.keepassxc.org/?guest=1)
