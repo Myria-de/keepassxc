@@ -1,4 +1,4 @@
-News 2023/11: We just merged our PassKey support to our next release branch. You can grab a snapshot build and test it out now. We already released support in our browser extension. 
+**News 2023/11:** We just merged our PassKey support to our next release branch. You can grab a snapshot build and test it out now. We already released support in our browser extension. 
 https://snapshot.keepassxc.org/latest/
 
 # <img src="https://keepassxc.org/assets/img/keepassxc.svg" width="40" height="40"/> KeePassXC
